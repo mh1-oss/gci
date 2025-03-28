@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Banner } from "@/data/initialData";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 const HeroSlider = () => {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const videoRefs = useRef<{[key: string]: HTMLVideoElement | null}>({});
 
   useEffect(() => {
     getBanners().then(setBanners);
@@ -23,6 +24,25 @@ const HeroSlider = () => {
     
     return () => clearInterval(interval);
   }, [banners.length]);
+
+  useEffect(() => {
+    // Pause all videos when changing slides
+    Object.values(videoRefs.current).forEach(videoEl => {
+      if (videoEl) {
+        videoEl.pause();
+      }
+    });
+
+    // Play the current video if it exists
+    const currentBanner = banners[currentIndex];
+    if (currentBanner && currentBanner.mediaType === 'video' && videoRefs.current[currentBanner.id]) {
+      const videoEl = videoRefs.current[currentBanner.id];
+      if (videoEl) {
+        videoEl.currentTime = 0;
+        videoEl.play().catch(err => console.log('Video autoplay was prevented'));
+      }
+    }
+  }, [currentIndex, banners]);
 
   const goToPrevious = () => {
     setCurrentIndex(prevIndex => 
@@ -40,6 +60,10 @@ const HeroSlider = () => {
     setCurrentIndex(index);
   };
 
+  const isVideo = (url: string) => {
+    return url.match(/\.(mp4|webm|ogg)$/i);
+  };
+
   if (banners.length === 0) {
     return null;
   }
@@ -47,33 +71,48 @@ const HeroSlider = () => {
   return (
     <div className="relative h-[70vh] min-h-[400px] bg-gray-100 overflow-hidden">
       {/* Slides */}
-      {banners.map((banner, index) => (
-        <div 
-          key={banner.id}
-          className={`absolute inset-0 flex items-center transition-opacity duration-1000 ease-in-out ${
-            index === currentIndex ? "opacity-100 z-10" : "opacity-0 z-0"
-          }`}
-          style={{
-            backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(${banner.image})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
-        >
-          <div className="container-custom text-center text-white">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 animate-fade-in">
-              {banner.title}
-            </h1>
-            <p className="text-xl md:text-2xl max-w-2xl mx-auto mb-8 animate-fade-in">
-              {banner.subtitle}
-            </p>
-            <Link to={banner.ctaLink}>
-              <Button size="lg" className="animate-fade-in">
-                {banner.ctaText}
-              </Button>
-            </Link>
+      {banners.map((banner, index) => {
+        const isVideoMedia = banner.mediaType === 'video' || isVideo(banner.image);
+        
+        return (
+          <div 
+            key={banner.id}
+            className={`absolute inset-0 flex items-center transition-opacity duration-1000 ease-in-out ${
+              index === currentIndex ? "opacity-100 z-10" : "opacity-0 z-0"
+            }`}
+            style={{
+              background: isVideoMedia ? 'rgba(0, 0, 0, 0.5)' : 
+                `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(${banner.image})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }}
+          >
+            {isVideoMedia && (
+              <video
+                ref={el => videoRefs.current[banner.id] = el}
+                className="absolute inset-0 w-full h-full object-cover"
+                src={banner.videoUrl || banner.image}
+                muted
+                loop
+                playsInline
+              />
+            )}
+            <div className="container-custom text-center text-white relative z-10">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 animate-fade-in">
+                {banner.title}
+              </h1>
+              <p className="text-xl md:text-2xl max-w-2xl mx-auto mb-8 animate-fade-in">
+                {banner.subtitle}
+              </p>
+              <Link to={banner.ctaLink}>
+                <Button size="lg" className="animate-fade-in">
+                  {banner.ctaText}
+                </Button>
+              </Link>
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
       
       {/* Navigation Arrows */}
       <button 

@@ -1,4 +1,3 @@
-
 export interface Product {
   id: string;
   name: string;
@@ -32,7 +31,8 @@ export interface Banner {
   image: string;
   ctaText: string;
   ctaLink: string;
-  active: boolean;
+  mediaType?: 'image' | 'video';
+  videoUrl?: string;
 }
 
 export interface CompanyInfo {
@@ -180,7 +180,8 @@ export const banners: Banner[] = [
     image: "/placeholder.svg",
     ctaText: "تسوق الآن",
     ctaLink: "/products",
-    active: true
+    mediaType: 'image',
+    videoUrl: null
   },
   {
     id: "banner2",
@@ -189,7 +190,8 @@ export const banners: Banner[] = [
     image: "/placeholder.svg",
     ctaText: "اكتشف العروض",
     ctaLink: "/products?category=cat2",
-    active: true
+    mediaType: 'image',
+    videoUrl: null
   },
   {
     id: "banner3",
@@ -198,7 +200,8 @@ export const banners: Banner[] = [
     image: "/placeholder.svg",
     ctaText: "حاسبة الطلاء",
     ctaLink: "/calculator",
-    active: false
+    mediaType: 'image',
+    videoUrl: null
   }
 ];
 
