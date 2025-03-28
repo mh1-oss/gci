@@ -105,25 +105,37 @@ const AdminSettings = () => {
         ...companyInfo,
         [field]: value,
       });
-    } else if (isNested && nestedField && !deepNested) {
-      setCompanyInfo({
-        ...companyInfo,
-        [field]: {
-          ...companyInfo[field as keyof CompanyInfo],
-          [nestedField]: value,
-        },
-      });
-    } else if (isNested && nestedField && deepNested && deepNestedField) {
-      setCompanyInfo({
-        ...companyInfo,
-        [field]: {
-          ...companyInfo[field as keyof CompanyInfo],
-          [nestedField]: {
-            ...(companyInfo[field as keyof CompanyInfo] as any)[nestedField],
-            [deepNestedField]: value,
-          },
-        },
-      });
+    } else if (isNested && nestedField) {
+      // Fix for the first spread operator error - ensure we're working with objects
+      const currentFieldValue = companyInfo[field as keyof CompanyInfo];
+      
+      if (typeof currentFieldValue === 'object' && currentFieldValue !== null) {
+        if (!deepNested) {
+          setCompanyInfo({
+            ...companyInfo,
+            [field]: {
+              ...currentFieldValue,
+              [nestedField]: value,
+            },
+          });
+        } else if (deepNested && deepNestedField) {
+          // Fix for the second spread operator error - ensure we're working with objects
+          const nestedValue = (currentFieldValue as any)[nestedField];
+          
+          if (typeof nestedValue === 'object' && nestedValue !== null) {
+            setCompanyInfo({
+              ...companyInfo,
+              [field]: {
+                ...currentFieldValue,
+                [nestedField]: {
+                  ...nestedValue,
+                  [deepNestedField]: value,
+                },
+              },
+            });
+          }
+        }
+      }
     }
   };
 
