@@ -113,10 +113,10 @@ const AdminSettings = () => {
 
   const clearLogoSelection = () => {
     if (companyInfo) {
-      setLogoPreview("/placeholder.svg");
+      setLogoPreview("/gci-logo.png");
       setCompanyInfo({
         ...companyInfo,
-        logo: "/placeholder.svg"
+        logo: "/gci-logo.png"
       });
       if (logoInputRef.current) {
         logoInputRef.current.value = "";
@@ -257,7 +257,7 @@ const AdminSettings = () => {
                               <img 
                                 src={logoPreview} 
                                 alt="شعار الشركة" 
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-contain"
                               />
                             )}
                             <button 

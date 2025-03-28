@@ -1,6 +1,7 @@
 
 import { useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
+import { RefreshCw } from "lucide-react";
 
 const VisualizerPage = () => {
   const { toast } = useToast();

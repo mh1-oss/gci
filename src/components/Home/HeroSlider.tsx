@@ -9,10 +9,21 @@ import { Button } from "@/components/ui/button";
 const HeroSlider = () => {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [sliderHeight, setSliderHeight] = useState(70);
+  const [textColor, setTextColor] = useState("#ffffff");
   const videoRefs = useRef<{[key: string]: HTMLVideoElement | null}>({});
 
   useEffect(() => {
-    getBanners().then(setBanners);
+    getBanners().then(data => {
+      setBanners(data);
+      // Set slider height and text color if provided in the banner data
+      if (data.length > 0 && data[0].sliderHeight) {
+        setSliderHeight(data[0].sliderHeight);
+      }
+      if (data.length > 0 && data[0].textColor) {
+        setTextColor(data[0].textColor);
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -69,7 +80,11 @@ const HeroSlider = () => {
   }
 
   return (
-    <div className="relative h-[70vh] min-h-[400px] bg-gray-100 overflow-hidden">
+    <div 
+      className="relative bg-gray-100 overflow-hidden" 
+      style={{ height: `${sliderHeight}vh`, minHeight: "400px" }}
+      dir="rtl"
+    >
       {/* Slides */}
       {banners.map((banner, index) => {
         const isVideoMedia = banner.mediaType === 'video' || isVideo(banner.image);
@@ -97,7 +112,7 @@ const HeroSlider = () => {
                 playsInline
               />
             )}
-            <div className="container-custom text-center text-white relative z-10">
+            <div className="container-custom text-center relative z-10" style={{ color: textColor }}>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 animate-fade-in">
                 {banner.title}
               </h1>
@@ -117,18 +132,18 @@ const HeroSlider = () => {
       {/* Navigation Arrows */}
       <button 
         onClick={goToPrevious}
-        className="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-black/30 hover:bg-black/50 text-white p-2 rounded-full transition-colors"
+        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-black/30 hover:bg-black/50 text-white p-2 rounded-full transition-colors"
         aria-label="Previous slide"
       >
-        <ChevronLeft size={24} />
+        <ChevronRight size={24} />
       </button>
       
       <button 
         onClick={goToNext}
-        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-black/30 hover:bg-black/50 text-white p-2 rounded-full transition-colors"
+        className="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-black/30 hover:bg-black/50 text-white p-2 rounded-full transition-colors"
         aria-label="Next slide"
       >
-        <ChevronRight size={24} />
+        <ChevronLeft size={24} />
       </button>
       
       {/* Indicators */}
