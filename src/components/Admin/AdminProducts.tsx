@@ -565,7 +565,7 @@ const ProductList = () => {
         categoryId: formData.categoryId,
         image: formData.image,
         featured: formData.featured,
-        colors: formData.colors ? formData.colors.join(", ") : "",
+        colors: formData.colors.split(",").map(color => color.trim()).filter(color => color),
         mediaGallery: formData.mediaGallery,
         specsPdf: formData.specsPdf,
       });
@@ -772,7 +772,7 @@ const AddProductForm = () => {
         categoryId: formData.categoryId,
         image: formData.image,
         featured: formData.featured,
-        colors: formData.colors ? formData.colors.join(", ") : "",
+        colors: formData.colors.split(",").map(color => color.trim()).filter(color => color),
         mediaGallery: formData.mediaGallery,
         specsPdf: formData.specsPdf,
       });

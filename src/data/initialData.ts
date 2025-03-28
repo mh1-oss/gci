@@ -38,14 +38,18 @@ export interface Banner {
 export interface CompanyInfo {
   name: string;
   logo: string;
-  address: string;
-  phone: string;
-  email: string;
-  socialMedia: {
-    facebook?: string;
-    twitter?: string;
-    instagram?: string;
-    youtube?: string;
+  slogan: string;
+  about: string;
+  contact: {
+    address: string;
+    phone: string;
+    email: string;
+    socialMedia: {
+      facebook?: string;
+      twitter?: string;
+      instagram?: string;
+      youtube?: string;
+    };
   };
   exchangeRate: number; // USD to IQD exchange rate
 }
@@ -201,13 +205,17 @@ export const banners: Banner[] = [
 export const companyInfo: CompanyInfo = {
   name: "مودرن بينت",
   logo: "/placeholder.svg",
-  address: "123 شارع الصناعة، بغداد، العراق",
-  phone: "+964 771 234 5678",
-  email: "info@modernpaint.iq",
-  socialMedia: {
-    facebook: "https://facebook.com/modernpaint",
-    twitter: "https://twitter.com/modernpaint",
-    instagram: "https://instagram.com/modernpaint"
+  slogan: "أفضل منتجات الطلاء بأعلى جودة",
+  about: "تأسست شركة مودرن بينت في عام 2005 وهي رائدة في مجال صناعة الدهانات والطلاء في العراق. نحن نقدم منتجات عالية الجودة تلبي احتياجات عملائنا من الأفراد والشركات.",
+  contact: {
+    address: "123 شارع الصناعة، بغداد، العراق",
+    phone: "+964 771 234 5678",
+    email: "info@modernpaint.iq",
+    socialMedia: {
+      facebook: "https://facebook.com/modernpaint",
+      twitter: "https://twitter.com/modernpaint",
+      instagram: "https://instagram.com/modernpaint"
+    }
   },
   exchangeRate: 1460 // 1 USD = 1460 IQD (example rate)
 };
