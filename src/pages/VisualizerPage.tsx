@@ -18,7 +18,7 @@ import {
   CardTitle 
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Camera, Refresh, Download, ArrowUp } from "lucide-react";
+import { Loader2, Camera, RefreshCw, Download, ArrowUp } from "lucide-react";
 
 const VisualizerPage = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -305,7 +305,7 @@ const VisualizerPage = () => {
                         onClick={resetVisualizer}
                         disabled={!uploadedImage}
                       >
-                        <Refresh className="ml-2 h-4 w-4" />
+                        <RefreshCw className="ml-2 h-4 w-4" />
                         إعادة تعيين
                       </Button>
                       

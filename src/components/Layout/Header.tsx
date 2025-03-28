@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -36,12 +35,10 @@ const Header = () => {
   const { currency, setCurrency } = useCurrency();
   const location = useLocation();
 
-  // Load categories
   useEffect(() => {
     getCategories().then(setCategories);
   }, []);
 
-  // Add scroll event listener
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
@@ -51,7 +48,6 @@ const Header = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Close mobile menu when navigating
   useEffect(() => {
     setIsMenuOpen(false);
   }, [location]);
@@ -68,12 +64,10 @@ const Header = () => {
     <header className={`sticky top-0 z-50 bg-white shadow-sm transition-all duration-300 ${isScrolled ? "py-2" : "py-4"}`} dir="rtl">
       <div className="container-custom">
         <div className="flex items-center justify-between">
-          {/* Logo */}
           <Link to="/" className="text-2xl font-bold text-brand-blue">
             <img src="/placeholder.svg" alt="مودرن بينت" className="h-10" />
           </Link>
 
-          {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
             <Link to="/" className="text-gray-700 hover:text-brand-blue transition-colors mx-3">
               الرئيسية
@@ -115,7 +109,6 @@ const Header = () => {
             </Link>
           </nav>
 
-          {/* Right Side Menu Items */}
           <div className="hidden md:flex items-center space-x-4">
             <Button 
               variant="outline" 
@@ -135,7 +128,7 @@ const Header = () => {
                     {user?.username}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56" dir="rtl">
+                <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel>حسابي</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   {isAdmin && (
@@ -175,7 +168,6 @@ const Header = () => {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center space-x-3">
             <Button 
               variant="outline" 
@@ -199,7 +191,6 @@ const Header = () => {
         </div>
       </div>
 
-      {/* Mobile Navigation Menu */}
       {isMenuOpen && (
         <div className="md:hidden absolute top-full left-0 right-0 bg-white shadow-lg animate-slide-in z-50">
           <nav className="flex flex-col py-4 px-6 space-y-4">
