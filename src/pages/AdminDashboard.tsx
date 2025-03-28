@@ -23,7 +23,7 @@ const AdminDashboard = () => {
   const location = useLocation();
 
   useEffect(() => {
-    document.title = "Modern Paint - Admin Dashboard";
+    document.title = "Modern Paint - لوحة تحكم المدير";
     
     // Redirect if not authenticated or not an admin
     if (!isAuthenticated || !isAdmin) {
@@ -33,18 +33,18 @@ const AdminDashboard = () => {
 
   if (!isAuthenticated || !isAdmin) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="flex items-center justify-center min-h-[60vh]" dir="rtl">
         <div className="text-center p-8 max-w-md">
           <AlertTriangle className="mx-auto h-12 w-12 text-yellow-500 mb-4" />
-          <h2 className="text-2xl font-bold mb-4">Access Denied</h2>
+          <h2 className="text-2xl font-bold mb-4">تم رفض الوصول</h2>
           <p className="text-gray-600 mb-6">
-            You need to be logged in as an administrator to access this page.
+            تحتاج إلى تسجيل الدخول كمسؤول للوصول إلى هذه الصفحة.
           </p>
           <Link 
             to="/login" 
             className="inline-block px-6 py-3 bg-brand-blue text-white rounded-md hover:bg-brand-darkblue transition-colors"
           >
-            Go to Login
+            الذهاب إلى تسجيل الدخول
           </Link>
         </div>
       </div>
@@ -62,12 +62,12 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="py-6">
+    <div className="py-6" dir="rtl">
       <div className="container-custom">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-4">Admin Dashboard</h1>
+          <h1 className="text-3xl font-bold mb-4">لوحة تحكم المدير</h1>
           <p className="text-gray-600">
-            Manage your website's products, categories, content, and settings.
+            إدارة منتجات موقعك، والفئات، والمحتوى، والإعدادات.
           </p>
         </div>
 
@@ -80,8 +80,8 @@ const AdminDashboard = () => {
                 asChild
               >
                 <Link to="/admin">
-                  <LayoutDashboard className="h-4 w-4" />
-                  Overview
+                  <LayoutDashboard className="h-4 w-4 ml-1" />
+                  نظرة عامة
                 </Link>
               </TabsTrigger>
               <TabsTrigger 
@@ -90,8 +90,8 @@ const AdminDashboard = () => {
                 asChild
               >
                 <Link to="/admin/products">
-                  <Package className="h-4 w-4" />
-                  Products
+                  <Package className="h-4 w-4 ml-1" />
+                  المنتجات
                 </Link>
               </TabsTrigger>
               <TabsTrigger 
@@ -100,8 +100,8 @@ const AdminDashboard = () => {
                 asChild
               >
                 <Link to="/admin/categories">
-                  <FolderTree className="h-4 w-4" />
-                  Categories
+                  <FolderTree className="h-4 w-4 ml-1" />
+                  الفئات
                 </Link>
               </TabsTrigger>
               <TabsTrigger 
@@ -110,8 +110,8 @@ const AdminDashboard = () => {
                 asChild
               >
                 <Link to="/admin/content">
-                  <FileText className="h-4 w-4" />
-                  Content
+                  <FileText className="h-4 w-4 ml-1" />
+                  المحتوى
                 </Link>
               </TabsTrigger>
               <TabsTrigger 
@@ -120,8 +120,8 @@ const AdminDashboard = () => {
                 asChild
               >
                 <Link to="/admin/settings">
-                  <Settings className="h-4 w-4" />
-                  Settings
+                  <Settings className="h-4 w-4 ml-1" />
+                  الإعدادات
                 </Link>
               </TabsTrigger>
             </div>

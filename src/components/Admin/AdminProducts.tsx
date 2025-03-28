@@ -1,13 +1,13 @@
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Routes, Route, Link, useNavigate } from "react-router-dom";
-import { Product, Category } from "@/data/initialData";
+import { Product, Category, MediaItem } from "@/data/initialData";
 import { 
   getProducts, 
   getCategories, 
   addProduct, 
   updateProduct, 
-  deleteProduct 
+  deleteProduct,
+  uploadMedia
 } from "@/services/dataService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,7 +40,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/use-toast";
 import { useCurrency } from "@/context/CurrencyContext";
-import { Plus, Edit, Trash2, Search, Loader2 } from "lucide-react";
+import { Plus, Edit, Trash2, Search, Loader2, Upload, Image, Video, FileText, X } from "lucide-react";
 
 interface ProductFormData {
   name: string;
@@ -50,7 +50,67 @@ interface ProductFormData {
   image: string;
   featured: boolean;
   colors: string;
+  mediaGallery: MediaItem[];
+  specsPdf: string;
 }
+
+interface MediaUploadProps {
+  onUpload: (file: File) => Promise<void>;
+  accept: string;
+  id: string;
+  icon: React.ReactNode;
+  label: string;
+}
+
+const MediaUpload = ({ onUpload, accept, id, icon, label }: MediaUploadProps) => {
+  const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setLoading(true);
+      try {
+        await onUpload(file);
+      } catch (error) {
+        console.error("Upload error:", error);
+      } finally {
+        setLoading(false);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      }
+    }
+  };
+  
+  return (
+    <div className="relative">
+      <input
+        type="file"
+        id={id}
+        accept={accept}
+        onChange={handleFileChange}
+        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+        disabled={loading}
+        ref={fileInputRef}
+      />
+      <div className={`border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:bg-gray-50 transition-colors ${loading ? 'bg-gray-50' : ''}`}>
+        {loading ? (
+          <div className="flex flex-col items-center py-4">
+            <Loader2 className="h-8 w-8 animate-spin text-brand-blue mb-2" />
+            <span className="text-sm text-gray-500">جاري التحميل...</span>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center py-4">
+            {icon}
+            <span className="mt-2 text-sm font-medium">{label}</span>
+            <span className="mt-1 text-xs text-gray-500">اضغط أو اسحب وأفلت</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const defaultProductForm: ProductFormData = {
   name: "",
@@ -60,6 +120,8 @@ const defaultProductForm: ProductFormData = {
   image: "/placeholder.svg",
   featured: false,
   colors: "",
+  mediaGallery: [],
+  specsPdf: "",
 };
 
 const ProductForm = ({ 
@@ -84,10 +146,14 @@ const ProductForm = ({
       image: product.image,
       featured: product.featured,
       colors: product.colors ? product.colors.join(", ") : "",
+      mediaGallery: product.mediaGallery || [],
+      specsPdf: product.specsPdf || "",
     } : { ...defaultProductForm }
   );
   
-  const handleChange = (field: keyof ProductFormData, value: string | boolean) => {
+  const { toast } = useToast();
+  
+  const handleChange = (field: keyof ProductFormData, value: string | boolean | MediaItem[]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
   
@@ -96,30 +162,116 @@ const ProductForm = ({
     onSubmit(formData);
   };
   
+  const handleMainImageUpload = async (file: File) => {
+    try {
+      const imageUrl = await uploadMedia(file);
+      handleChange("image", imageUrl);
+      toast({
+        title: "تم تحميل الصورة الرئيسية",
+        description: "تم تحميل الصورة الرئيسية بنجاح.",
+      });
+    } catch (error) {
+      toast({
+        title: "خطأ في التحميل",
+        description: "فشل تحميل الصورة. يرجى المحاولة مرة أخرى.",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const handleGalleryImageUpload = async (file: File) => {
+    try {
+      const imageUrl = await uploadMedia(file);
+      const newMedia: MediaItem = {
+        url: imageUrl,
+        type: 'image'
+      };
+      handleChange("mediaGallery", [...formData.mediaGallery, newMedia]);
+      toast({
+        title: "تم تحميل الصورة",
+        description: "تم إضافة الصورة إلى معرض الوسائط.",
+      });
+    } catch (error) {
+      toast({
+        title: "خطأ في التحميل",
+        description: "فشل تحميل الصورة. يرجى المحاولة مرة أخرى.",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const handleVideoUpload = async (file: File) => {
+    try {
+      const videoUrl = await uploadMedia(file);
+      const newMedia: MediaItem = {
+        url: videoUrl,
+        type: 'video'
+      };
+      handleChange("mediaGallery", [...formData.mediaGallery, newMedia]);
+      toast({
+        title: "تم تحميل الفيديو",
+        description: "تم إضافة الفيديو إلى معرض الوسائط.",
+      });
+    } catch (error) {
+      toast({
+        title: "خطأ في التحميل",
+        description: "فشل تحميل الفيديو. يرجى المحاولة مرة أخرى.",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const handlePdfUpload = async (file: File) => {
+    try {
+      const pdfUrl = await uploadMedia(file);
+      handleChange("specsPdf", pdfUrl);
+      toast({
+        title: "تم تحميل ملف PDF",
+        description: "تم تعيين ملف المواصفات بنجاح.",
+      });
+    } catch (error) {
+      toast({
+        title: "خطأ في التحميل",
+        description: "فشل تحميل ملف PDF. يرجى المحاولة مرة أخرى.",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const removeMediaItem = (index: number) => {
+    const updatedGallery = [...formData.mediaGallery];
+    updatedGallery.splice(index, 1);
+    handleChange("mediaGallery", updatedGallery);
+  };
+  
+  const removePdf = () => {
+    handleChange("specsPdf", "");
+  };
+  
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6" dir="rtl">
       <div>
         <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-          Product Name
+          اسم المنتج
         </label>
         <Input
           id="name"
           value={formData.name}
           onChange={(e) => handleChange("name", e.target.value)}
-          placeholder="Enter product name"
+          placeholder="أدخل اسم المنتج"
           required
         />
       </div>
       
       <div>
         <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-          Description
+          الوصف
         </label>
         <Textarea
           id="description"
           value={formData.description}
           onChange={(e) => handleChange("description", e.target.value)}
-          placeholder="Enter product description"
+          placeholder="أدخل وصف المنتج"
           rows={4}
           required
         />
@@ -128,7 +280,7 @@ const ProductForm = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
-            Price (USD)
+            السعر (USD)
           </label>
           <Input
             id="price"
@@ -144,14 +296,14 @@ const ProductForm = ({
         
         <div>
           <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-            Category
+            الفئة
           </label>
           <Select 
             value={formData.categoryId} 
             onValueChange={(value) => handleChange("categoryId", value)}
           >
             <SelectTrigger id="category">
-              <SelectValue placeholder="Select a category" />
+              <SelectValue placeholder="اختر فئة" />
             </SelectTrigger>
             <SelectContent>
               {categories.map((category) => (
@@ -164,28 +316,120 @@ const ProductForm = ({
         </div>
       </div>
       
+      {/* Main Image Upload */}
       <div>
-        <label htmlFor="image" className="block text-sm font-medium text-gray-700 mb-1">
-          Image URL
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          الصورة الرئيسية
         </label>
-        <Input
-          id="image"
-          value={formData.image}
-          onChange={(e) => handleChange("image", e.target.value)}
-          placeholder="Enter image URL"
-          required
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <MediaUpload
+            onUpload={handleMainImageUpload}
+            accept="image/*"
+            id="main-image-upload"
+            icon={<Image className="h-10 w-10 text-gray-400" />}
+            label="تحميل صورة رئيسية"
+          />
+          {formData.image && formData.image !== "/placeholder.svg" && (
+            <div className="relative aspect-square rounded-lg overflow-hidden border border-gray-200">
+              <img src={formData.image} alt="Main" className="w-full h-full object-cover" />
+            </div>
+          )}
+        </div>
+      </div>
+      
+      {/* Media Gallery */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          معرض الوسائط
+        </label>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <MediaUpload
+            onUpload={handleGalleryImageUpload}
+            accept="image/*"
+            id="gallery-image-upload"
+            icon={<Image className="h-10 w-10 text-gray-400" />}
+            label="تحميل صورة للمعرض"
+          />
+          <MediaUpload
+            onUpload={handleVideoUpload}
+            accept="video/*"
+            id="video-upload"
+            icon={<Video className="h-10 w-10 text-gray-400" />}
+            label="تحميل فيديو"
+          />
+        </div>
+        
+        {formData.mediaGallery.length > 0 && (
+          <div className="mt-4">
+            <h4 className="text-sm font-medium text-gray-700 mb-2">الوسائط المحملة:</h4>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {formData.mediaGallery.map((media, index) => (
+                <div key={index} className="relative group">
+                  {media.type === 'video' ? (
+                    <div className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center">
+                      <Video className="h-8 w-8 text-gray-500" />
+                    </div>
+                  ) : (
+                    <div className="aspect-square rounded-lg overflow-hidden">
+                      <img src={media.url} alt={`Gallery ${index + 1}`} className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => removeMediaItem(index)}
+                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+      
+      {/* PDF Specs Upload */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          ملف مواصفات PDF
+        </label>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <MediaUpload
+            onUpload={handlePdfUpload}
+            accept=".pdf"
+            id="pdf-upload"
+            icon={<FileText className="h-10 w-10 text-gray-400" />}
+            label="تحميل ملف PDF للمواصفات"
+          />
+          {formData.specsPdf && (
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center">
+                <FileText className="h-6 w-6 text-gray-500 mr-2" />
+                <span className="text-sm font-medium truncate max-w-[200px]">
+                  {formData.specsPdf.split('/').pop() || 'specs.pdf'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={removePdf}
+                className="text-red-500 p-1 hover:bg-gray-200 rounded-full"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+        </div>
       </div>
       
       <div>
         <label htmlFor="colors" className="block text-sm font-medium text-gray-700 mb-1">
-          Available Colors (comma separated)
+          الألوان المتاحة (مفصولة بفواصل)
         </label>
         <Input
           id="colors"
           value={formData.colors}
           onChange={(e) => handleChange("colors", e.target.value)}
-          placeholder="e.g. Red, Blue, Green"
+          placeholder="مثال: أحمر، أزرق، أخضر"
         />
       </div>
       
@@ -197,24 +441,24 @@ const ProductForm = ({
         />
         <label
           htmlFor="featured"
-          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+          className="mr-2 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
         >
-          Featured Product
+          منتج مميز
         </label>
       </div>
       
       <div className="flex justify-end space-x-4">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
+        <Button type="button" variant="outline" onClick={onCancel} className="ml-4">
+          إلغاء
         </Button>
         <Button type="submit" disabled={isLoading}>
           {isLoading ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Saving...
+              <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+              جاري الحفظ...
             </>
           ) : (
-            'Save Product'
+            'حفظ المنتج'
           )}
         </Button>
       </div>
@@ -321,7 +565,9 @@ const ProductList = () => {
         categoryId: formData.categoryId,
         image: formData.image,
         featured: formData.featured,
-        colors: formData.colors ? formData.colors.split(",").map(c => c.trim()) : undefined,
+        colors: formData.colors ? formData.colors.join(", ") : "",
+        mediaGallery: formData.mediaGallery,
+        specsPdf: formData.specsPdf,
       });
       
       if (updatedProduct) {
@@ -350,28 +596,27 @@ const ProductList = () => {
     }
   };
   
-  // Get category name by id
   const getCategoryName = (categoryId: string) => {
     const category = categories.find(cat => cat.id === categoryId);
     return category ? category.name : "Unknown";
   };
   
   return (
-    <div>
+    <div dir="rtl">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <div className="relative w-full sm:w-auto">
           <Input
-            placeholder="Search products..."
+            placeholder="البحث عن المنتجات..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pr-10"
           />
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
         </div>
         
         <Button onClick={() => navigate("/admin/products/add")}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Product
+          <Plus className="h-4 w-4 ml-2" />
+          إضافة منتج
         </Button>
       </div>
       
@@ -384,11 +629,11 @@ const ProductList = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>Featured</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>الاسم</TableHead>
+                <TableHead>الفئة</TableHead>
+                <TableHead>السعر</TableHead>
+                <TableHead>مميز</TableHead>
+                <TableHead className="text-left">الإجراءات</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -397,13 +642,14 @@ const ProductList = () => {
                   <TableCell className="font-medium">{product.name}</TableCell>
                   <TableCell>{getCategoryName(product.categoryId)}</TableCell>
                   <TableCell>{formatPrice(product.price)}</TableCell>
-                  <TableCell>{product.featured ? "Yes" : "No"}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end space-x-2">
+                  <TableCell>{product.featured ? "نعم" : "لا"}</TableCell>
+                  <TableCell className="text-left">
+                    <div className="flex justify-start space-x-2">
                       <Button 
                         variant="outline" 
                         size="sm" 
                         onClick={() => handleEditClick(product)}
+                        className="ml-2"
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -424,17 +670,16 @@ const ProductList = () => {
         </div>
       ) : (
         <div className="text-center py-10 border rounded-lg">
-          <p className="text-gray-500">No products found</p>
+          <p className="text-gray-500">لم يتم العثور على منتجات</p>
         </div>
       )}
       
-      {/* Edit Product Dialog */}
       <Dialog open={!!editingProduct} onOpenChange={(open) => !open && setEditingProduct(null)}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit Product</DialogTitle>
+            <DialogTitle>تعديل المنتج</DialogTitle>
             <DialogDescription>
-              Make changes to the product details below.
+              قم بإجراء تغييرات على تفاصيل المنتج أدناه.
             </DialogDescription>
           </DialogHeader>
           
@@ -450,13 +695,12 @@ const ProductList = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogTitle>تأكيد الحذف</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete the product "{productToDelete?.name}"? This action cannot be undone.
+              هل أنت متأكد أنك تريد حذف المنتج "{productToDelete?.name}"؟ لا يمكن التراجع عن هذا الإجراء.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -464,8 +708,9 @@ const ProductList = () => {
               variant="outline" 
               onClick={() => setDeleteDialogOpen(false)}
               disabled={formLoading}
+              className="ml-4"
             >
-              Cancel
+              إلغاء
             </Button>
             <Button 
               variant="destructive" 
@@ -474,11 +719,11 @@ const ProductList = () => {
             >
               {formLoading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Deleting...
+                  <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                  جاري الحذف...
                 </>
               ) : (
-                'Delete'
+                'حذف'
               )}
             </Button>
           </DialogFooter>
@@ -527,7 +772,9 @@ const AddProductForm = () => {
         categoryId: formData.categoryId,
         image: formData.image,
         featured: formData.featured,
-        colors: formData.colors ? formData.colors.split(",").map(c => c.trim()) : undefined,
+        colors: formData.colors ? formData.colors.join(", ") : "",
+        mediaGallery: formData.mediaGallery,
+        specsPdf: formData.specsPdf,
       });
       
       toast({
@@ -561,9 +808,9 @@ const AddProductForm = () => {
     <Card>
       <CardContent className="pt-6">
         <div className="mb-6">
-          <h2 className="text-2xl font-bold">Add New Product</h2>
+          <h2 className="text-2xl font-bold">إضافة منتج جديد</h2>
           <p className="text-gray-500">
-            Fill in the details below to create a new product.
+            املأ التفاصيل أدناه لإنشاء منتج جديد.
           </p>
         </div>
         

@@ -7,8 +7,15 @@ export interface Product {
   categoryId: string;
   image: string;
   featured: boolean;
-  specifications?: Record<string, string>;
   colors?: string[];
+  specifications?: Record<string, string>;
+  mediaGallery?: MediaItem[];
+  specsPdf?: string;
+}
+
+export interface MediaItem {
+  url: string;
+  type: 'image' | 'video';
 }
 
 export interface Category {
@@ -25,275 +32,182 @@ export interface Banner {
   image: string;
   ctaText: string;
   ctaLink: string;
+  active: boolean;
 }
 
 export interface CompanyInfo {
   name: string;
-  slogan: string;
-  about: string;
-  contact: {
-    address: string;
-    email: string;
-    phone: string;
-    socialMedia: {
-      facebook: string;
-      instagram: string;
-      twitter: string;
-    }
+  logo: string;
+  address: string;
+  phone: string;
+  email: string;
+  socialMedia: {
+    facebook?: string;
+    twitter?: string;
+    instagram?: string;
+    youtube?: string;
   };
+  exchangeRate: number; // USD to IQD exchange rate
 }
 
-export const categories: Category[] = [
-  {
-    id: "cat1",
-    name: "Interior Paints",
-    description: "High-quality paints for interior walls and ceilings",
-    image: "/placeholder.svg"
-  },
-  {
-    id: "cat2",
-    name: "Exterior Paints",
-    description: "Weather-resistant paints for exterior surfaces",
-    image: "/placeholder.svg"
-  },
-  {
-    id: "cat3",
-    name: "Wood Finishes",
-    description: "Stains and varnishes for wooden surfaces",
-    image: "/placeholder.svg"
-  },
-  {
-    id: "cat4",
-    name: "Metal Paints",
-    description: "Rust-proof paints for metal surfaces",
-    image: "/placeholder.svg"
-  },
-  {
-    id: "cat5",
-    name: "Primers",
-    description: "Preparation coatings for various surfaces",
-    image: "/placeholder.svg"
-  },
-  {
-    id: "cat6",
-    name: "Specialty Coatings",
-    description: "Specialized paints for specific applications",
-    image: "/placeholder.svg"
-  }
-];
-
+// Sample data
 export const products: Product[] = [
   {
     id: "p1",
-    name: "Premium Matte Wall Paint",
-    description: "Superior quality matte finish paint for interior walls with excellent coverage and washability.",
-    price: 25.99,
-    categoryId: "cat1",
-    image: "/placeholder.svg",
-    featured: true,
-    specifications: {
-      "Coverage": "8-10 m²/L",
-      "Dry Time": "1-2 hours",
-      "Recoat Time": "4 hours",
-      "VOC Content": "Low",
-      "Finish": "Matte"
-    },
-    colors: ["White", "Off-White", "Beige", "Light Gray", "Sky Blue"]
-  },
-  {
-    id: "p2",
-    name: "Weather Shield Exterior Paint",
-    description: "Long-lasting exterior paint with advanced weather protection technology.",
-    price: 32.99,
-    categoryId: "cat2",
-    image: "/placeholder.svg",
-    featured: true,
-    specifications: {
-      "Coverage": "6-8 m²/L",
-      "Dry Time": "2-3 hours",
-      "Recoat Time": "6 hours",
-      "Weather Resistance": "Excellent",
-      "Finish": "Satin"
-    },
-    colors: ["White", "Beige", "Tan", "Gray", "Blue", "Green"]
-  },
-  {
-    id: "p3",
-    name: "Wood Stain & Sealer",
-    description: "Penetrating wood stain that enhances grain and protects against moisture.",
-    price: 18.99,
-    categoryId: "cat3",
-    image: "/placeholder.svg",
-    featured: false,
-    specifications: {
-      "Coverage": "10-12 m²/L",
-      "Dry Time": "4-6 hours",
-      "Recoat Time": "12 hours",
-      "Water Resistance": "High",
-      "Finish": "Natural"
-    },
-    colors: ["Cherry", "Walnut", "Oak", "Mahogany", "Ebony"]
-  },
-  {
-    id: "p4",
-    name: "Anti-Rust Metal Paint",
-    description: "Directly applies to rust with no primer needed. Provides long-lasting protection.",
-    price: 27.99,
-    categoryId: "cat4",
-    image: "/placeholder.svg",
-    featured: true,
-    specifications: {
-      "Coverage": "7-9 m²/L",
-      "Dry Time": "1-2 hours",
-      "Recoat Time": "4 hours",
-      "Rust Protection": "Advanced",
-      "Finish": "Gloss"
-    },
-    colors: ["Black", "White", "Silver", "Red", "Blue"]
-  },
-  {
-    id: "p5",
-    name: "All-Surface Primer",
-    description: "Universal primer suitable for all surfaces including difficult substrates.",
-    price: 15.99,
-    categoryId: "cat5",
-    image: "/placeholder.svg",
-    featured: false,
-    specifications: {
-      "Coverage": "8-10 m²/L",
-      "Dry Time": "30 minutes",
-      "Recoat Time": "1 hour",
-      "Adhesion": "Superior",
-      "Finish": "Flat"
-    },
-    colors: ["White"]
-  },
-  {
-    id: "p6",
-    name: "Concrete Floor Paint",
-    description: "Durable epoxy-based paint for concrete floors with excellent wear resistance.",
-    price: 38.99,
-    categoryId: "cat6",
-    image: "/placeholder.svg",
-    featured: false,
-    specifications: {
-      "Coverage": "5-7 m²/L",
-      "Dry Time": "6-8 hours",
-      "Recoat Time": "24 hours",
-      "Abrasion Resistance": "High",
-      "Finish": "Semi-Gloss"
-    },
-    colors: ["Gray", "Beige", "Blue", "Green", "Red"]
-  },
-  {
-    id: "p7",
-    name: "Kitchen & Bath Paint",
-    description: "Mildew-resistant paint specifically formulated for humid environments.",
+    name: "طلاء أكريليك ممتاز",
+    description: "طلاء أكريليك متميز يوفر تغطية استثنائية ومقاومة للتلاشي، مثالي للاستخدام الداخلي والخارجي.",
     price: 29.99,
     categoryId: "cat1",
     image: "/placeholder.svg",
     featured: true,
+    colors: ["أبيض", "عاجي", "بيج"],
     specifications: {
-      "Coverage": "8-10 m²/L",
-      "Dry Time": "1-2 hours",
-      "Recoat Time": "4 hours",
-      "Mildew Resistance": "Excellent",
-      "Finish": "Semi-Gloss"
-    },
-    colors: ["White", "Off-White", "Light Blue", "Light Green", "Beige"]
+      "النوع": "أكريليك",
+      "التغطية": "8-10 متر مربع / لتر",
+      "وقت الجفاف": "ساعة واحدة",
+      "إعادة الطلاء": "4 ساعات",
+      "اللمعان": "مطفي"
+    }
   },
   {
-    id: "p8",
-    name: "High-Gloss Enamel",
-    description: "Tough, durable high-gloss finish for trim, doors, and cabinets.",
-    price: 26.99,
+    id: "p2",
+    name: "طلاء الأسطح المعدنية المضاد للصدأ",
+    description: "طلاء أساس ونهائي يحمي الأسطح المعدنية من الصدأ مع توفير تشطيب جميل ومتين.",
+    price: 39.99,
+    categoryId: "cat2",
+    image: "/placeholder.svg",
+    featured: true,
+    colors: ["فضي", "أسود", "أحمر"]
+  },
+  {
+    id: "p3",
+    name: "طلاء أكريليك للخشب",
+    description: "طلاء متخصص للأسطح الخشبية يعزز الجمال الطبيعي للخشب مع توفير حماية فائقة.",
+    price: 45.99,
+    categoryId: "cat3",
+    image: "/placeholder.svg",
+    featured: false,
+    colors: ["شفاف لامع", "شفاف مطفي", "بني فاتح"]
+  },
+  {
+    id: "p4",
+    name: "طلاء الأسطح الخرسانية",
+    description: "طلاء متين للأرضيات والأسطح الخرسانية، مقاوم للبقع والمواد الكيميائية المنزلية.",
+    price: 52.99,
+    categoryId: "cat4",
+    image: "/placeholder.svg",
+    featured: false,
+    colors: ["رمادي", "بيج", "أخضر"]
+  },
+  {
+    id: "p5",
+    name: "طلاء الجدران الداخلية",
+    description: "طلاء منخفض الرائحة وقابل للغسل، مثالي للغرف المعيشية وغرف النوم مع تغطية ممتازة.",
+    price: 24.99,
+    categoryId: "cat1",
+    image: "/placeholder.svg",
+    featured: true,
+    colors: ["أبيض ناصع", "كريمي", "رمادي فاتح", "أزرق سماوي"]
+  },
+  {
+    id: "p6",
+    name: "طلاء الحمامات والمطابخ",
+    description: "طلاء مقاوم للرطوبة والعفن، مصمم خصيصًا للأماكن ذات الرطوبة العالية.",
+    price: 34.99,
     categoryId: "cat1",
     image: "/placeholder.svg",
     featured: false,
-    specifications: {
-      "Coverage": "8-10 m²/L",
-      "Dry Time": "4-6 hours",
-      "Recoat Time": "16 hours",
-      "Scratch Resistance": "High",
-      "Finish": "High-Gloss"
-    },
-    colors: ["White", "Black", "Red", "Blue", "Green", "Yellow"]
+    colors: ["أبيض", "عاجي", "أزرق فاتح"]
   },
   {
-    id: "p9",
-    name: "Chalk Finish Paint",
-    description: "Ultra-matte decorative paint perfect for furniture and DIY projects.",
-    price: 19.99,
-    categoryId: "cat6",
+    id: "p7",
+    name: "طلاء أيبوكسي للأرضيات",
+    description: "طلاء أيبوكسي عالي الأداء للمرائب وأرضيات الورش والمستودعات.",
+    price: 69.99,
+    categoryId: "cat4",
     image: "/placeholder.svg",
-    featured: false,
-    specifications: {
-      "Coverage": "10-12 m²/L",
-      "Dry Time": "30 minutes",
-      "Recoat Time": "2 hours",
-      "Adhesion": "Excellent",
-      "Finish": "Ultra-Matte"
-    },
-    colors: ["White", "Gray", "Blue", "Green", "Pink", "Black"]
+    featured: true,
+    colors: ["رمادي", "أسود", "أزرق"]
   },
   {
-    id: "p10",
-    name: "Heat Resistant Paint",
-    description: "Specialized paint that withstands temperatures up to 650°C.",
-    price: 24.99,
-    categoryId: "cat6",
+    id: "p8",
+    name: "طلاء الأسقف",
+    description: "طلاء خاص للأسقف بتغطية ممتازة ومقاومة للتكثيف والبقع.",
+    price: 22.99,
+    categoryId: "cat1",
     image: "/placeholder.svg",
     featured: false,
-    specifications: {
-      "Coverage": "8-10 m²/L",
-      "Dry Time": "1 hour",
-      "Heat Resistance": "Up to 650°C",
-      "Application": "Spray/Brush",
-      "Finish": "Matte"
-    },
-    colors: ["Black", "Silver", "White"]
+    colors: ["أبيض فائق"]
+  }
+];
+
+export const categories: Category[] = [
+  {
+    id: "cat1",
+    name: "الطلاء الداخلي",
+    description: "طلاء عالي الجودة للجدران والأسقف الداخلية",
+    image: "/placeholder.svg"
+  },
+  {
+    id: "cat2",
+    name: "الطلاء الخارجي",
+    description: "طلاء مقاوم للعوامل الجوية للاستخدام الخارجي",
+    image: "/placeholder.svg"
+  },
+  {
+    id: "cat3",
+    name: "الطلاء الخشبي",
+    description: "أصباغ وورنيش للأسطح الخشبية",
+    image: "/placeholder.svg"
+  },
+  {
+    id: "cat4",
+    name: "طلاء الأرضيات",
+    description: "طلاء متخصص للأرضيات الخرسانية والخشبية",
+    image: "/placeholder.svg"
   }
 ];
 
 export const banners: Banner[] = [
   {
-    id: "b1",
-    title: "Premium Quality Paints",
-    subtitle: "Transform your space with our premium collection",
+    id: "banner1",
+    title: "أفضل أنواع الطلاء بأفضل الأسعار",
+    subtitle: "اكتشف مجموعتنا من الطلاء عالي الجودة للمشاريع الداخلية والخارجية",
     image: "/placeholder.svg",
-    ctaText: "Shop Now",
-    ctaLink: "/products"
+    ctaText: "تسوق الآن",
+    ctaLink: "/products",
+    active: true
   },
   {
-    id: "b2",
-    title: "New Exterior Collection",
-    subtitle: "Weather-resistant paints for lasting protection",
+    id: "banner2",
+    title: "خصم 20% على الطلاء الخارجي",
+    subtitle: "حماية متميزة ضد العوامل الجوية مع ألوان لا تتلاشى",
     image: "/placeholder.svg",
-    ctaText: "Explore",
-    ctaLink: "/products?category=cat2"
+    ctaText: "اكتشف العروض",
+    ctaLink: "/products?category=cat2",
+    active: true
   },
   {
-    id: "b3",
-    title: "Professional Finish Guaranteed",
-    subtitle: "Get perfect results every time",
+    id: "banner3",
+    title: "الكمية المناسبة لكل مشروع",
+    subtitle: "استخدم حاسبة الطلاء الخاصة بنا لتحديد الكمية المناسبة",
     image: "/placeholder.svg",
-    ctaText: "Learn More",
-    ctaLink: "/about"
+    ctaText: "حاسبة الطلاء",
+    ctaLink: "/calculator",
+    active: false
   }
 ];
 
 export const companyInfo: CompanyInfo = {
-  name: "Modern Paint Co.",
-  slogan: "Colors that inspire, quality that lasts",
-  about: "Modern Paint Co. has been a leading provider of high-quality paints and coatings since 1995. We are committed to innovation, sustainability, and customer satisfaction. Our products are designed to deliver exceptional performance while being environmentally responsible.",
-  contact: {
-    address: "123 Paint Street, Baghdad, Iraq",
-    email: "info@modernpaint.com",
-    phone: "+964 771 123 4567",
-    socialMedia: {
-      facebook: "https://facebook.com/modernpaint",
-      instagram: "https://instagram.com/modernpaint",
-      twitter: "https://twitter.com/modernpaint"
-    }
-  }
+  name: "مودرن بينت",
+  logo: "/placeholder.svg",
+  address: "123 شارع الصناعة، بغداد، العراق",
+  phone: "+964 771 234 5678",
+  email: "info@modernpaint.iq",
+  socialMedia: {
+    facebook: "https://facebook.com/modernpaint",
+    twitter: "https://twitter.com/modernpaint",
+    instagram: "https://instagram.com/modernpaint"
+  },
+  exchangeRate: 1460 // 1 USD = 1460 IQD (example rate)
 };

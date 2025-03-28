@@ -23,7 +23,7 @@ const ProductsPage = () => {
   
   // Update document title
   useEffect(() => {
-    document.title = "Modern Paint - Products";
+    document.title = "Modern Paint - المنتجات";
   }, []);
 
   // Fetch categories
@@ -66,8 +66,8 @@ const ProductsPage = () => {
 
   // Get current category name
   const currentCategory = categoryId 
-    ? categories.find(cat => cat.id === categoryId)?.name || "Products" 
-    : "All Products";
+    ? categories.find(cat => cat.id === categoryId)?.name || "المنتجات" 
+    : "جميع المنتجات";
 
   // Handle search submit
   const handleSearch = (e: React.FormEvent) => {
@@ -89,7 +89,7 @@ const ProductsPage = () => {
     
     // Update URL params
     const params = new URLSearchParams(searchParams);
-    if (value) {
+    if (value && value !== "all-categories") {
       params.set("category", value);
     } else {
       params.delete("category");
@@ -111,7 +111,7 @@ const ProductsPage = () => {
   };
 
   return (
-    <div className="py-8">
+    <div className="py-8" dir="rtl">
       <div className="container-custom">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-4">{currentCategory}</h1>
@@ -122,14 +122,14 @@ const ProductsPage = () => {
               {/* Category filter */}
               <div className="w-full md:w-1/3">
                 <label htmlFor="category-filter" className="block text-sm font-medium text-gray-700 mb-1">
-                  Category
+                  الفئة
                 </label>
                 <Select value={selectedCategory} onValueChange={handleCategoryChange}>
                   <SelectTrigger id="category-filter" className="w-full">
-                    <SelectValue placeholder="All Categories" />
+                    <SelectValue placeholder="جميع الفئات" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all-categories">All Categories</SelectItem>
+                    <SelectItem value="all-categories">جميع الفئات</SelectItem>
                     {categories.map((category) => (
                       <SelectItem key={category.id} value={category.id}>
                         {category.name}
@@ -144,23 +144,23 @@ const ProductsPage = () => {
                 <form onSubmit={handleSearch} className="flex gap-2">
                   <div className="flex-grow">
                     <label htmlFor="search-filter" className="block text-sm font-medium text-gray-700 mb-1">
-                      Search
+                      بحث
                     </label>
                     <div className="relative">
                       <Input
                         id="search-filter"
                         type="text"
-                        placeholder="Search products..."
+                        placeholder="ابحث عن المنتجات..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pr-10"
+                        className="w-full pl-10 pr-3"
                       />
-                      <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                      <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                         <Search className="h-4 w-4 text-gray-400" />
                       </div>
                     </div>
                   </div>
-                  <Button type="submit" className="mt-auto">Search</Button>
+                  <Button type="submit" className="mt-auto">بحث</Button>
                 </form>
               </div>
               
@@ -171,8 +171,8 @@ const ProductsPage = () => {
                   onClick={clearFilters}
                   className="md:mt-auto flex items-center gap-1"
                 >
-                  <FilterX className="h-4 w-4" />
-                  Clear Filters
+                  <FilterX className="h-4 w-4 ml-1" />
+                  مسح الفلاتر
                 </Button>
               )}
             </div>
@@ -202,11 +202,11 @@ const ProductsPage = () => {
             </div>
           ) : (
             <div className="text-center py-12">
-              <h3 className="text-xl font-semibold mb-2">No products found</h3>
+              <h3 className="text-xl font-semibold mb-2">لم يتم العثور على منتجات</h3>
               <p className="text-gray-500 mb-6">
-                Try changing your search criteria or browse all products.
+                حاول تغيير معايير البحث أو تصفح جميع المنتجات.
               </p>
-              <Button onClick={clearFilters}>View All Products</Button>
+              <Button onClick={clearFilters}>عرض جميع المنتجات</Button>
             </div>
           )}
         </div>

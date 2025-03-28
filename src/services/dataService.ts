@@ -7,7 +7,8 @@ import {
   Product, 
   Category,
   Banner,
-  CompanyInfo
+  CompanyInfo,
+  MediaItem
 } from '@/data/initialData';
 
 // Helper function to safely parse localStorage data
@@ -202,6 +203,34 @@ export const updateCompanyInfo = (updates: Partial<CompanyInfo>): Promise<Compan
   setLocalStorageData('companyInfo', companyInfo);
   
   return Promise.resolve({...companyInfo});
+};
+
+// Media Upload function
+export const uploadMedia = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    // In a real application, you would upload to a server or storage service
+    // Here we're using FileReader to simulate a file upload
+    const reader = new FileReader();
+    
+    reader.onload = (event) => {
+      // Simulating a delay to mimic upload time
+      setTimeout(() => {
+        if (event.target?.result) {
+          // Return a data URL in this mock implementation
+          // In a real app, this would be the URL from your storage service
+          resolve(event.target.result.toString());
+        } else {
+          reject(new Error("Failed to read file"));
+        }
+      }, 1000);
+    };
+    
+    reader.onerror = () => {
+      reject(new Error("Error reading file"));
+    };
+    
+    reader.readAsDataURL(file);
+  });
 };
 
 // Reset to initial data (for testing)

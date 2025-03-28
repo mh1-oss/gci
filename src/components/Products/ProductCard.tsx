@@ -4,6 +4,7 @@ import { Product } from "@/data/initialData";
 import { useCurrency } from "@/context/CurrencyContext";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { FileText } from "lucide-react";
 
 interface ProductCardProps {
   product: Product;
@@ -11,6 +12,13 @@ interface ProductCardProps {
 
 const ProductCard = ({ product }: ProductCardProps) => {
   const { formatPrice } = useCurrency();
+
+  // Function to open PDF in a new tab
+  const handleViewPDF = () => {
+    if (product.specsPdf) {
+      window.open(product.specsPdf, '_blank');
+    }
+  };
 
   return (
     <Card className="product-card overflow-hidden h-full flex flex-col">
@@ -35,11 +43,22 @@ const ProductCard = ({ product }: ProductCardProps) => {
         </p>
       </CardContent>
       <CardFooter className="p-4 pt-0">
-        <Link to={`/products/${product.id}`} className="w-full">
-          <Button variant="default" className="w-full">
-            View Details
+        <div className="w-full flex gap-2">
+          <Link to={`/products/${product.id}`} className="flex-grow">
+            <Button variant="outline" className="w-full">
+              عرض التفاصيل
+            </Button>
+          </Link>
+          <Button 
+            variant="default" 
+            className="w-full"
+            onClick={handleViewPDF}
+            disabled={!product.specsPdf}
+          >
+            <FileText className="mr-2 h-4 w-4" />
+            عرض المواصفات
           </Button>
-        </Link>
+        </div>
       </CardFooter>
     </Card>
   );
