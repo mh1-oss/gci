@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useCurrency } from "@/context/CurrencyContext";
 import { getCompanyInfo, updateCompanyInfo } from "@/services/dataService";
 import { CompanyInfo } from "@/data/initialData";
@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2 } from "lucide-react";
+import { Loader2, Upload, X } from "lucide-react";
 
 const AdminSettings = () => {
   const { exchangeRate, setExchangeRate } = useCurrency();
@@ -17,6 +17,8 @@ const AdminSettings = () => {
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -25,11 +27,12 @@ const AdminSettings = () => {
         setLoading(true);
         const info = await getCompanyInfo();
         setCompanyInfo(info);
+        setLogoPreview(info.logo);
       } catch (error) {
         console.error("Error fetching company info:", error);
         toast({
-          title: "Error",
-          description: "Could not load company information.",
+          title: "خطأ",
+          description: "فشل في تحميل معلومات الشركة.",
           variant: "destructive",
         });
       } finally {
@@ -51,8 +54,8 @@ const AdminSettings = () => {
     
     if (isNaN(newRate) || newRate <= 0) {
       toast({
-        title: "Invalid Rate",
-        description: "Please enter a valid positive number for the exchange rate.",
+        title: "معدل غير صالح",
+        description: "يرجى إدخال رقم موجب صالح لمعدل الصرف.",
         variant: "destructive",
       });
       return;
@@ -60,8 +63,8 @@ const AdminSettings = () => {
     
     setExchangeRate(newRate);
     toast({
-      title: "Exchange Rate Updated",
-      description: `The exchange rate has been set to 1 USD = ${newRate} IQD.`,
+      title: "تم تحديث معدل الصرف",
+      description: `تم تعيين سعر الصرف إلى 1 دولار أمريكي = ${newRate} دينار عراقي.`,
       variant: "default",
     });
   };
@@ -74,19 +77,50 @@ const AdminSettings = () => {
       setSaving(true);
       await updateCompanyInfo(companyInfo);
       toast({
-        title: "Company Info Updated",
-        description: "Company information has been successfully updated.",
+        title: "تم تحديث معلومات الشركة",
+        description: "تم تحديث معلومات الشركة بنجاح.",
         variant: "default",
       });
     } catch (error) {
       console.error("Error updating company info:", error);
       toast({
-        title: "Error",
-        description: "Could not update company information.",
+        title: "خطأ",
+        description: "فشل تحديث معلومات الشركة.",
         variant: "destructive",
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setLogoPreview(result);
+        if (companyInfo) {
+          setCompanyInfo({
+            ...companyInfo,
+            logo: result
+          });
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const clearLogoSelection = () => {
+    if (companyInfo) {
+      setLogoPreview("/placeholder.svg");
+      setCompanyInfo({
+        ...companyInfo,
+        logo: "/placeholder.svg"
+      });
+      if (logoInputRef.current) {
+        logoInputRef.current.value = "";
+      }
     }
   };
 
@@ -148,21 +182,21 @@ const AdminSettings = () => {
   }
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-6">Settings</h2>
+    <div dir="rtl">
+      <h2 className="text-2xl font-bold mb-6">الإعدادات</h2>
       
       <Tabs defaultValue="currency" className="w-full">
         <TabsList className="mb-6">
-          <TabsTrigger value="currency">Currency Settings</TabsTrigger>
-          <TabsTrigger value="company">Company Information</TabsTrigger>
+          <TabsTrigger value="currency">إعدادات العملة</TabsTrigger>
+          <TabsTrigger value="company">معلومات الشركة</TabsTrigger>
         </TabsList>
         
         <TabsContent value="currency">
           <Card>
             <CardHeader>
-              <CardTitle>Currency Settings</CardTitle>
+              <CardTitle>إعدادات العملة</CardTitle>
               <CardDescription>
-                Update the exchange rate between USD and IQD. This affects how prices are displayed throughout the website.
+                تحديث سعر الصرف بين الدولار الأمريكي والدينار العراقي. هذا يؤثر على كيفية عرض الأسعار في جميع أنحاء الموقع.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -170,7 +204,7 @@ const AdminSettings = () => {
                 <div className="space-y-4">
                   <div>
                     <label htmlFor="exchange-rate" className="block text-sm font-medium text-gray-700 mb-1">
-                      Exchange Rate (1 USD to IQD)
+                      سعر الصرف (1 دولار أمريكي إلى الدينار العراقي)
                     </label>
                     <div className="flex">
                       <Input
@@ -183,11 +217,11 @@ const AdminSettings = () => {
                         className="rounded-r-none"
                       />
                       <div className="bg-gray-100 border border-l-0 border-gray-300 px-3 py-2 flex items-center rounded-r-md">
-                        IQD
+                        دينار عراقي
                       </div>
                     </div>
                     <p className="text-sm text-gray-500 mt-1">
-                      Current rate: 1 USD = {exchangeRate} IQD
+                      السعر الحالي: 1 دولار أمريكي = {exchangeRate} دينار عراقي
                     </p>
                   </div>
                 </div>
@@ -195,7 +229,7 @@ const AdminSettings = () => {
             </CardContent>
             <CardFooter>
               <Button type="submit" form="exchange-rate-form">
-                Update Exchange Rate
+                تحديث سعر الصرف
               </Button>
             </CardFooter>
           </Card>
@@ -205,21 +239,62 @@ const AdminSettings = () => {
           {companyInfo && (
             <Card>
               <CardHeader>
-                <CardTitle>Company Information</CardTitle>
+                <CardTitle>معلومات الشركة</CardTitle>
                 <CardDescription>
-                  Update your company details that appear throughout the website.
+                  تحديث تفاصيل شركتك التي تظهر في جميع أنحاء الموقع.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleCompanyInfoSubmit} id="company-info-form">
                   <div className="space-y-6">
+                    {/* Logo Upload */}
+                    <div className="space-y-4">
+                      <h3 className="font-semibold">شعار الشركة</h3>
+                      <div className="flex flex-col space-y-4">
+                        <div className="flex justify-center">
+                          <div className="relative w-32 h-32 border border-gray-300 rounded-md overflow-hidden">
+                            {logoPreview && (
+                              <img 
+                                src={logoPreview} 
+                                alt="شعار الشركة" 
+                                className="w-full h-full object-cover"
+                              />
+                            )}
+                            <button 
+                              type="button" 
+                              onClick={clearLogoSelection}
+                              className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                        <div className="flex justify-center">
+                          <label htmlFor="logo-upload" className="cursor-pointer">
+                            <div className="flex items-center space-x-2 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-md transition-colors">
+                              <Upload className="h-4 w-4 ml-2" />
+                              <span>تحميل شعار جديد</span>
+                            </div>
+                            <input 
+                              id="logo-upload" 
+                              type="file" 
+                              accept="image/*" 
+                              ref={logoInputRef}
+                              onChange={handleLogoChange} 
+                              className="hidden" 
+                            />
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+
                     {/* Basic Information */}
                     <div className="space-y-4">
-                      <h3 className="font-semibold">Basic Information</h3>
+                      <h3 className="font-semibold">المعلومات الأساسية</h3>
                       
                       <div>
                         <label htmlFor="company-name" className="block text-sm font-medium text-gray-700 mb-1">
-                          Company Name
+                          اسم الشركة
                         </label>
                         <Input
                           id="company-name"
@@ -230,7 +305,7 @@ const AdminSettings = () => {
                       
                       <div>
                         <label htmlFor="company-slogan" className="block text-sm font-medium text-gray-700 mb-1">
-                          Slogan
+                          شعار الشركة
                         </label>
                         <Input
                           id="company-slogan"
@@ -241,7 +316,7 @@ const AdminSettings = () => {
                       
                       <div>
                         <label htmlFor="company-about" className="block text-sm font-medium text-gray-700 mb-1">
-                          About
+                          عن الشركة
                         </label>
                         <Textarea
                           id="company-about"
@@ -254,11 +329,11 @@ const AdminSettings = () => {
                     
                     {/* Contact Information */}
                     <div className="space-y-4">
-                      <h3 className="font-semibold">Contact Information</h3>
+                      <h3 className="font-semibold">معلومات الاتصال</h3>
                       
                       <div>
                         <label htmlFor="company-address" className="block text-sm font-medium text-gray-700 mb-1">
-                          Address
+                          العنوان
                         </label>
                         <Input
                           id="company-address"
@@ -269,7 +344,7 @@ const AdminSettings = () => {
                       
                       <div>
                         <label htmlFor="company-email" className="block text-sm font-medium text-gray-700 mb-1">
-                          Email
+                          البريد الإلكتروني
                         </label>
                         <Input
                           id="company-email"
@@ -281,7 +356,7 @@ const AdminSettings = () => {
                       
                       <div>
                         <label htmlFor="company-phone" className="block text-sm font-medium text-gray-700 mb-1">
-                          Phone
+                          رقم الهاتف
                         </label>
                         <Input
                           id="company-phone"
@@ -293,11 +368,11 @@ const AdminSettings = () => {
                     
                     {/* Social Media */}
                     <div className="space-y-4">
-                      <h3 className="font-semibold">Social Media</h3>
+                      <h3 className="font-semibold">وسائل التواصل الاجتماعي</h3>
                       
                       <div>
                         <label htmlFor="social-facebook" className="block text-sm font-medium text-gray-700 mb-1">
-                          Facebook URL
+                          رابط فيسبوك
                         </label>
                         <Input
                           id="social-facebook"
@@ -308,7 +383,7 @@ const AdminSettings = () => {
                       
                       <div>
                         <label htmlFor="social-instagram" className="block text-sm font-medium text-gray-700 mb-1">
-                          Instagram URL
+                          رابط انستغرام
                         </label>
                         <Input
                           id="social-instagram"
@@ -319,7 +394,7 @@ const AdminSettings = () => {
                       
                       <div>
                         <label htmlFor="social-twitter" className="block text-sm font-medium text-gray-700 mb-1">
-                          Twitter URL
+                          رابط تويتر
                         </label>
                         <Input
                           id="social-twitter"
@@ -335,11 +410,11 @@ const AdminSettings = () => {
                 <Button type="submit" form="company-info-form" disabled={saving}>
                   {saving ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Saving...
+                      <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                      جاري الحفظ...
                     </>
                   ) : (
-                    "Save Changes"
+                    "حفظ التغييرات"
                   )}
                 </Button>
               </CardFooter>

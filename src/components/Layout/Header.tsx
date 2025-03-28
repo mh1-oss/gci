@@ -24,7 +24,8 @@ import {
   CreditCard,
   LogOut,
   Settings,
-  LayoutDashboard
+  LayoutDashboard,
+  Palette
 } from "lucide-react";
 
 const Header = () => {
@@ -64,31 +65,31 @@ const Header = () => {
   };
 
   return (
-    <header className={`sticky top-0 z-50 bg-white shadow-sm transition-all duration-300 ${isScrolled ? "py-2" : "py-4"}`}>
+    <header className={`sticky top-0 z-50 bg-white shadow-sm transition-all duration-300 ${isScrolled ? "py-2" : "py-4"}`} dir="rtl">
       <div className="container-custom">
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="text-2xl font-bold text-brand-blue">
-            Modern<span className="text-brand-teal">Paint</span>
+            <img src="/placeholder.svg" alt="مودرن بينت" className="h-10" />
           </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
-            <Link to="/" className="text-gray-700 hover:text-brand-blue transition-colors">
-              Home
+            <Link to="/" className="text-gray-700 hover:text-brand-blue transition-colors mx-3">
+              الرئيسية
             </Link>
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="inline-flex items-center">
-                  Products <ChevronDown className="ml-1 h-4 w-4" />
+                <Button variant="ghost" className="inline-flex items-center mx-3">
+                  المنتجات <ChevronDown className="mr-1 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="center" className="w-56">
-                <DropdownMenuLabel>Categories</DropdownMenuLabel>
+                <DropdownMenuLabel>الفئات</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link to="/products" className="w-full">All Products</Link>
+                  <Link to="/products" className="w-full">جميع المنتجات</Link>
                 </DropdownMenuItem>
                 {categories.map((category) => (
                   <DropdownMenuItem key={category.id} asChild>
@@ -100,12 +101,17 @@ const Header = () => {
               </DropdownMenuContent>
             </DropdownMenu>
             
-            <Link to="/about" className="text-gray-700 hover:text-brand-blue transition-colors">
-              About
+            <Link to="/about" className="text-gray-700 hover:text-brand-blue transition-colors mx-3">
+              من نحن
             </Link>
             
-            <Link to="/contact" className="text-gray-700 hover:text-brand-blue transition-colors">
-              Contact
+            <Link to="/contact" className="text-gray-700 hover:text-brand-blue transition-colors mx-3">
+              اتصل بنا
+            </Link>
+
+            <Link to="/visualizer" className="text-gray-700 hover:text-brand-blue transition-colors mx-3">
+              محاكي الألوان
+              <Palette className="inline-block mr-1 h-4 w-4" />
             </Link>
           </nav>
 
@@ -115,7 +121,7 @@ const Header = () => {
               variant="outline" 
               size="sm" 
               onClick={toggleCurrency}
-              className="flex items-center gap-1"
+              className="flex items-center gap-1 mx-2"
             >
               <DollarSign className="h-4 w-4" />
               {currency}
@@ -129,33 +135,33 @@ const Header = () => {
                     {user?.username}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuContent align="end" className="w-56" dir="rtl">
+                  <DropdownMenuLabel>حسابي</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   {isAdmin && (
                     <DropdownMenuItem asChild>
                       <Link to="/admin" className="flex items-center w-full">
-                        <LayoutDashboard className="mr-2 h-4 w-4" />
-                        Admin Dashboard
+                        <LayoutDashboard className="ml-2 h-4 w-4" />
+                        لوحة التحكم
                       </Link>
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem asChild>
                     <Link to="/orders" className="flex items-center w-full">
-                      <CreditCard className="mr-2 h-4 w-4" />
-                      Orders
+                      <CreditCard className="ml-2 h-4 w-4" />
+                      الطلبات
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link to="/settings" className="flex items-center w-full">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Settings
+                      <Settings className="ml-2 h-4 w-4" />
+                      الإعدادات
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={logout} className="text-red-500 flex items-center">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Logout
+                    <LogOut className="ml-2 h-4 w-4" />
+                    تسجيل الخروج
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -163,7 +169,7 @@ const Header = () => {
               <Link to="/login">
                 <Button size="sm" className="flex items-center gap-1">
                   <User className="h-4 w-4" />
-                  Login
+                  تسجيل الدخول
                 </Button>
               </Link>
             )}
@@ -201,17 +207,17 @@ const Header = () => {
               to="/" 
               className="text-gray-700 hover:text-brand-blue py-2 transition-colors"
             >
-              Home
+              الرئيسية
             </Link>
             
             <div className="py-2">
-              <p className="text-gray-500 mb-2 text-sm font-medium">Products</p>
-              <div className="pl-4 space-y-2">
+              <p className="text-gray-500 mb-2 text-sm font-medium">المنتجات</p>
+              <div className="pr-4 space-y-2">
                 <Link 
                   to="/products" 
                   className="block text-gray-700 hover:text-brand-blue transition-colors"
                 >
-                  All Products
+                  جميع المنتجات
                 </Link>
                 {categories.map((category) => (
                   <Link 
@@ -229,46 +235,54 @@ const Header = () => {
               to="/about" 
               className="text-gray-700 hover:text-brand-blue py-2 transition-colors"
             >
-              About
+              من نحن
             </Link>
             
             <Link 
               to="/contact" 
               className="text-gray-700 hover:text-brand-blue py-2 transition-colors"
             >
-              Contact
+              اتصل بنا
+            </Link>
+
+            <Link 
+              to="/visualizer" 
+              className="text-gray-700 hover:text-brand-blue py-2 transition-colors"
+            >
+              محاكي الألوان
+              <Palette className="inline-block mr-1 h-4 w-4" />
             </Link>
             
             {isAuthenticated ? (
               <>
                 <div className="border-t border-gray-100 pt-2">
-                  <p className="text-gray-500 mb-2 text-sm font-medium">Account</p>
-                  <div className="pl-4 space-y-2">
+                  <p className="text-gray-500 mb-2 text-sm font-medium">الحساب</p>
+                  <div className="pr-4 space-y-2">
                     {isAdmin && (
                       <Link 
                         to="/admin" 
                         className="block text-gray-700 hover:text-brand-blue transition-colors"
                       >
-                        Admin Dashboard
+                        لوحة التحكم
                       </Link>
                     )}
                     <Link 
                       to="/orders" 
                       className="block text-gray-700 hover:text-brand-blue transition-colors"
                     >
-                      Orders
+                      الطلبات
                     </Link>
                     <Link 
                       to="/settings" 
                       className="block text-gray-700 hover:text-brand-blue transition-colors"
                     >
-                      Settings
+                      الإعدادات
                     </Link>
                     <button 
                       onClick={logout}
-                      className="block w-full text-left text-red-500 hover:text-red-600 transition-colors"
+                      className="block w-full text-right text-red-500 hover:text-red-600 transition-colors"
                     >
-                      Logout
+                      تسجيل الخروج
                     </button>
                   </div>
                 </div>
@@ -278,7 +292,7 @@ const Header = () => {
                 to="/login" 
                 className="bg-brand-blue text-white py-2 px-4 rounded-md text-center hover:bg-brand-darkblue transition-colors"
               >
-                Login
+                تسجيل الدخول
               </Link>
             )}
           </nav>

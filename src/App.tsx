@@ -14,6 +14,7 @@ import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
 import LoginPage from "./pages/LoginPage";
 import AdminDashboard from "./pages/AdminDashboard";
+import VisualizerPage from "./pages/VisualizerPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const App = () => (
                 <Route path="products/:id" element={<ProductDetailsPage />} />
                 <Route path="about" element={<AboutPage />} />
                 <Route path="contact" element={<ContactPage />} />
+                <Route path="visualizer" element={<VisualizerPage />} />
                 <Route path="login" element={<LoginPage />} />
                 <Route path="admin/*" element={<AdminDashboard />} />
                 <Route path="*" element={<NotFound />} />
