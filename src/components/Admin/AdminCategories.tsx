@@ -1,17 +1,12 @@
-
-import { useState, useEffect } from "react";
-import { Routes, Route, Link, useNavigate } from "react-router-dom";
-import { Category } from "@/data/initialData";
+import React, { useState, useEffect } from 'react';
+import { useToast } from '@/components/ui/use-toast';
 import { 
-  getCategories, 
-  addCategory, 
-  updateCategory, 
-  deleteCategory,
-  getProductsByCategory
-} from "@/services/dataService";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle 
+} from '@/components/ui/card';
 import { 
   Table, 
   TableBody, 
@@ -19,455 +14,341 @@ import {
   TableHead, 
   TableHeader, 
   TableRow 
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/components/ui/use-toast";
-import { Plus, Edit, Trash2, Search, Loader2, Eye } from "lucide-react";
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle 
+} from '@/components/ui/dialog';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '@/components/ui/alert-dialog';
+import { Loader2, Trash, Edit, Plus } from 'lucide-react';
+import { 
+  fetchCategories, 
+  createCategory, 
+  updateCategory, 
+  deleteCategory 
+} from '@/services/supabaseService';
+import { Category } from '@/data/initialData';
 
-interface CategoryFormData {
-  name: string;
-  description: string;
-  image: string;
-}
-
-const defaultCategoryForm: CategoryFormData = {
-  name: "",
-  description: "",
-  image: "/placeholder.svg",
-};
-
-const CategoryForm = ({ 
-  category, 
-  onSubmit, 
-  onCancel, 
-  isLoading 
-}: { 
-  category?: Category; 
-  onSubmit: (data: CategoryFormData) => void;
-  onCancel: () => void;
-  isLoading: boolean;
-}) => {
-  const [formData, setFormData] = useState<CategoryFormData>(
-    category ? {
-      name: category.name,
-      description: category.description,
-      image: category.image,
-    } : { ...defaultCategoryForm }
-  );
-  
-  const handleChange = (field: keyof CategoryFormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-  
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(formData);
-  };
-  
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div>
-        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-          Category Name
-        </label>
-        <Input
-          id="name"
-          value={formData.name}
-          onChange={(e) => handleChange("name", e.target.value)}
-          placeholder="Enter category name"
-          required
-        />
-      </div>
-      
-      <div>
-        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-          Description
-        </label>
-        <Textarea
-          id="description"
-          value={formData.description}
-          onChange={(e) => handleChange("description", e.target.value)}
-          placeholder="Enter category description"
-          rows={4}
-          required
-        />
-      </div>
-      
-      <div>
-        <label htmlFor="image" className="block text-sm font-medium text-gray-700 mb-1">
-          Image URL
-        </label>
-        <Input
-          id="image"
-          value={formData.image}
-          onChange={(e) => handleChange("image", e.target.value)}
-          placeholder="Enter image URL"
-          required
-        />
-      </div>
-      
-      <div className="flex justify-end space-x-4">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Saving...
-            </>
-          ) : (
-            'Save Category'
-          )}
-        </Button>
-      </div>
-    </form>
-  );
-};
-
-const CategoryList = () => {
+const AdminCategories = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
-  const [formLoading, setFormLoading] = useState(false);
-  const [productCounts, setProductCounts] = useState<Record<string, number>>({});
-  const navigate = useNavigate();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [editTarget, setEditTarget] = useState<Category | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
+  const [deleteDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
   const { toast } = useToast();
-  
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const categoriesData = await getCategories();
-        setCategories(categoriesData);
-        
-        // Get product counts for each category
-        const counts: Record<string, number> = {};
-        for (const category of categoriesData) {
-          const products = await getProductsByCategory(category.id);
-          counts[category.id] = products.length;
-        }
-        setProductCounts(counts);
-      } catch (error) {
-        console.error("Error fetching categories data:", error);
-        toast({
-          title: "Error",
-          description: "Could not load categories data.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchData();
-  }, [toast]);
-  
-  const filteredCategories = categories.filter(category => 
-    category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    category.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-  
-  const handleEditClick = (category: Category) => {
-    setEditingCategory(category);
-  };
-  
-  const handleDeleteClick = (category: Category) => {
-    setCategoryToDelete(category);
-    setDeleteDialogOpen(true);
-  };
-  
-  const handleDeleteConfirm = async () => {
-    if (!categoryToDelete) return;
-    
-    // Check if category has products
-    if (productCounts[categoryToDelete.id] > 0) {
-      toast({
-        title: "Cannot Delete Category",
-        description: `This category has ${productCounts[categoryToDelete.id]} products associated with it. Please reassign or delete these products first.`,
-        variant: "destructive",
-      });
-      setDeleteDialogOpen(false);
-      setCategoryToDelete(null);
-      return;
-    }
-    
+    loadCategories();
+  }, []);
+
+  const loadCategories = async () => {
+    setLoading(true);
     try {
-      setFormLoading(true);
-      const success = await deleteCategory(categoryToDelete.id);
-      
-      if (success) {
-        setCategories(prevCategories => 
-          prevCategories.filter(c => c.id !== categoryToDelete.id)
-        );
-        
-        toast({
-          title: "Category Deleted",
-          description: `${categoryToDelete.name} has been removed.`,
-          variant: "default",
-        });
-      } else {
-        throw new Error("Failed to delete category");
-      }
+      const fetchedCategories = await fetchCategories();
+      setCategories(fetchedCategories);
     } catch (error) {
-      console.error("Error deleting category:", error);
+      console.error("Error fetching categories:", error);
       toast({
-        title: "Error",
-        description: "Could not delete the category.",
-        variant: "destructive",
+        title: "خطأ",
+        description: "حدث خطأ أثناء جلب الفئات.",
+        variant: "destructive"
       });
     } finally {
-      setFormLoading(false);
-      setDeleteDialogOpen(false);
-      setCategoryToDelete(null);
+      setLoading(false);
     }
   };
-  
-  const handleUpdateCategory = async (formData: CategoryFormData) => {
-    if (!editingCategory) return;
-    
-    try {
-      setFormLoading(true);
-      
-      const updatedCategory = await updateCategory(editingCategory.id, {
-        name: formData.name,
-        description: formData.description,
-        image: formData.image,
+
+  const handleCreate = async () => {
+    if (!name) {
+      toast({
+        title: "خطأ",
+        description: "الرجاء إدخال اسم الفئة.",
+        variant: "destructive"
       });
-      
-      if (updatedCategory) {
-        setCategories(prevCategories => 
-          prevCategories.map(c => c.id === editingCategory.id ? updatedCategory : c)
-        );
-        
+      return;
+    }
+
+    try {
+      const newCategory: Omit<Category, 'id'> = { name, description };
+      const createdCategory = await createCategory(newCategory);
+
+      if (createdCategory) {
+        setCategories([...categories, createdCategory]);
         toast({
-          title: "Category Updated",
-          description: `${updatedCategory.name} has been updated.`,
-          variant: "default",
+          title: "تم بنجاح",
+          description: "تم إنشاء الفئة بنجاح."
         });
+        setDialogOpen(false);
+        setName('');
+        setDescription('');
       } else {
-        throw new Error("Failed to update category");
+        toast({
+          title: "فشل الإنشاء",
+          description: "حدث خطأ أثناء إنشاء الفئة.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Error creating category:", error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ غير متوقع أثناء إنشاء الفئة.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleEdit = (category: Category) => {
+    setEditMode(true);
+    setEditTarget(category);
+    setName(category.name);
+    setDescription(category.description || '');
+    setDialogOpen(true);
+  };
+
+  const handleUpdate = async () => {
+    if (!name) {
+      toast({
+        title: "خطأ",
+        description: "الرجاء إدخال اسم الفئة.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!editTarget) return;
+
+    try {
+      const updatedCategoryData: Partial<Category> = {
+        name: name,
+        description: description
+      };
+      const updatedCategory = await updateCategory(editTarget.id, updatedCategoryData);
+
+      if (updatedCategory) {
+        setCategories(prevCategories =>
+          prevCategories.map(c => (c.id === editTarget.id ? updatedCategory : c))
+        );
+        toast({
+          title: "تم التحديث بنجاح",
+          description: "تم تحديث الفئة بنجاح."
+        });
+        setDialogOpen(false);
+        setEditMode(false);
+        setEditTarget(null);
+        setName('');
+        setDescription('');
+      } else {
+        toast({
+          title: "فشل التحديث",
+          description: "حدث خطأ أثناء تحديث الفئة.",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error("Error updating category:", error);
       toast({
-        title: "Error",
-        description: "Could not update the category.",
-        variant: "destructive",
+        title: "خطأ",
+        description: "حدث خطأ غير متوقع أثناء تحديث الفئة.",
+        variant: "destructive"
       });
-    } finally {
-      setFormLoading(false);
-      setEditingCategory(null);
     }
   };
-  
+
+  const handleDelete = (category: Category) => {
+    setDeleteTarget(category);
+    setDeleteDialogOpen(true);
+  };
+
+  // Fix the filter function in deleteCategory
+const handleDeleteConfirm = async () => {
+  setIsDeleting(true);
+  try {
+    const success = await deleteCategory(deleteTarget?.id || '');
+    if (success) {
+      toast({
+        title: "تم الحذف بنجاح",
+        description: "تم حذف الفئة بنجاح."
+      });
+      setCategories(prevCategories => prevCategories.filter(c => c.id !== deleteTarget?.id));
+      setDeleteDialogOpen(false);
+      setDeleteTarget(null);
+    } else {
+      toast({
+        title: "فشل الحذف",
+        description: "حدث خطأ أثناء حذف الفئة.",
+        variant: "destructive"
+      });
+    }
+  } catch (error) {
+    console.error("Error deleting category:", error);
+    toast({
+      title: "خطأ",
+      description: "حدث خطأ غير متوقع أثناء حذف الفئة.",
+      variant: "destructive"
+    });
+  } finally {
+    setIsDeleting(false);
+  }
+};
+
   return (
     <div>
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <div className="relative w-full sm:w-auto">
-          <Input
-            placeholder="Search categories..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-        </div>
-        
-        <Button onClick={() => navigate("/admin/categories/add")}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Category
-        </Button>
-      </div>
-      
-      {loading ? (
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-brand-blue" />
-        </div>
-      ) : filteredCategories.length > 0 ? (
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Products</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredCategories.map((category) => (
-                <TableRow key={category.id}>
-                  <TableCell className="font-medium">{category.name}</TableCell>
-                  <TableCell className="max-w-xs truncate">{category.description}</TableCell>
-                  <TableCell>{productCounts[category.id] || 0}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end space-x-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => navigate(`/products?category=${category.id}`)}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => handleEditClick(category)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => handleDeleteClick(category)}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+      <Card>
+        <CardHeader className="flex flex-row justify-between items-center">
+          <div>
+            <CardTitle>إدارة الفئات</CardTitle>
+            <CardDescription>إضافة وتعديل وحذف الفئات الموجودة في الموقع</CardDescription>
+          </div>
+          <Button onClick={() => setDialogOpen(true)}>
+            <Plus className="ml-2 h-4 w-4" />
+            إضافة فئة جديدة
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : categories.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              لا توجد فئات. أضف فئة جديدة للبدء.
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>اسم الفئة</TableHead>
+                  <TableHead>الوصف</TableHead>
+                  <TableHead className="text-left">الإجراءات</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      ) : (
-        <div className="text-center py-10 border rounded-lg">
-          <p className="text-gray-500">No categories found</p>
-        </div>
-      )}
-      
-      {/* Edit Category Dialog */}
-      <Dialog open={!!editingCategory} onOpenChange={(open) => !open && setEditingCategory(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Edit Category</DialogTitle>
-            <DialogDescription>
-              Make changes to the category details below.
-            </DialogDescription>
-          </DialogHeader>
-          
-          {editingCategory && (
-            <CategoryForm
-              category={editingCategory}
-              onSubmit={handleUpdateCategory}
-              onCancel={() => setEditingCategory(null)}
-              isLoading={formLoading}
-            />
+              </TableHeader>
+              <TableBody>
+                {categories.map((category) => (
+                  <TableRow key={category.id}>
+                    <TableCell className="font-medium">{category.name}</TableCell>
+                    <TableCell>{category.description}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2 space-x-reverse">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => handleEdit(category)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => handleDelete(category)}
+                          className="text-red-500"
+                        >
+                          <Trash className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
-        </DialogContent>
-      </Dialog>
-      
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
+        </CardContent>
+      </Card>
+
+      <Dialog open={dialogOpen} onOpenChange={() => setDialogOpen(false)}>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogTitle>{editMode ? 'تعديل فئة' : 'إضافة فئة جديدة'}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete the category "{categoryToDelete?.name}"? This action cannot be undone.
+              {editMode ? 'تعديل تفاصيل الفئة.' : 'أدخل تفاصيل الفئة الجديدة.'}
             </DialogDescription>
           </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">
+                اسم الفئة
+              </Label>
+              <Input 
+                id="name" 
+                value={name} 
+                onChange={(e) => setName(e.target.value)} 
+                className="col-span-3" 
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="description" className="text-right">
+                الوصف
+              </Label>
+              <Input
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="col-span-3"
+              />
+            </div>
+          </div>
           <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setDeleteDialogOpen(false)}
-              disabled={formLoading}
-            >
-              Cancel
+            <Button type="button" variant="secondary" onClick={() => {
+              setDialogOpen(false);
+              setEditMode(false);
+              setEditTarget(null);
+              setName('');
+              setDescription('');
+            }}>
+              إلغاء
             </Button>
-            <Button 
-              variant="destructive" 
-              onClick={handleDeleteConfirm}
-              disabled={formLoading}
-            >
-              {formLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Deleting...
-                </>
-              ) : (
-                'Delete'
-              )}
+            <Button onClick={editMode ? handleUpdate : handleCreate}>
+              {editMode ? 'تحديث الفئة' : 'إنشاء فئة'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={deleteDeleteDialogOpen} onOpenChange={() => setDeleteDialogOpen(false)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>هل أنت متأكد؟</AlertDialogTitle>
+            <AlertDialogDescription>
+              سيؤدي هذا الإجراء إلى حذف الفئة نهائيًا ولا يمكن التراجع عنه.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteDialogOpen(false)}>
+              إلغاء
+            </AlertDialogCancel>
+            <AlertDialogAction disabled={isDeleting} onClick={handleDeleteConfirm}>
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  جاري الحذف...
+                </>
+              ) : 'حذف'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
-  );
-};
-
-const AddCategoryForm = () => {
-  const [formLoading, setFormLoading] = useState(false);
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  
-  const handleSubmit = async (formData: CategoryFormData) => {
-    try {
-      setFormLoading(true);
-      
-      const newCategory = await addCategory({
-        name: formData.name,
-        description: formData.description,
-        image: formData.image,
-      });
-      
-      toast({
-        title: "Category Added",
-        description: `${newCategory.name} has been added successfully.`,
-        variant: "default",
-      });
-      
-      navigate("/admin/categories");
-    } catch (error) {
-      console.error("Error adding category:", error);
-      toast({
-        title: "Error",
-        description: "Could not add the category.",
-        variant: "destructive",
-      });
-    } finally {
-      setFormLoading(false);
-    }
-  };
-  
-  return (
-    <Card>
-      <CardContent className="pt-6">
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold">Add New Category</h2>
-          <p className="text-gray-500">
-            Fill in the details below to create a new category.
-          </p>
-        </div>
-        
-        <CategoryForm
-          onSubmit={handleSubmit}
-          onCancel={() => navigate("/admin/categories")}
-          isLoading={formLoading}
-        />
-      </CardContent>
-    </Card>
-  );
-};
-
-const AdminCategories = () => {
-  return (
-    <Routes>
-      <Route index element={<CategoryList />} />
-      <Route path="add" element={<AddCategoryForm />} />
-    </Routes>
   );
 };
 

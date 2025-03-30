@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Facebook, Instagram, Twitter, Mail, MapPin, Phone } from "lucide-react";
@@ -6,10 +5,32 @@ import { getCompanyInfo } from "@/services/dataService";
 import { CompanyInfo } from "@/data/initialData";
 
 const Footer = () => {
-  const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
+  const [companyInfo, setCompanyInfo] = useState<CompanyInfo>({
+    name: '',
+    slogan: '',
+    about: '',
+    logo: '',
+    contact: {
+      address: '',
+      phone: '',
+      email: '',
+      socialMedia: {}
+    },
+    exchangeRate: 1
+  });
 
   useEffect(() => {
-    getCompanyInfo().then(setCompanyInfo);
+    const fetchCompanyInfo = async () => {
+      const info = await getCompanyInfo();
+      if (info) {
+        setCompanyInfo({
+          ...info,
+          exchangeRate: info.exchangeRate || 1
+        });
+      }
+    };
+    
+    fetchCompanyInfo();
   }, []);
 
   if (!companyInfo) {

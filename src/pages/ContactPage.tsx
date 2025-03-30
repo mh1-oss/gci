@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { getCompanyInfo } from "@/services/dataService";
 import { CompanyInfo } from "@/data/initialData";
@@ -16,12 +15,36 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 
 const ContactPage = () => {
-  const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
+  const [companyInfo, setCompanyInfo] = useState<CompanyInfo>({
+    name: '',
+    slogan: '',
+    about: '',
+    logo: '',
+    contact: {
+      address: '',
+      phone: '',
+      email: '',
+      socialMedia: {}
+    },
+    exchangeRate: 1
+  });
+
   const { toast } = useToast();
 
   useEffect(() => {
-    document.title = "Modern Paint - Contact Us";
-    getCompanyInfo().then(setCompanyInfo);
+    document.title = "اتصل بنا - الشركة الذهبية للصناعات الكيمياوية";
+    
+    const fetchCompanyInfo = async () => {
+      const info = await getCompanyInfo();
+      if (info) {
+        setCompanyInfo({
+          ...info,
+          exchangeRate: info.exchangeRate || 1
+        });
+      }
+    };
+    
+    fetchCompanyInfo();
   }, []);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -44,79 +67,79 @@ const ContactPage = () => {
       <div className="container-custom">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-6">Contact Us</h1>
+          <h1 className="text-4xl font-bold mb-6">اتصل بنا</h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            We're here to answer any questions you may have about our products and services.
+            نحن هنا لرد أي أسئلة لديك عن منتجاتنا وخدماتنا.
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
           {/* Contact Form */}
           <div className="bg-white rounded-lg shadow-sm p-8">
-            <h2 className="text-2xl font-bold mb-6">Send Us a Message</h2>
+            <h2 className="text-2xl font-bold mb-6">ارسل لنا رسالة</h2>
             <form onSubmit={handleSubmit}>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                    Full Name
+                    الاسم الكامل
                   </label>
                   <Input 
                     id="name" 
                     name="name" 
                     type="text" 
                     required 
-                    placeholder="Your full name"
+                    placeholder="اسمك الكامل"
                   />
                 </div>
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                    Email Address
+                    عنوان البريد الإلكتروني
                   </label>
                   <Input 
                     id="email" 
                     name="email" 
                     type="email" 
                     required 
-                    placeholder="Your email address"
+                    placeholder="عنوان بريدك الإلكتروني"
                   />
                 </div>
               </div>
               
               <div className="mb-4">
                 <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">
-                  Subject
+                  الموضوع
                 </label>
                 <Input 
                   id="subject" 
                   name="subject" 
                   type="text" 
                   required 
-                  placeholder="What is this regarding?"
+                  placeholder="ما يتعلق هذا بالفعل؟"
                 />
               </div>
               
               <div className="mb-6">
                 <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
-                  Message
+                  الرسالة
                 </label>
                 <Textarea 
                   id="message" 
                   name="message" 
                   rows={5} 
                   required 
-                  placeholder="Type your message here..."
+                  placeholder="اكتب رسالتك هنا..."
                 />
               </div>
               
               <Button type="submit" className="w-full">
-                Send Message
+                ارسل رسالة
               </Button>
             </form>
           </div>
 
           {/* Contact Information */}
           <div>
-            <h2 className="text-2xl font-bold mb-6">Get in Touch</h2>
+            <h2 className="text-2xl font-bold mb-6">اتصل بنا</h2>
             
             <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
               <div className="space-y-4">
@@ -125,7 +148,7 @@ const ContactPage = () => {
                     <MapPin className="h-5 w-5" />
                   </div>
                   <div>
-                    <h3 className="font-semibold mb-1">Our Address</h3>
+                    <h3 className="font-semibold mb-1">عنواننا</h3>
                     <p className="text-gray-600">{companyInfo.contact.address}</p>
                   </div>
                 </div>
@@ -135,7 +158,7 @@ const ContactPage = () => {
                     <Phone className="h-5 w-5" />
                   </div>
                   <div>
-                    <h3 className="font-semibold mb-1">Phone Number</h3>
+                    <h3 className="font-semibold mb-1">رقم الهاتف</h3>
                     <p className="text-gray-600">{companyInfo.contact.phone}</p>
                   </div>
                 </div>
@@ -145,7 +168,7 @@ const ContactPage = () => {
                     <Mail className="h-5 w-5" />
                   </div>
                   <div>
-                    <h3 className="font-semibold mb-1">Email Address</h3>
+                    <h3 className="font-semibold mb-1">عنوان البريد الإلكتروني</h3>
                     <p className="text-gray-600">{companyInfo.contact.email}</p>
                   </div>
                 </div>
@@ -154,26 +177,26 @@ const ContactPage = () => {
             
             {/* Business Hours */}
             <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-              <h3 className="font-semibold mb-3">Business Hours</h3>
+              <h3 className="font-semibold mb-3">ساعات العمل</h3>
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Monday - Friday</span>
-                  <span>9:00 AM - 6:00 PM</span>
+                  <span className="text-gray-600">الإثنين - الجمعة</span>
+                  <span>9:00 صباحاً - 6:00 مساءً</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Saturday</span>
-                  <span>10:00 AM - 4:00 PM</span>
+                  <span className="text-gray-600">السبت</span>
+                  <span>10:00 صباحاً - 4:00 مساءً</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Sunday</span>
-                  <span>Closed</span>
+                  <span className="text-gray-600">الأحد</span>
+                  <span>مغلق</span>
                 </div>
               </div>
             </div>
             
             {/* Social Media */}
             <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="font-semibold mb-3">Follow Us</h3>
+              <h3 className="font-semibold mb-3">تابعنا</h3>
               <div className="flex space-x-4">
                 <a 
                   href={companyInfo.contact.socialMedia.facebook} 
@@ -206,7 +229,7 @@ const ContactPage = () => {
         
         {/* Map Section */}
         <div className="mt-12 rounded-lg overflow-hidden shadow-sm h-[400px] bg-gray-100 flex items-center justify-center">
-          <p className="text-gray-500">Map would be embedded here in a production environment</p>
+          <p className="text-gray-500">سيتم إضافة الخريطة هنا في البيئة الإنتاجية</p>
         </div>
       </div>
     </div>

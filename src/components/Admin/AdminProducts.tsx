@@ -475,6 +475,8 @@ const ProductList = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [formLoading, setFormLoading] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { formatPrice } = useCurrency();
@@ -519,36 +521,33 @@ const ProductList = () => {
   };
   
   const handleDeleteConfirm = async () => {
-    if (!productToDelete) return;
-    
+    setIsDeleting(true);
     try {
-      setFormLoading(true);
-      const success = await deleteProduct(productToDelete.id);
-      
+      const success = await deleteProduct(selectedProduct?.id || '');
       if (success) {
-        setProducts(prevProducts => 
-          prevProducts.filter(p => p.id !== productToDelete.id)
-        );
-        
         toast({
-          title: "Product Deleted",
-          description: `${productToDelete.name} has been removed.`,
-          variant: "default",
+          title: "تم الحذف بنجاح",
+          description: "تم حذف المنتج بنجاح."
         });
+        setProducts(prevProducts => prevProducts.filter(p => p.id !== selectedProduct?.id));
+        setDeleteDialogOpen(false);
+        setSelectedProduct(null);
       } else {
-        throw new Error("Failed to delete product");
+        toast({
+          title: "فشل الحذف",
+          description: "حدث خطأ أثناء حذف المنتج.",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error("Error deleting product:", error);
       toast({
-        title: "Error",
-        description: "Could not delete the product.",
-        variant: "destructive",
+        title: "خطأ",
+        description: "حدث خطأ غير متوقع أثناء حذف المنتج.",
+        variant: "destructive"
       });
     } finally {
-      setFormLoading(false);
-      setDeleteDialogOpen(false);
-      setProductToDelete(null);
+      setIsDeleting(false);
     }
   };
   

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useCurrency } from "@/context/CurrencyContext";
 import { getCompanyInfo, updateCompanyInfo } from "@/services/dataService";
@@ -14,7 +13,19 @@ import { Loader2, Upload, X } from "lucide-react";
 const AdminSettings = () => {
   const { exchangeRate, setExchangeRate } = useCurrency();
   const [tempExchangeRate, setTempExchangeRate] = useState(exchangeRate.toString());
-  const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
+  const [companyInfo, setCompanyInfo] = useState<CompanyInfo>({
+    name: '',
+    slogan: '',
+    about: '',
+    logo: '',
+    contact: {
+      address: '',
+      phone: '',
+      email: '',
+      socialMedia: {}
+    },
+    exchangeRate: 1
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -43,7 +54,6 @@ const AdminSettings = () => {
     fetchData();
   }, [toast]);
 
-  // Update temp exchange rate when context value changes
   useEffect(() => {
     setTempExchangeRate(exchangeRate.toString());
   }, [exchangeRate]);
@@ -140,7 +150,6 @@ const AdminSettings = () => {
         [field]: value,
       });
     } else if (isNested && nestedField) {
-      // Fix for the first spread operator error - ensure we're working with objects
       const currentFieldValue = companyInfo[field as keyof CompanyInfo];
       
       if (typeof currentFieldValue === 'object' && currentFieldValue !== null) {
@@ -153,7 +162,6 @@ const AdminSettings = () => {
             },
           });
         } else if (deepNested && deepNestedField) {
-          // Fix for the second spread operator error - ensure we're working with objects
           const nestedValue = (currentFieldValue as any)[nestedField];
           
           if (typeof nestedValue === 'object' && nestedValue !== null) {

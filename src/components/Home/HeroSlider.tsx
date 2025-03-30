@@ -3,7 +3,6 @@ import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Banner } from "@/data/initialData";
-import { getBanners } from "@/services/dataService";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -23,16 +22,36 @@ const HeroSlider = () => {
     setLoading(true);
     try {
       // Fetch banners from database
-      const fetchedBanners = await getBanners();
+      const { data, error } = await supabase
+        .from('banners')
+        .select('*')
+        .order('order_index', { ascending: true });
         
-      if (fetchedBanners.length > 0) {
-        setBanners(fetchedBanners);
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        const mappedBanners: Banner[] = data.map(banner => ({
+          id: banner.id,
+          title: banner.title,
+          subtitle: banner.subtitle || '',
+          image: banner.image || '',
+          videoUrl: banner.video_url || '',
+          mediaType: (banner.media_type as "image" | "video") || "image",
+          ctaText: banner.cta_text || 'اكتشف المزيد',
+          ctaLink: banner.cta_link || '/products',
+          orderIndex: banner.order_index || 0,
+          sliderHeight: banner.slider_height || 70,
+          textColor: banner.text_color || '#ffffff'
+        }));
+        
+        setBanners(mappedBanners);
+        
         // Set slider height and text color if provided in the banner data
-        if (fetchedBanners[0].sliderHeight) {
-          setSliderHeight(fetchedBanners[0].sliderHeight);
+        if (mappedBanners[0].sliderHeight) {
+          setSliderHeight(mappedBanners[0].sliderHeight);
         }
-        if (fetchedBanners[0].textColor) {
-          setTextColor(fetchedBanners[0].textColor);
+        if (mappedBanners[0].textColor) {
+          setTextColor(mappedBanners[0].textColor);
         }
       } else {
         setBanners([]);

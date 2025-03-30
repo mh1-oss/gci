@@ -28,33 +28,38 @@ export interface Banner {
   id: string;
   title: string;
   subtitle?: string;
-  image: string;
+  image?: string;
   videoUrl?: string;
   mediaType: "image" | "video";
-  ctaText: string;
-  ctaLink: string;
-  order?: number;
+  ctaText?: string;
+  ctaLink?: string;
+  orderIndex: number;
   sliderHeight?: number;
   textColor?: string;
 }
 
+export interface Review {
+  id: string;
+  customerName: string;
+  content: string;
+  rating: number;
+  position?: string;
+  imageUrl?: string;
+  isApproved?: boolean;
+}
+
 export interface CompanyInfo {
   name: string;
-  logo: string;
   slogan: string;
   about: string;
+  logo: string;
   contact: {
     address: string;
     phone: string;
     email: string;
-    socialMedia: {
-      facebook?: string;
-      twitter?: string;
-      instagram?: string;
-      youtube?: string;
-    };
+    socialMedia: Record<string, string>;
   };
-  exchangeRate: number; // USD to IQD exchange rate
+  exchangeRate?: number;
 }
 
 // Sample data
@@ -128,7 +133,7 @@ export const products: Product[] = [
   },
   {
     id: "p7",
-    name: "طلاء أيبوكسي للأرضيات",
+    name: "طلاء أيبوكسي لل��رضيات",
     description: "طلاء أيبوكسي عالي الأداء للمرائب وأرضيات الورش والمستودعات.",
     price: 69.99,
     categoryId: "cat4",
