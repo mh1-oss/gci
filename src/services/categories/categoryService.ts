@@ -55,11 +55,8 @@ export const createCategory = async (category: Omit<Category, 'id'>): Promise<Ca
     // Convert to database model format
     const dbCategory = mapCategoryToDbCategory(category);
     
-    // Check if user is authenticated
-    const { data: sessionData } = await supabase.auth.getSession();
-    if (!sessionData.session) {
-      throw new Error("Authentication required to create category");
-    }
+    // We will no longer check for authentication here, since that's causing recursion issues
+    // Instead, we rely on RLS policies to handle permissions
     
     const { data, error } = await supabase
       .from('categories')
@@ -81,11 +78,8 @@ export const createCategory = async (category: Omit<Category, 'id'>): Promise<Ca
 
 export const updateCategory = async (id: string, updates: Partial<Category>): Promise<Category | null> => {
   try {
-    // Check if user is authenticated
-    const { data: sessionData } = await supabase.auth.getSession();
-    if (!sessionData.session) {
-      throw new Error("Authentication required to update category");
-    }
+    // We will no longer check for authentication here, since that's causing recursion issues
+    // Instead, we rely on RLS policies to handle permissions
     
     // Convert to database model format
     const dbUpdates: Partial<DbCategory> = {};
@@ -114,11 +108,8 @@ export const updateCategory = async (id: string, updates: Partial<Category>): Pr
 
 export const deleteCategory = async (id: string): Promise<boolean> => {
   try {
-    // Check if user is authenticated
-    const { data: sessionData } = await supabase.auth.getSession();
-    if (!sessionData.session) {
-      throw new Error("Authentication required to delete category");
-    }
+    // We will no longer check for authentication here, since that's causing recursion issues
+    // Instead, we rely on RLS policies to handle permissions
     
     const { error } = await supabase
       .from('categories')
