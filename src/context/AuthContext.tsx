@@ -138,7 +138,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         toast({
           title: "تم تسجيل الدخول",
           description: "لكن ليس لديك صلاحيات إدارية",
-          variant: "warning",
+          variant: "destructive", // Changed from "warning" to "destructive" as "warning" is not a valid variant
         });
       }
       
