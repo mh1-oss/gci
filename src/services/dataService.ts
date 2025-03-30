@@ -1,8 +1,9 @@
-
 import { Category, Product, Review, Banner, CompanyInfo } from "@/data/initialData";
 import { supabase } from "@/integrations/supabase/client";
 
+// DEPRECATED: Use fetchCategories from '@/services/categories/categoryService' instead
 export const getCategories = async (): Promise<Category[]> => {
+  console.warn("getCategories() in dataService.ts is deprecated. Use fetchCategories() from '@/services/categories/categoryService' instead.");
   try {
     const { data, error } = await supabase
       .from('categories')
@@ -26,6 +27,83 @@ export const getCategories = async (): Promise<Category[]> => {
   } catch (error) {
     console.error("Error fetching categories:", error);
     return [];
+  }
+};
+
+// DEPRECATED: Use fetchCategoryById from '@/services/categories/categoryService' instead
+export const getCategoryById = async (id: string): Promise<Category | null> => {
+  console.warn("getCategoryById() in dataService.ts is deprecated. Use fetchCategoryById() from '@/services/categories/categoryService' instead.");
+  try {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) return null;
+
+    return data ? {
+      id: data.id,
+      name: data.name,
+      description: data.description || '',
+      image: '/placeholder.svg'
+    } : null;
+  } catch (error) {
+    console.error(`Error fetching category with id ${id}:`, error);
+    return null;
+  }
+};
+
+// DEPRECATED: Use addCategory from '@/services/categories/categoryService' instead
+export const addCategory = async (category: any) => {
+  console.warn("addCategory() in dataService.ts is deprecated. Use createCategory() from '@/services/categories/categoryService' instead.");
+  try {
+    const { error } = await supabase
+      .from('categories')
+      .insert([category]);
+
+    if (error) throw error;
+
+    return true;
+  } catch (error) {
+    console.error('Error adding category:', error);
+    return false;
+  }
+};
+
+// DEPRECATED: Use updateCategory from '@/services/categories/categoryService' instead
+export const updateCategory = async (id: string, category: any) => {
+  console.warn("updateCategory() in dataService.ts is deprecated. Use updateCategory() from '@/services/categories/categoryService' instead.");
+  try {
+    const { error } = await supabase
+      .from('categories')
+      .update(category)
+      .eq('id', id);
+
+    if (error) throw error;
+
+    return true;
+  } catch (error) {
+    console.error('Error updating category:', error);
+    return false;
+  }
+};
+
+// DEPRECATED: Use deleteCategory from '@/services/categories/categoryService' instead
+export const deleteCategory = async (id: string) => {
+  console.warn("deleteCategory() in dataService.ts is deprecated. Use deleteCategory() from '@/services/categories/categoryService' instead.");
+  try {
+    const { error } = await supabase
+      .from('categories')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    return true;
+  } catch (error) {
+    console.error('Error deleting category:', error);
+    return false;
   }
 };
 
@@ -155,28 +233,6 @@ export const getBanners = async (): Promise<Banner[]> => {
   } catch (error) {
     console.error('Error fetching banners:', error);
     return [];
-  }
-};
-
-export const getCategoryById = async (id: string): Promise<Category | null> => {
-  try {
-    const { data, error } = await supabase
-      .from('categories')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error) return null;
-
-    return data ? {
-      id: data.id,
-      name: data.name,
-      description: data.description || '',
-      image: '/placeholder.svg'
-    } : null;
-  } catch (error) {
-    console.error(`Error fetching category with id ${id}:`, error);
-    return null;
   }
 };
 
@@ -337,53 +393,6 @@ export const deleteProduct = async (id: string) => {
     return true;
   } catch (error) {
     console.error('Error deleting product:', error);
-    return false;
-  }
-};
-
-export const addCategory = async (category: any) => {
-  try {
-    const { error } = await supabase
-      .from('categories')
-      .insert([category]);
-
-    if (error) throw error;
-
-    return true;
-  } catch (error) {
-    console.error('Error adding category:', error);
-    return false;
-  }
-};
-
-export const updateCategory = async (id: string, category: any) => {
-  try {
-    const { error } = await supabase
-      .from('categories')
-      .update(category)
-      .eq('id', id);
-
-    if (error) throw error;
-
-    return true;
-  } catch (error) {
-    console.error('Error updating category:', error);
-    return false;
-  }
-};
-
-export const deleteCategory = async (id: string) => {
-  try {
-    const { error } = await supabase
-      .from('categories')
-      .delete()
-      .eq('id', id);
-
-    if (error) throw error;
-
-    return true;
-  } catch (error) {
-    console.error('Error deleting category:', error);
     return false;
   }
 };
