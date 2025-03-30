@@ -5,6 +5,7 @@ import { useCurrency } from "@/context/CurrencyContext";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileText } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 interface ProductCardProps {
   product: Product;
@@ -17,6 +18,12 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const handleViewPDF = () => {
     if (product.specsPdf) {
       window.open(product.specsPdf, '_blank');
+    } else {
+      toast({
+        title: "غير متوفر",
+        description: "ملف المواصفات غير متوفر لهذا المنتج",
+        variant: "destructive",
+      });
     }
   };
 

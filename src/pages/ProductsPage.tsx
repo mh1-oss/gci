@@ -2,7 +2,8 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Product, Category } from "@/data/initialData";
-import { getProducts, getCategories, getProductsByCategory } from "@/services/dataService";
+import { fetchProducts, fetchProductsByCategory } from "@/services/products/productService";
+import { fetchCategories } from "@/services/categories/categoryService"; 
 import ProductCard from "@/components/Products/ProductCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -28,21 +29,21 @@ const ProductsPage = () => {
 
   // Fetch categories
   useEffect(() => {
-    getCategories().then(setCategories);
+    fetchCategories().then(setCategories);
   }, []);
 
   // Fetch products when category or search changes
   useEffect(() => {
     setLoading(true);
     
-    const fetchProducts = async () => {
+    const getProductsData = async () => {
       try {
         let data: Product[];
         
         if (categoryId) {
-          data = await getProductsByCategory(categoryId);
+          data = await fetchProductsByCategory(categoryId);
         } else {
-          data = await getProducts();
+          data = await fetchProducts();
         }
         
         // Filter by search term if provided
@@ -61,7 +62,7 @@ const ProductsPage = () => {
       }
     };
     
-    fetchProducts();
+    getProductsData();
   }, [categoryId, searchQuery]);
 
   // Get current category name
