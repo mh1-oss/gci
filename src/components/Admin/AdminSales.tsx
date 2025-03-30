@@ -1,4 +1,5 @@
-
+import React from 'react';
+import { Sale } from '@/utils/models';
 import { useState, useEffect } from "react";
 import { useNavigate, Routes, Route, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -22,8 +23,6 @@ import { ar } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { getProducts } from "@/services/dataService";
 import { 
-  Sale, 
-  SaleItem,
   mapDbSaleToSale,
   mapSaleToDbSale,
   mapSaleItemToDbSaleItem,

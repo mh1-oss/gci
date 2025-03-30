@@ -1,4 +1,5 @@
-
+import React from 'react';
+import { StockTransaction } from '@/utils/models';
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -25,9 +26,6 @@ import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { getProducts } from "@/services/dataService";
-import { StockTransaction } from "@/utils/models";
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Product } from "@/data/initialData";
 import { getStockTransactions, addStockTransaction, calculateProductStock } from "@/services/stock/stockService";
 
 const AdminStock = () => {
@@ -39,7 +37,6 @@ const AdminStock = () => {
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
   
-  // Use React Query for data fetching
   const { 
     data: products = [],
     isLoading: productsLoading 
@@ -105,14 +102,12 @@ const AdminStock = () => {
           description: `تمت إضافة معاملة جديدة لـ ${productObj.name}`,
         });
         
-        // Reset form and close dialog
         setSelectedProduct("");
         setTransactionType("in");
         setQuantity(1);
         setNotes("");
         setShowAddDialog(false);
         
-        // Refresh transactions list
         refetchTransactions();
       }
     } catch (error) {
