@@ -1,7 +1,8 @@
 
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { getProducts, getCategories } from "@/services/dataService";
+import { fetchProducts } from "@/services/products/productService";
+import { fetchCategories } from "@/services/categories/categoryService";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Package, FolderTree, Settings, DollarSign, RefreshCw } from "lucide-react";
@@ -17,8 +18,8 @@ const AdminOverview = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const products = await getProducts();
-        const categories = await getCategories();
+        const products = await fetchProducts();
+        const categories = await fetchCategories();
         
         setProductCount(products.length);
         setCategoryCount(categories.length);

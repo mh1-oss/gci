@@ -1,6 +1,7 @@
+
 import { useState, useEffect, useRef } from "react";
 import { useCurrency } from "@/context/CurrencyContext";
-import { getCompanyInfo, updateCompanyInfo } from "@/services/dataService";
+import { fetchCompanyInfo, updateCompanyInfo } from "@/services/company/companyService";
 import { CompanyInfo } from "@/data/initialData";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,7 +37,7 @@ const AdminSettings = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const info = await getCompanyInfo();
+        const info = await fetchCompanyInfo();
         setCompanyInfo(info);
         setLogoPreview(info.logo);
       } catch (error) {

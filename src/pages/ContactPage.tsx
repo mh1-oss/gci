@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { getCompanyInfo } from "@/services/dataService";
+import { useState, useEffect } from "react";
+import { fetchCompanyInfo } from "@/services/company/companyService";
 import { CompanyInfo } from "@/data/initialData";
 import { 
   MapPin, 
@@ -35,7 +35,7 @@ const ContactPage = () => {
     document.title = "اتصل بنا - الشركة الذهبية للصناعات الكيمياوية";
     
     const fetchCompanyInfo = async () => {
-      const info = await getCompanyInfo();
+      const info = await fetchCompanyInfo();
       if (info) {
         setCompanyInfo({
           ...info,

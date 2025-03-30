@@ -1,8 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Product, Category } from "@/data/initialData";
-import { getProductById, getCategoryById } from "@/services/dataService";
+import { Product, Category, Review, MediaItem, RelatedProduct } from "@/data/initialData";
+import { fetchProductById, fetchRelatedProducts } from "@/services/products/productService";
+import { fetchCategoryById } from "@/services/categories/categoryService";
 import { useCurrency } from "@/context/CurrencyContext";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -21,14 +21,12 @@ const ProductDetailsPage = () => {
     if (!id) return;
 
     setLoading(true);
-    getProductById(id)
+    fetchProductById(id)
       .then(async (productData) => {
         if (productData) {
           setProduct(productData);
-          // Set initial active media
           setActiveMedia(productData.image);
-          // Get category details
-          const categoryData = await getCategoryById(productData.categoryId);
+          const categoryData = await fetchCategoryById(productData.categoryId);
           setCategory(categoryData || null);
           document.title = `ModernPaint - ${productData.name}`;
         }
@@ -244,7 +242,7 @@ const ProductDetailsPage = () => {
                   <div>
                     <h3 className="font-semibold mb-2">التنظيف</h3>
                     <p className="text-gray-700">
-                      نظف جميع المعدات مباشرة بعد الاستخدام بالماء للمنتجات ذات الأساس المائي
+                      نظف جميع المعدات مباشرة بعد الاستخدام بالماء للمنتجات ذات الأساس ��لمائي
                       أو المذيب المناسب للمنتجات ذات الأساس المذيب. تخلص من الحاويات الفارغة بشكل مسؤول.
                     </p>
                   </div>

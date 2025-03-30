@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useCurrency } from "@/context/CurrencyContext";
@@ -12,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { getCategories } from "@/services/dataService";
+import { fetchCategories } from "@/services/categories/categoryService";
 import { Category } from "@/data/initialData";
 import { 
   Menu, 
@@ -37,7 +36,7 @@ const Header = () => {
   const location = useLocation();
 
   useEffect(() => {
-    getCategories().then(setCategories);
+    fetchCategories().then(setCategories);
   }, []);
 
   useEffect(() => {
@@ -61,7 +60,6 @@ const Header = () => {
     setCurrency(currency === "USD" ? "IQD" : "USD");
   };
 
-  // Display email instead of username since there's no username property
   const displayName = user?.email ? user.email.split('@')[0] : 'المستخدم';
 
   return (

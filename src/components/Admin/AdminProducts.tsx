@@ -1,15 +1,14 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Routes, Route, Link, useNavigate } from "react-router-dom";
 import { Product, Category, MediaItem } from "@/data/initialData";
 import { 
-  getProducts, 
-  getCategories, 
-  addProduct, 
+  fetchProducts, 
+  createProduct, 
   updateProduct, 
-  deleteProduct,
-  uploadMedia
-} from "@/services/dataService";
+  deleteProduct 
+} from "@/services/products/productService";
+import { fetchCategories } from "@/services/categories/categoryService";
+import { uploadMedia } from "@/services/media/mediaService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -487,8 +486,8 @@ const ProductList = () => {
       try {
         setLoading(true);
         const [productsData, categoriesData] = await Promise.all([
-          getProducts(),
-          getCategories()
+          fetchProducts(),
+          fetchCategories()
         ]);
         setProducts(productsData);
         setCategories(categoriesData);
@@ -575,14 +574,13 @@ const ProductList = () => {
       const success = await updateProduct(editingProduct.id, updatedProductData);
       
       if (success) {
-        // Fixed: Ensure we're returning a Product array and not mixing with boolean values
         setProducts(prevProducts => {
           return prevProducts.map(p => {
             if (p.id === editingProduct.id) {
               return {
                 ...p,
                 ...updatedProductData,
-                id: editingProduct.id // ensure we keep the original ID
+                id: editingProduct.id
               };
             }
             return p;
@@ -755,10 +753,10 @@ const AddProductForm = () => {
   const { toast } = useToast();
   
   useEffect(() => {
-    const fetchCategories = async () => {
+    const loadCategories = async () => {
       try {
         setLoading(true);
-        const data = await getCategories();
+        const data = await fetchCategories();
         setCategories(data);
       } catch (error) {
         console.error("Error fetching categories:", error);
@@ -772,7 +770,7 @@ const AddProductForm = () => {
       }
     };
     
-    fetchCategories();
+    loadCategories();
   }, [toast]);
   
   const handleSubmit = async (formData: ProductFormData) => {
@@ -791,7 +789,7 @@ const AddProductForm = () => {
         specsPdf: formData.specsPdf,
       };
       
-      const success = await addProduct(newProductData);
+      const success = await createProduct(newProductData);
       
       if (success) {
         toast({

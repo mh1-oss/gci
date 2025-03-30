@@ -1,7 +1,8 @@
+
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Facebook, Instagram, Twitter, Mail, MapPin, Phone } from "lucide-react";
-import { getCompanyInfo } from "@/services/dataService";
+import { fetchCompanyInfo } from "@/services/company/companyService";
 import { CompanyInfo } from "@/data/initialData";
 
 const Footer = () => {
@@ -20,8 +21,8 @@ const Footer = () => {
   });
 
   useEffect(() => {
-    const fetchCompanyInfo = async () => {
-      const info = await getCompanyInfo();
+    const fetchData = async () => {
+      const info = await fetchCompanyInfo();
       if (info) {
         setCompanyInfo({
           ...info,
@@ -30,7 +31,7 @@ const Footer = () => {
       }
     };
     
-    fetchCompanyInfo();
+    fetchData();
   }, []);
 
   if (!companyInfo) {
