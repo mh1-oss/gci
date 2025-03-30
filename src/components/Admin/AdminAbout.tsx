@@ -1,26 +1,42 @@
-
 import { useState, useEffect } from "react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Upload, X } from "lucide-react";
+import { Loader2, Upload } from "lucide-react";
 import { fetchCompanyInfo, updateCompanyInfo } from "@/services/company/companyService";
 import { uploadMedia } from "@/services/media/mediaService";
 import { CompanyInfo } from "@/data/initialData";
+import ErrorAlert from "./Categories/ErrorAlert";
+
+const DEFAULT_COMPANY_INFO: CompanyInfo = {
+  name: 'شركة الذهبية للصناعات الكيمياوية',
+  slogan: 'جودة تدوم مع الوقت',
+  about: '',
+  logo: '/gci-logo.png',
+  contact: {
+    address: '',
+    phone: '',
+    email: '',
+    socialMedia: {}
+  },
+  exchangeRate: 1
+};
 
 const AdminAbout = () => {
-  const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
+  const [companyInfo, setCompanyInfo] = useState<CompanyInfo>(DEFAULT_COMPANY_INFO);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>('/gci-logo.png');
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
+        setError(null);
         const info = await fetchCompanyInfo();
         console.log("Fetched company info:", info);
         
@@ -29,23 +45,12 @@ const AdminAbout = () => {
           setLogoPreview(info.logo);
         } else {
           // Set default values if no info is found
-          setCompanyInfo({
-            name: 'شركة الذهبية للصناعات الكيمياوية',
-            slogan: 'جودة تدوم مع الوقت',
-            about: '',
-            logo: '/gci-logo.png',
-            contact: {
-              address: '',
-              phone: '',
-              email: '',
-              socialMedia: {}
-            },
-            exchangeRate: 1
-          });
+          setCompanyInfo(DEFAULT_COMPANY_INFO);
           setLogoPreview('/gci-logo.png');
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error fetching company info:", error);
+        setError("فشل في تحميل معلومات الشركة");
         toast({
           title: "خطأ",
           description: "فشل في تحميل معلومات الشركة.",
@@ -136,143 +141,143 @@ const AdminAbout = () => {
     <div dir="rtl">
       <h2 className="text-2xl font-bold mb-6">تعديل صفحة من نحن</h2>
       
-      {companyInfo && (
-        <Card>
-          <CardHeader>
-            <CardTitle>معلومات الشركة</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label htmlFor="company-name" className="block text-sm font-medium text-gray-700 mb-1">
-                اسم الشركة
-              </label>
-              <Input
-                id="company-name"
-                value={companyInfo.name}
-                onChange={(e) => setCompanyInfo({...companyInfo, name: e.target.value})}
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="company-slogan" className="block text-sm font-medium text-gray-700 mb-1">
-                شعار الشركة
-              </label>
-              <Input
-                id="company-slogan"
-                value={companyInfo.slogan}
-                onChange={(e) => setCompanyInfo({...companyInfo, slogan: e.target.value})}
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                شعار الشركة (الصورة)
-              </label>
-              <div className="flex flex-col space-y-4">
-                {logoPreview && (
-                  <div className="relative w-32 h-32 border border-gray-300 rounded-md overflow-hidden">
-                    <img 
-                      src={logoPreview} 
-                      alt="شعار الشركة" 
-                      className="w-full h-full object-contain"
-                    />
-                  </div>
-                )}
-                <div>
-                  <label htmlFor="logo-upload" className="cursor-pointer">
-                    <div className="flex items-center space-x-2 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-md transition-colors">
-                      <Upload className="h-4 w-4 ml-2" />
-                      <span>تحميل شعار جديد</span>
-                    </div>
-                    <input 
-                      id="logo-upload" 
-                      type="file" 
-                      accept="image/*" 
-                      onChange={handleLogoChange} 
-                      className="hidden" 
-                    />
-                  </label>
+      <ErrorAlert error={error} />
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>معلومات الشركة</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <label htmlFor="company-name" className="block text-sm font-medium text-gray-700 mb-1">
+              اسم الشركة
+            </label>
+            <Input
+              id="company-name"
+              value={companyInfo.name}
+              onChange={(e) => setCompanyInfo({...companyInfo, name: e.target.value})}
+            />
+          </div>
+          
+          <div>
+            <label htmlFor="company-slogan" className="block text-sm font-medium text-gray-700 mb-1">
+              شعار الشركة
+            </label>
+            <Input
+              id="company-slogan"
+              value={companyInfo.slogan}
+              onChange={(e) => setCompanyInfo({...companyInfo, slogan: e.target.value})}
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              شعار الشركة (الصورة)
+            </label>
+            <div className="flex flex-col space-y-4">
+              {logoPreview && (
+                <div className="relative w-32 h-32 border border-gray-300 rounded-md overflow-hidden">
+                  <img 
+                    src={logoPreview} 
+                    alt="شعار الشركة" 
+                    className="w-full h-full object-contain"
+                  />
                 </div>
+              )}
+              <div>
+                <label htmlFor="logo-upload" className="cursor-pointer">
+                  <div className="flex items-center space-x-2 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-md transition-colors">
+                    <Upload className="h-4 w-4 ml-2" />
+                    <span>تحميل شعار جديد</span>
+                  </div>
+                  <input 
+                    id="logo-upload" 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={handleLogoChange} 
+                    className="hidden" 
+                  />
+                </label>
               </div>
             </div>
-            
-            <div>
-              <label htmlFor="company-about" className="block text-sm font-medium text-gray-700 mb-1">
-                عن الشركة
-              </label>
-              <Textarea
-                id="company-about"
-                value={companyInfo.about}
-                onChange={(e) => handleAboutChange(e.target.value)}
-                rows={10}
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="contact-address" className="block text-sm font-medium text-gray-700 mb-1">
-                العنوان
-              </label>
-              <Input
-                id="contact-address"
-                value={companyInfo.contact?.address || ""}
-                onChange={(e) => setCompanyInfo({
-                  ...companyInfo, 
-                  contact: { 
-                    ...companyInfo.contact,
-                    address: e.target.value
-                  }
-                })}
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="contact-email" className="block text-sm font-medium text-gray-700 mb-1">
-                البريد الإلكتروني
-              </label>
-              <Input
-                id="contact-email"
-                value={companyInfo.contact?.email || ""}
-                onChange={(e) => setCompanyInfo({
-                  ...companyInfo, 
-                  contact: { 
-                    ...companyInfo.contact,
-                    email: e.target.value
-                  }
-                })}
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="contact-phone" className="block text-sm font-medium text-gray-700 mb-1">
-                رقم الهاتف
-              </label>
-              <Input
-                id="contact-phone"
-                value={companyInfo.contact?.phone || ""}
-                onChange={(e) => setCompanyInfo({
-                  ...companyInfo, 
-                  contact: { 
-                    ...companyInfo.contact,
-                    phone: e.target.value
-                  }
-                })}
-              />
-            </div>
-          </CardContent>
-          <CardFooter>
-            <Button onClick={handleSave} disabled={saving}>
-              {saving ? (
-                <>
-                  <Loader2 className="ml-2 h-4 w-4 animate-spin" />
-                  جاري الحفظ...
-                </>
-              ) : (
-                "حفظ التغييرات"
-              )}
-            </Button>
-          </CardFooter>
-        </Card>
-      )}
+          </div>
+          
+          <div>
+            <label htmlFor="company-about" className="block text-sm font-medium text-gray-700 mb-1">
+              عن الشركة
+            </label>
+            <Textarea
+              id="company-about"
+              value={companyInfo.about}
+              onChange={(e) => handleAboutChange(e.target.value)}
+              rows={10}
+            />
+          </div>
+          
+          <div>
+            <label htmlFor="contact-address" className="block text-sm font-medium text-gray-700 mb-1">
+              العنوان
+            </label>
+            <Input
+              id="contact-address"
+              value={companyInfo.contact?.address || ""}
+              onChange={(e) => setCompanyInfo({
+                ...companyInfo, 
+                contact: { 
+                  ...companyInfo.contact,
+                  address: e.target.value
+                }
+              })}
+            />
+          </div>
+          
+          <div>
+            <label htmlFor="contact-email" className="block text-sm font-medium text-gray-700 mb-1">
+              البريد الإلكتروني
+            </label>
+            <Input
+              id="contact-email"
+              value={companyInfo.contact?.email || ""}
+              onChange={(e) => setCompanyInfo({
+                ...companyInfo, 
+                contact: { 
+                  ...companyInfo.contact,
+                  email: e.target.value
+                }
+              })}
+            />
+          </div>
+          
+          <div>
+            <label htmlFor="contact-phone" className="block text-sm font-medium text-gray-700 mb-1">
+              رقم الهاتف
+            </label>
+            <Input
+              id="contact-phone"
+              value={companyInfo.contact?.phone || ""}
+              onChange={(e) => setCompanyInfo({
+                ...companyInfo, 
+                contact: { 
+                  ...companyInfo.contact,
+                  phone: e.target.value
+                }
+              })}
+            />
+          </div>
+        </CardContent>
+        <CardFooter>
+          <Button onClick={handleSave} disabled={saving}>
+            {saving ? (
+              <>
+                <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                جاري الحفظ...
+              </>
+            ) : (
+              "حفظ التغييرات"
+            )}
+          </Button>
+        </CardFooter>
+      </Card>
     </div>
   );
 };

@@ -50,7 +50,7 @@ const AdminCategories = () => {
       const fetchedCategories = await fetchCategories();
       console.log("Fetched categories:", fetchedCategories);
       setCategories(fetchedCategories);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error loading categories:", err);
       setError("حدث خطأ أثناء تحميل الفئات. يرجى المحاولة مرة أخرى.");
       toast({
@@ -64,7 +64,7 @@ const AdminCategories = () => {
   };
 
   const handleCreate = async () => {
-    if (!name) {
+    if (!name.trim()) {
       toast({
         title: "خطأ",
         description: "الرجاء إدخال اسم الفئة.",
@@ -78,8 +78,8 @@ const AdminCategories = () => {
     try {
       console.log("Creating new category:", { name, description });
       const newCategory: Omit<Category, 'id'> = { 
-        name, 
-        description, 
+        name: name.trim(), 
+        description: description.trim(), 
         image: '/placeholder.svg' 
       };
       const createdCategory = await createCategory(newCategory);

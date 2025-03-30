@@ -1,6 +1,4 @@
-
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
 import type { CompanyInfo } from '@/data/initialData';
 import { Json } from "@/integrations/supabase/types";
 
@@ -71,7 +69,19 @@ export const fetchCompanyInfo = async (): Promise<CompanyInfo | null> => {
     
     if (error) {
       console.error('Error fetching company info:', error);
-      return null;
+      return {
+        name: 'شركة الذهبية للصناعات الكيمياوية',
+        slogan: 'جودة تدوم مع الوقت',
+        about: '',
+        logo: '/gci-logo.png',
+        contact: {
+          address: '',
+          phone: '',
+          email: '',
+          socialMedia: {}
+        },
+        exchangeRate: 1
+      };
     }
     
     if (!data) {
@@ -89,13 +99,25 @@ export const fetchCompanyInfo = async (): Promise<CompanyInfo | null> => {
       name: data.name,
       slogan: data.slogan || '',
       about: data.about || '',
-      logo: data.logo_url || '',
+      logo: data.logo_url || '/gci-logo.png',
       contact: contactInfo,
       exchangeRate: 1
     };
   } catch (error) {
     console.error('Unexpected error fetching company info:', error);
-    return null;
+    return {
+      name: 'شركة الذهبية للصناعات الكيمياوية',
+      slogan: 'جودة تدوم مع الوقت',
+      about: '',
+      logo: '/gci-logo.png',
+      contact: {
+        address: '',
+        phone: '',
+        email: '',
+        socialMedia: {}
+      },
+      exchangeRate: 1
+    };
   }
 };
 
