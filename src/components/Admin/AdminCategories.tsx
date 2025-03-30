@@ -45,7 +45,7 @@ import {
   createCategory, 
   updateCategory, 
   deleteCategory 
-} from '@/services/supabaseService';
+} from '@/services'; // Updated import path
 import { Category } from '@/data/initialData';
 
 const AdminCategories = () => {
