@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { 
@@ -163,7 +164,11 @@ const AdminBanners = () => {
         }
       }
       
+      // Generate a unique ID for the new banner
+      const newId = crypto.randomUUID();
+      
       const newBanner = {
+        id: newId, // Add this required field
         title: formData.title,
         subtitle: formData.subtitle || null,
         image: formData.mediaType === 'image' ? imageUrl : null,
@@ -178,7 +183,7 @@ const AdminBanners = () => {
       
       const { error } = await supabase
         .from('banners')
-        .insert([newBanner]);
+        .insert(newBanner);
       
       if (error) throw error;
       
