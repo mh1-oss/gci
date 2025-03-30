@@ -67,9 +67,9 @@ const AdminDashboard = () => {
 
         if (salesError) throw salesError;
 
-        // Calculate total sales amount
+        // Calculate total sales amount - Fix: Ensure total_amount is converted to a number
         const recentSalesTotal = recentSalesData?.reduce(
-          (sum, sale) => sum + parseFloat(sale.total_amount), 
+          (sum, sale) => sum + (typeof sale.total_amount === 'string' ? parseFloat(sale.total_amount) : Number(sale.total_amount)), 
           0
         ) || 0;
         
