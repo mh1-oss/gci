@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, Routes, Route, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -28,7 +29,7 @@ import {
   mapSaleItemToDbSaleItem,
   DbSale,
   DbSaleItem
-} from "@/utils/modelMappers";
+} from '@/utils/models';
 import { Product } from "@/data/initialData";
 
 const SalesList = () => {

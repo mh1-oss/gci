@@ -25,7 +25,7 @@ import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { getProducts } from "@/services/dataService";
-import { StockTransaction } from "@/utils/modelMappers";
+import { StockTransaction } from "@/utils/models";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Product } from "@/data/initialData";
 import { getStockTransactions, addStockTransaction, calculateProductStock } from "@/services/stock/stockService";
