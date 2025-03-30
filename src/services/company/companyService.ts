@@ -22,11 +22,17 @@ const extractContactInfo = (contactData: Json | null): CompanyInfo['contact'] =>
   if (typeof contactData === 'string') {
     try {
       const parsed = JSON.parse(contactData);
+      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+        return defaultContact;
+      }
+      
       return {
         address: typeof parsed.address === 'string' ? parsed.address : '',
         phone: typeof parsed.phone === 'string' ? parsed.phone : '',
         email: typeof parsed.email === 'string' ? parsed.email : '',
-        socialMedia: typeof parsed.socialMedia === 'object' && parsed.socialMedia ? parsed.socialMedia : {}
+        socialMedia: typeof parsed.socialMedia === 'object' && parsed.socialMedia !== null && !Array.isArray(parsed.socialMedia) 
+          ? parsed.socialMedia as Record<string, string> 
+          : {}
       };
     } catch (err) {
       console.error('Error parsing contact JSON:', err);
@@ -34,17 +40,17 @@ const extractContactInfo = (contactData: Json | null): CompanyInfo['contact'] =>
     }
   }
 
-  // Handle object JSON data
+  // Handle object JSON data with proper type checking
   if (typeof contactData === 'object' && !Array.isArray(contactData)) {
-    // Type guard for object type
-    const objData = contactData as { [key: string]: Json | undefined };
+    // Explicitly cast to object with string keys
+    const objData = contactData as Record<string, Json>;
     
     return {
       address: typeof objData.address === 'string' ? objData.address : '',
       phone: typeof objData.phone === 'string' ? objData.phone : '',
       email: typeof objData.email === 'string' ? objData.email : '',
-      socialMedia: typeof objData.socialMedia === 'object' && objData.socialMedia && !Array.isArray(objData.socialMedia) 
-        ? objData.socialMedia as Record<string, string> 
+      socialMedia: typeof objData.socialMedia === 'object' && objData.socialMedia !== null && !Array.isArray(objData.socialMedia) 
+        ? objData.socialMedia as Record<string, string>
         : {}
     };
   }
