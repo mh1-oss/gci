@@ -60,11 +60,25 @@ const AdminBanners = () => {
       const { data, error } = await supabase
         .from('banners')
         .select('*')
-        .order('order', { ascending: true });
+        .order('order_index', { ascending: true });
         
       if (error) throw error;
       
-      setBanners(data || []);
+      const formattedBanners: Banner[] = (data || []).map((banner: any) => ({
+        id: banner.id,
+        title: banner.title,
+        subtitle: banner.subtitle,
+        image: banner.image || '',
+        videoUrl: banner.video_url,
+        mediaType: banner.media_type as "image" | "video",
+        ctaText: banner.cta_text || 'اكتشف المزيد',
+        ctaLink: banner.cta_link || '/products',
+        order: banner.order_index,
+        sliderHeight: banner.slider_height,
+        textColor: banner.text_color
+      }));
+      
+      setBanners(formattedBanners);
     } catch (error: any) {
       console.error('Error fetching banners:', error);
       toast({
@@ -133,17 +147,23 @@ const AdminBanners = () => {
         ? Math.max(...banners.map(b => b.order ?? 0)) 
         : 0;
       
-      const newBannerData = {
-        ...newBanner,
+      const bannerToInsert = {
+        title: newBanner.title,
+        subtitle: newBanner.subtitle,
         image: imageUrl,
-        videoUrl: videoUrl,
-        order: maxOrder + 1,
+        video_url: videoUrl,
+        media_type: newBanner.mediaType,
+        cta_text: newBanner.ctaText,
+        cta_link: newBanner.ctaLink,
+        order_index: maxOrder + 1,
+        slider_height: newBanner.sliderHeight,
+        text_color: newBanner.textColor,
         id: `banner-${Date.now()}`
       };
       
       const { data, error } = await supabase
         .from('banners')
-        .insert([newBannerData]);
+        .insert([bannerToInsert]);
         
       if (error) throw error;
       
@@ -221,9 +241,15 @@ const AdminBanners = () => {
       const { data, error } = await supabase
         .from('banners')
         .update({ 
-          ...editingBanner,
+          title: editingBanner.title,
+          subtitle: editingBanner.subtitle,
           image: imageUrl,
-          videoUrl: videoUrl
+          video_url: videoUrl,
+          media_type: editingBanner.mediaType,
+          cta_text: editingBanner.ctaText,
+          cta_link: editingBanner.ctaLink,
+          slider_height: editingBanner.sliderHeight,
+          text_color: editingBanner.textColor
         })
         .eq('id', editingBanner.id);
         
@@ -278,19 +304,23 @@ const AdminBanners = () => {
     
     try {
       const newBanners = [...banners];
-      const temp = newBanners[index].order;
-      newBanners[index].order = newBanners[index - 1].order;
-      newBanners[index - 1].order = temp;
+      const currentBanner = newBanners[index];
+      const previousBanner = newBanners[index - 1];
       
-      // Update in database
-      for (const banner of [newBanners[index], newBanners[index - 1]]) {
-        const { error } = await supabase
-          .from('banners')
-          .update({ order: banner.order })
-          .eq('id', banner.id);
-          
-        if (error) throw error;
-      }
+      // Swap order values
+      const tempOrder = currentBanner.order;
+      
+      // Update in database - first banner
+      await supabase
+        .from('banners')
+        .update({ order_index: previousBanner.order })
+        .eq('id', currentBanner.id);
+      
+      // Update in database - second banner  
+      await supabase
+        .from('banners')
+        .update({ order_index: tempOrder })
+        .eq('id', previousBanner.id);
       
       fetchBanners();
     } catch (error: any) {
@@ -308,19 +338,23 @@ const AdminBanners = () => {
     
     try {
       const newBanners = [...banners];
-      const temp = newBanners[index].order;
-      newBanners[index].order = newBanners[index + 1].order;
-      newBanners[index + 1].order = temp;
+      const currentBanner = newBanners[index];
+      const nextBanner = newBanners[index + 1];
       
-      // Update in database
-      for (const banner of [newBanners[index], newBanners[index + 1]]) {
-        const { error } = await supabase
-          .from('banners')
-          .update({ order: banner.order })
-          .eq('id', banner.id);
-          
-        if (error) throw error;
-      }
+      // Swap order values
+      const tempOrder = currentBanner.order;
+      
+      // Update in database - first banner
+      await supabase
+        .from('banners')
+        .update({ order_index: nextBanner.order })
+        .eq('id', currentBanner.id);
+      
+      // Update in database - second banner  
+      await supabase
+        .from('banners')
+        .update({ order_index: tempOrder })
+        .eq('id', nextBanner.id);
       
       fetchBanners();
     } catch (error: any) {
@@ -399,7 +433,7 @@ const AdminBanners = () => {
                 <Label htmlFor="new-media-type">نوع الوسائط</Label>
                 <Select 
                   value={newBanner.mediaType} 
-                  onValueChange={(value) => setNewBanner({...newBanner, mediaType: value})}
+                  onValueChange={(value: "image" | "video") => setNewBanner({...newBanner, mediaType: value})}
                 >
                   <SelectTrigger id="new-media-type">
                     <SelectValue placeholder="اختر نوع الوسائط" />
@@ -666,7 +700,7 @@ const AdminBanners = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <p><strong>العنوان الفرعي:</strong> {banner.subtitle}</p>
-                        <p><strong>نص الزر:</strong> {banner.ctaText}</p>
+                        <p><strong>نص ال��ر:</strong> {banner.ctaText}</p>
                         <p><strong>رابط الزر:</strong> {banner.ctaLink}</p>
                         <p><strong>ارتفاع السلايدر:</strong> {banner.sliderHeight}%</p>
                         <p><strong>لون النص:</strong> <span className="inline-block w-4 h-4 align-middle" style={{backgroundColor: banner.textColor}}></span> {banner.textColor}</p>

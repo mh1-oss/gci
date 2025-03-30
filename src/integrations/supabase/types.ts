@@ -9,6 +9,54 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      banners: {
+        Row: {
+          created_at: string | null
+          cta_link: string | null
+          cta_text: string | null
+          id: string
+          image: string | null
+          media_type: string | null
+          order_index: number | null
+          slider_height: number | null
+          subtitle: string | null
+          text_color: string | null
+          title: string
+          updated_at: string | null
+          video_url: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          cta_link?: string | null
+          cta_text?: string | null
+          id: string
+          image?: string | null
+          media_type?: string | null
+          order_index?: number | null
+          slider_height?: number | null
+          subtitle?: string | null
+          text_color?: string | null
+          title: string
+          updated_at?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          cta_link?: string | null
+          cta_text?: string | null
+          id?: string
+          image?: string | null
+          media_type?: string | null
+          order_index?: number | null
+          slider_height?: number | null
+          subtitle?: string | null
+          text_color?: string | null
+          title?: string
+          updated_at?: string | null
+          video_url?: string | null
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string

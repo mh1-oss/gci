@@ -27,12 +27,13 @@ export interface Category {
 export interface Banner {
   id: string;
   title: string;
-  subtitle: string;
+  subtitle?: string;
   image: string;
+  videoUrl?: string;
+  mediaType: "image" | "video";
   ctaText: string;
   ctaLink: string;
-  mediaType?: 'image' | 'video';
-  videoUrl?: string;
+  order?: number;
   sliderHeight?: number;
   textColor?: string;
 }

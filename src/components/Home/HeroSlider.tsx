@@ -22,36 +22,24 @@ const HeroSlider = () => {
   const fetchBanners = async () => {
     setLoading(true);
     try {
-      // First try to get from Supabase
-      const { data, error } = await supabase
-        .from('banners')
-        .select('*')
-        .order('order', { ascending: true });
+      // Fetch banners from database
+      const fetchedBanners = await getBanners();
         
-      if (error) {
-        console.error("Error fetching banners from Supabase:", error);
-        // Fallback to local data
-        const localBanners = await getBanners();
-        setBanners(localBanners);
-      } else if (data && data.length > 0) {
-        setBanners(data);
+      if (fetchedBanners.length > 0) {
+        setBanners(fetchedBanners);
         // Set slider height and text color if provided in the banner data
-        if (data[0].sliderHeight) {
-          setSliderHeight(data[0].sliderHeight);
+        if (fetchedBanners[0].sliderHeight) {
+          setSliderHeight(fetchedBanners[0].sliderHeight);
         }
-        if (data[0].textColor) {
-          setTextColor(data[0].textColor);
+        if (fetchedBanners[0].textColor) {
+          setTextColor(fetchedBanners[0].textColor);
         }
       } else {
-        // Fallback to local data if no banners in Supabase
-        const localBanners = await getBanners();
-        setBanners(localBanners);
+        setBanners([]);
       }
     } catch (error) {
       console.error("Error fetching banners:", error);
-      // Fallback to local data
-      const localBanners = await getBanners();
-      setBanners(localBanners);
+      setBanners([]);
     } finally {
       setLoading(false);
     }
@@ -102,7 +90,7 @@ const HeroSlider = () => {
     setCurrentIndex(index);
   };
 
-  const isVideo = (url: string) => {
+  const isVideo = (url: string | undefined) => {
     return url?.match(/\.(mp4|webm|ogg)$/i);
   };
 
