@@ -5,7 +5,7 @@ import {
   mapDbCategoryToCategory,
   mapCategoryToDbCategory,
   DbCategory
-} from '@/utils/modelMappers';
+} from '@/utils/models';
 
 // Categories
 export const fetchCategories = async (): Promise<Category[]> => {

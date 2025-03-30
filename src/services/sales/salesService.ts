@@ -8,7 +8,7 @@ import {
   mapDbSaleItemWithProductToSaleItem,
   Sale,
   SaleItem
-} from '@/utils/modelMappers';
+} from '@/utils/models';
 
 // Sales services will be implemented here when needed
 // This placeholder file is created to maintain the structure

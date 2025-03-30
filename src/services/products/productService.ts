@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import type { Product } from '@/data/initialData';
@@ -6,7 +5,7 @@ import {
   mapDbProductToProduct,
   mapProductToDbProduct,
   DbProduct
-} from '@/utils/modelMappers';
+} from '@/utils/models';
 
 // Products
 export const fetchProducts = async (): Promise<Product[]> => {

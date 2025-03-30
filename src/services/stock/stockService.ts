@@ -1,11 +1,10 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { 
   mapDbStockTransactionToStockTransaction, 
   mapStockTransactionToDbStockTransaction,
   StockTransaction,
   DbStockTransaction
-} from '@/utils/modelMappers';
+} from '@/utils/models';
 
 export const getStockTransactions = async (): Promise<StockTransaction[]> => {
   try {
