@@ -81,6 +81,7 @@ export const fetchBanners = async (): Promise<Banner[]> => {
 
 export const createBanner = async (banner: Omit<Banner, 'id'>): Promise<Banner | null> => {
   try {
+    // This now includes an id field from our updated mapper function
     const dbBanner = mapBannerToDbBanner(banner);
     
     // We're using a regular object, not an array of objects

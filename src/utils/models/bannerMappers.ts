@@ -18,8 +18,13 @@ export function mapDbBannerToBanner(dbBanner: DbBanner): Banner {
   };
 }
 
-export function mapBannerToDbBanner(banner: Omit<Banner, 'id'>): Omit<DbBanner, 'id' | 'created_at' | 'updated_at'> {
+// Updated to generate a new ID and include it in the returned object
+export function mapBannerToDbBanner(banner: Omit<Banner, 'id'>): Omit<DbBanner, 'created_at' | 'updated_at'> {
+  // Generate a new ID for the banner
+  const id = crypto.randomUUID();
+  
   return {
+    id, // Include the generated ID
     title: banner.title,
     subtitle: banner.subtitle || null,
     image: banner.image || null,
