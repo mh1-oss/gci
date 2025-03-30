@@ -43,6 +43,33 @@ export interface DbCompanyInfo {
   updated_at: string;
 }
 
+export interface DbStockTransaction {
+  id: string;
+  product_id: string;
+  quantity: number;
+  transaction_type: 'in' | 'out';
+  notes: string | null;
+  created_at: string;
+}
+
+export interface DbSale {
+  id: string;
+  customer_name: string;
+  customer_phone: string | null;
+  customer_email: string | null;
+  total_amount: number;
+  created_at: string;
+}
+
+export interface DbSaleItem {
+  id: string;
+  sale_id: string;
+  product_id: string;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+}
+
 // Mapper functions to convert between DB and app models
 export function mapDbProductToProduct(dbProduct: DbProduct): Product {
   return {

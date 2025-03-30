@@ -11,7 +11,6 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isAdmin: boolean;
   login: (email: string, password: string) => Promise<boolean>;
-  signup: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   loading: boolean;
 }
@@ -96,41 +95,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
   
-  const signup = async (email: string, password: string): Promise<boolean> => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password
-      });
-      
-      if (error) {
-        toast({
-          title: "فشل إنشاء الحساب",
-          description: error.message,
-          variant: "destructive",
-        });
-        return false;
-      }
-      
-      toast({
-        title: "تم إنشاء الحساب بنجاح",
-        description: "يرجى التحقق من بريدك الإلكتروني لتأكيد الحساب",
-      });
-      return true;
-    } catch (error) {
-      console.error('Unexpected error during signup:', error);
-      toast({
-        title: "خطأ غير متوقع",
-        description: "حدث خطأ أثناء إنشاء الحساب",
-        variant: "destructive",
-      });
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
-  
   const logout = async (): Promise<void> => {
     try {
       setLoading(true);
@@ -158,7 +122,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     isAuthenticated: !!user,
     isAdmin,
     login,
-    signup,
     logout,
     loading
   };

@@ -8,13 +8,17 @@ import AdminProducts from "@/components/Admin/AdminProducts";
 import AdminCategories from "@/components/Admin/AdminCategories";
 import AdminSettings from "@/components/Admin/AdminSettings";
 import AdminContent from "@/components/Admin/AdminContent";
+import AdminStock from "@/components/Admin/AdminStock";
+import AdminSales from "@/components/Admin/AdminSales";
 import { 
   LayoutDashboard, 
   Package, 
   FolderTree, 
   Settings, 
   FileText,
-  AlertTriangle
+  AlertTriangle,
+  BarChart3,
+  ShoppingCart
 } from "lucide-react";
 
 const AdminDashboard = () => {
@@ -23,7 +27,7 @@ const AdminDashboard = () => {
   const location = useLocation();
 
   useEffect(() => {
-    document.title = "Modern Paint - لوحة تحكم المدير";
+    document.title = "لوحة تحكم المدير";
     
     // Redirect if not authenticated or not an admin
     if (!isAuthenticated || !isAdmin) {
@@ -58,6 +62,8 @@ const AdminDashboard = () => {
     if (path.includes("/admin/categories")) return "categories";
     if (path.includes("/admin/content")) return "content";
     if (path.includes("/admin/settings")) return "settings";
+    if (path.includes("/admin/stock")) return "stock";
+    if (path.includes("/admin/sales")) return "sales";
     return "overview";
   };
 
@@ -72,8 +78,8 @@ const AdminDashboard = () => {
         </div>
 
         <Tabs value={getActiveTab()} className="space-y-6">
-          <TabsList className="w-full border-b border-gray-200 pb-0 rounded-none bg-transparent">
-            <div className="flex overflow-x-auto space-x-2 w-full">
+          <TabsList className="w-full border-b border-gray-200 pb-0 rounded-none bg-transparent overflow-x-auto">
+            <div className="flex space-x-2 space-x-reverse w-full">
               <TabsTrigger 
                 value="overview" 
                 className="flex items-center gap-2 data-[state=active]:border-b-2 data-[state=active]:border-brand-blue rounded-none px-4 py-2"
@@ -102,6 +108,26 @@ const AdminDashboard = () => {
                 <Link to="/admin/categories">
                   <FolderTree className="h-4 w-4 ml-1" />
                   الفئات
+                </Link>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="stock" 
+                className="flex items-center gap-2 data-[state=active]:border-b-2 data-[state=active]:border-brand-blue rounded-none px-4 py-2"
+                asChild
+              >
+                <Link to="/admin/stock">
+                  <BarChart3 className="h-4 w-4 ml-1" />
+                  المخزون
+                </Link>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="sales" 
+                className="flex items-center gap-2 data-[state=active]:border-b-2 data-[state=active]:border-brand-blue rounded-none px-4 py-2"
+                asChild
+              >
+                <Link to="/admin/sales">
+                  <ShoppingCart className="h-4 w-4 ml-1" />
+                  المبيعات
                 </Link>
               </TabsTrigger>
               <TabsTrigger 
@@ -134,6 +160,8 @@ const AdminDashboard = () => {
               <Route path="categories/*" element={<AdminCategories />} />
               <Route path="content/*" element={<AdminContent />} />
               <Route path="settings/*" element={<AdminSettings />} />
+              <Route path="stock/*" element={<AdminStock />} />
+              <Route path="sales/*" element={<AdminSales />} />
             </Routes>
           </div>
         </Tabs>
