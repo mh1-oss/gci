@@ -85,21 +85,25 @@ const AdminBanners = () => {
 
       if (error) throw error;
       
-      const mappedBanners: Banner[] = data.map(banner => ({
-        id: banner.id,
-        title: banner.title,
-        subtitle: banner.subtitle || '',
-        image: banner.image || '',
-        videoUrl: banner.video_url || '',
-        mediaType: (banner.media_type as "image" | "video") || "image",
-        ctaText: banner.cta_text || 'اكتشف المزيد',
-        ctaLink: banner.cta_link || '/products',
-        orderIndex: banner.order_index || 0,
-        sliderHeight: banner.slider_height || 70,
-        textColor: banner.text_color || '#ffffff'
-      }));
-      
-      setBanners(mappedBanners);
+      if (data && data.length > 0) {
+        const mappedBanners: Banner[] = data.map(banner => ({
+          id: banner.id,
+          title: banner.title,
+          subtitle: banner.subtitle || '',
+          image: banner.image || '',
+          videoUrl: banner.video_url || '',
+          mediaType: (banner.media_type as "image" | "video") || "image",
+          ctaText: banner.cta_text || 'اكتشف المزيد',
+          ctaLink: banner.cta_link || '/products',
+          orderIndex: banner.order_index || 0,
+          sliderHeight: banner.slider_height || 70,
+          textColor: banner.text_color || '#ffffff'
+        }));
+        
+        setBanners(mappedBanners);
+      } else {
+        setBanners([]);
+      }
     } catch (error) {
       console.error('Error fetching banners:', error);
       toast({
@@ -163,7 +167,6 @@ const AdminBanners = () => {
       
       // Prepare banner data
       const newBanner = {
-        id: crypto.randomUUID(),
         title: formData.title,
         subtitle: formData.subtitle,
         image: formData.mediaType === 'image' ? imageUrl : null,
@@ -515,7 +518,7 @@ const AdminBanners = () => {
                 <Label htmlFor="media-type">نوع الوسائط</Label>
                 <Select 
                   defaultValue={formData.mediaType} 
-                  onValueChange={(value) => setFormData({...formData, mediaType: value})}
+                  onValueChange={(value) => setFormData({...formData, mediaType: value as "image" | "video"})}
                 >
                   <SelectTrigger id="media-type">
                     <SelectValue placeholder="اختر نوع الوسائط" />
