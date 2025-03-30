@@ -90,7 +90,11 @@ const AdminCategories = () => {
     }
 
     try {
-      const newCategory: Omit<Category, 'id'> = { name, description };
+      const newCategory: Omit<Category, 'id'> = { 
+        name, 
+        description, 
+        image: '/placeholder.svg' 
+      };
       const createdCategory = await createCategory(newCategory);
 
       if (createdCategory) {
@@ -181,37 +185,36 @@ const AdminCategories = () => {
     setDeleteDialogOpen(true);
   };
 
-  // Fix the filter function in deleteCategory
-const handleDeleteConfirm = async () => {
-  setIsDeleting(true);
-  try {
-    const success = await deleteCategory(deleteTarget?.id || '');
-    if (success) {
+  const handleDeleteConfirm = async () => {
+    setIsDeleting(true);
+    try {
+      const success = await deleteCategory(deleteTarget?.id || '');
+      if (success) {
+        toast({
+          title: "تم الحذف بنجاح",
+          description: "تم حذف الفئة بنجاح."
+        });
+        setCategories(prevCategories => prevCategories.filter(c => c.id !== deleteTarget?.id));
+        setDeleteDialogOpen(false);
+        setDeleteTarget(null);
+      } else {
+        toast({
+          title: "فشل الحذف",
+          description: "حدث خطأ أثناء حذف الفئة.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting category:", error);
       toast({
-        title: "تم الحذف بنجاح",
-        description: "تم حذف الفئة بنجاح."
-      });
-      setCategories(prevCategories => prevCategories.filter(c => c.id !== deleteTarget?.id));
-      setDeleteDialogOpen(false);
-      setDeleteTarget(null);
-    } else {
-      toast({
-        title: "فشل الحذف",
-        description: "حدث خطأ أثناء حذف الفئة.",
+        title: "خطأ",
+        description: "حدث خطأ غير متوقع أثناء حذف الفئة.",
         variant: "destructive"
       });
+    } finally {
+      setIsDeleting(false);
     }
-  } catch (error) {
-    console.error("Error deleting category:", error);
-    toast({
-      title: "خطأ",
-      description: "حدث خطأ غير متوقع أثناء حذف الفئة.",
-      variant: "destructive"
-    });
-  } finally {
-    setIsDeleting(false);
-  }
-};
+  };
 
   return (
     <div>

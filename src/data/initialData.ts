@@ -67,7 +67,7 @@ export const products: Product[] = [
   {
     id: "p1",
     name: "طلاء أكريليك ممتاز",
-    description: "طلاء أكريليك متميز يوفر تغطية استثنائية ومقاومة للتلاشي، مثالي للاستخدام الداخلي والخارجي.",
+    description: "طلاء أكريليك ممتاز يوفر تغطية استثنائية ومقاومة للتلاشي، مثالي للاستخدام الداخلي والخارجي.",
     price: 29.99,
     categoryId: "cat1",
     image: "/placeholder.svg",
@@ -189,7 +189,8 @@ export const banners: Banner[] = [
     ctaText: "تسوق الآن",
     ctaLink: "/products",
     mediaType: 'image',
-    videoUrl: null
+    videoUrl: null,
+    orderIndex: 0
   },
   {
     id: "banner2",
@@ -199,7 +200,8 @@ export const banners: Banner[] = [
     ctaText: "اكتشف العروض",
     ctaLink: "/products?category=cat2",
     mediaType: 'image',
-    videoUrl: null
+    videoUrl: null,
+    orderIndex: 1
   },
   {
     id: "banner3",
@@ -209,7 +211,8 @@ export const banners: Banner[] = [
     ctaText: "حاسبة الطلاء",
     ctaLink: "/calculator",
     mediaType: 'image',
-    videoUrl: null
+    videoUrl: null,
+    orderIndex: 2
   }
 ];
 

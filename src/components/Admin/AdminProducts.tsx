@@ -523,13 +523,15 @@ const ProductList = () => {
   const handleDeleteConfirm = async () => {
     setIsDeleting(true);
     try {
-      const success = await deleteProduct(selectedProduct?.id || '');
+      if (!selectedProduct) return;
+      
+      const success = await deleteProduct(selectedProduct.id);
       if (success) {
         toast({
           title: "تم الحذف بنجاح",
           description: "تم حذف المنتج بنجاح."
         });
-        setProducts(prevProducts => prevProducts.filter(p => p.id !== selectedProduct?.id));
+        setProducts(prevProducts => prevProducts.filter(p => p.id !== selectedProduct.id));
         setDeleteDialogOpen(false);
         setSelectedProduct(null);
       } else {
@@ -764,7 +766,7 @@ const AddProductForm = () => {
     try {
       setFormLoading(true);
       
-      const newProduct = await addProduct({
+      const newProductData = {
         name: formData.name,
         description: formData.description,
         price: parseFloat(formData.price),
@@ -774,15 +776,19 @@ const AddProductForm = () => {
         colors: formData.colors.split(",").map(color => color.trim()).filter(color => color),
         mediaGallery: formData.mediaGallery,
         specsPdf: formData.specsPdf,
-      });
+      };
       
-      toast({
-        title: "Product Added",
-        description: `${newProduct.name} has been added successfully.`,
-        variant: "default",
-      });
+      const newProduct = await addProduct(newProductData);
       
-      navigate("/admin/products");
+      if (newProduct) {
+        toast({
+          title: "Product Added",
+          description: `${typeof newProduct === 'object' ? newProduct.name : 'New product'} has been added successfully.`,
+          variant: "default",
+        });
+        
+        navigate("/admin/products");
+      }
     } catch (error) {
       console.error("Error adding product:", error);
       toast({

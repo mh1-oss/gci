@@ -243,19 +243,31 @@ export const getCompanyInfo = async (): Promise<CompanyInfo | null> => {
 
     if (error) return null;
 
-    return data ? {
-      name: data.name,
-      slogan: data.slogan || '',
-      about: data.about || '',
-      logo: data.logo_url || '/placeholder.svg',
-      contact: data.contact || {
+    if (!data) return null;
+    
+    let contactData = data.contact;
+    if (typeof contactData !== 'object' || contactData === null) {
+      contactData = {
         address: '',
         phone: '',
         email: '',
         socialMedia: {}
+      };
+    }
+    
+    return {
+      name: data.name,
+      slogan: data.slogan || '',
+      about: data.about || '',
+      logo: data.logo_url || '/placeholder.svg',
+      contact: {
+        address: contactData.address || '',
+        phone: contactData.phone || '',
+        email: contactData.email || '',
+        socialMedia: contactData.socialMedia || {}
       },
       exchangeRate: 1
-    } : null;
+    };
   } catch (error) {
     console.error('Error fetching company info:', error);
     return null;

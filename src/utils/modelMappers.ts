@@ -1,9 +1,9 @@
-
 import type { 
   Product, 
   Category,
   CompanyInfo,
-  MediaItem
+  MediaItem,
+  Banner
 } from '@/data/initialData';
 
 // Types representing the Supabase database schema
@@ -43,6 +43,22 @@ export interface DbCompanyInfo {
   updated_at: string;
 }
 
+export interface DbBanner {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  image: string | null;
+  video_url: string | null;
+  media_type: string;
+  cta_text: string | null;
+  cta_link: string | null;
+  order_index: number;
+  slider_height: number | null;
+  text_color: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface DbStockTransaction {
   id: string;
   product_id: string;
@@ -71,7 +87,6 @@ export interface DbSaleItem {
   created_at: string;
 }
 
-// Additional types for our application
 export interface SaleItem {
   id: string;
   product_id: string;
@@ -101,7 +116,6 @@ export interface StockTransaction {
   created_at: string;
 }
 
-// Mapper functions to convert between DB and app models
 export function mapDbProductToProduct(dbProduct: DbProduct): Product {
   return {
     id: dbProduct.id,
@@ -110,8 +124,7 @@ export function mapDbProductToProduct(dbProduct: DbProduct): Product {
     categoryId: dbProduct.category_id || '',
     price: dbProduct.price,
     image: dbProduct.image_url || '/placeholder.svg',
-    featured: false, // Default value, can be updated if needed
-    // Add other optional fields with default values
+    featured: false,
     colors: [],
     specifications: {},
     mediaGallery: []
@@ -124,8 +137,8 @@ export function mapProductToDbProduct(product: Omit<Product, 'id'>): Omit<DbProd
     description: product.description,
     category_id: product.categoryId,
     price: product.price,
-    cost_price: product.price * 0.7, // Assuming 30% margin, can adjust as needed
-    stock_quantity: 0, // Default value
+    cost_price: product.price * 0.7,
+    stock_quantity: 0,
     image_url: product.image !== '/placeholder.svg' ? product.image : null
   };
 }
@@ -135,14 +148,14 @@ export function mapDbCategoryToCategory(dbCategory: DbCategory): Category {
     id: dbCategory.id,
     name: dbCategory.name,
     description: dbCategory.description || '',
-    image: '/placeholder.svg', // Default value
+    image: '/placeholder.svg'
   };
 }
 
 export function mapCategoryToDbCategory(category: Omit<Category, 'id'>): Omit<DbCategory, 'id' | 'created_at' | 'updated_at'> {
   return {
     name: category.name,
-    description: category.description,
+    description: category.description
   };
 }
 
@@ -158,7 +171,7 @@ export function mapDbCompanyInfoToCompanyInfo(dbInfo: DbCompanyInfo): CompanyInf
       email: '',
       socialMedia: {}
     },
-    exchangeRate: 1460 // Default value
+    exchangeRate: 1460
   };
 }
 
@@ -231,5 +244,36 @@ export function mapStockTransactionToDbStockTransaction(transaction: Omit<StockT
     quantity: transaction.quantity,
     transaction_type: transaction.transaction_type,
     notes: transaction.notes
+  };
+}
+
+export function mapDbBannerToBanner(dbBanner: DbBanner): Banner {
+  return {
+    id: dbBanner.id,
+    title: dbBanner.title,
+    subtitle: dbBanner.subtitle || undefined,
+    image: dbBanner.image || undefined,
+    videoUrl: dbBanner.video_url || undefined,
+    mediaType: (dbBanner.media_type as "image" | "video") || "image",
+    ctaText: dbBanner.cta_text || undefined,
+    ctaLink: dbBanner.cta_link || undefined,
+    orderIndex: dbBanner.order_index,
+    sliderHeight: dbBanner.slider_height || undefined,
+    textColor: dbBanner.text_color || undefined,
+  };
+}
+
+export function mapBannerToDbBanner(banner: Omit<Banner, 'id'>): Omit<DbBanner, 'id' | 'created_at' | 'updated_at'> {
+  return {
+    title: banner.title,
+    subtitle: banner.subtitle || null,
+    image: banner.image || null,
+    video_url: banner.videoUrl || null,
+    media_type: banner.mediaType,
+    cta_text: banner.ctaText || null,
+    cta_link: banner.ctaLink || null,
+    order_index: banner.orderIndex,
+    slider_height: banner.sliderHeight || null,
+    text_color: banner.textColor || null,
   };
 }
