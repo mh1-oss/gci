@@ -2,12 +2,15 @@
 import HeroSlider from "@/components/Home/HeroSlider";
 import CategorySection from "@/components/Home/CategorySection";
 import FeaturedProducts from "@/components/Home/FeaturedProducts";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Calculator } from "lucide-react";
 import { useEffect } from "react";
 
 const HomePage = () => {
   // Update document title
   useEffect(() => {
-    document.title = "مودرن بينت - الصفحة الرئيسية";
+    document.title = "GSI - الصفحة الرئيسية";
   }, []);
 
   return (
@@ -15,6 +18,24 @@ const HomePage = () => {
       <HeroSlider />
       <CategorySection />
       <FeaturedProducts />
+      
+      {/* Paint Calculator CTA */}
+      <section className="py-16 bg-brand-blue text-white" dir="rtl">
+        <div className="container-custom">
+          <div className="max-w-3xl mx-auto text-center">
+            <h2 className="text-3xl font-bold mb-4">حاسبة الطلاء</h2>
+            <p className="text-lg mb-8">
+              استخدم حاسبة الطلاء لدينا لتحديد كمية الطلاء التي ستحتاجها لمشروعك القادم.
+            </p>
+            <Link to="/calculator">
+              <Button size="lg" variant="outline" className="bg-white text-brand-blue hover:bg-gray-100">
+                <Calculator className="ml-2 h-5 w-5" />
+                استخدم الحاسبة الآن
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
       
       {/* Features Section */}
       <section className="py-16 bg-gray-900 text-white" dir="rtl">
