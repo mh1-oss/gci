@@ -1,6 +1,5 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
 import { 
   mapDbStockTransactionToStockTransaction, 
   mapStockTransactionToDbStockTransaction,
@@ -10,6 +9,7 @@ import {
 
 export const getStockTransactions = async (): Promise<StockTransaction[]> => {
   try {
+    console.log("Fetching stock transactions...");
     // Fetch all stock transactions
     const { data: transactionData, error: transactionError } = await supabase
       .from('stock_transactions')
@@ -36,6 +36,8 @@ export const getStockTransactions = async (): Promise<StockTransaction[]> => {
       return acc;
     }, {} as Record<string, string>);
     
+    console.log("Transaction data:", transactionData?.length);
+    
     // Map transactions with product names
     return (transactionData || []).map((transaction: DbStockTransaction) => 
       mapDbStockTransactionToStockTransaction(
@@ -53,6 +55,8 @@ export const addStockTransaction = async (transaction: Omit<StockTransaction, 'i
   try {
     const dbTransaction = mapStockTransactionToDbStockTransaction(transaction);
     
+    console.log("Adding stock transaction:", dbTransaction);
+    
     const { error } = await supabase
       .from('stock_transactions')
       .insert([dbTransaction]);
@@ -62,6 +66,7 @@ export const addStockTransaction = async (transaction: Omit<StockTransaction, 'i
       throw error;
     }
     
+    console.log("Transaction added successfully");
     return true;
   } catch (error) {
     console.error('Unexpected error adding transaction:', error);
@@ -70,6 +75,8 @@ export const addStockTransaction = async (transaction: Omit<StockTransaction, 'i
 };
 
 export const calculateProductStock = (transactions: StockTransaction[]): Record<string, { product_id: string, product_name: string, stock: number }> => {
+  console.log("Calculating product stock from transactions:", transactions?.length);
+  
   return transactions.reduce((acc, transaction) => {
     if (!acc[transaction.product_id]) {
       acc[transaction.product_id] = {

@@ -140,7 +140,7 @@ const AdminStock = () => {
               إضافة معاملة
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>إضافة معاملة مخزون جديدة</DialogTitle>
               <DialogDescription>
