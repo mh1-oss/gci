@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { fetchProducts } from "@/services/products/productService";
 import { useCurrency } from "@/context/CurrencyContext";
@@ -18,12 +19,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Calculator, ArrowRight } from "lucide-react";
+import { Product } from "@/data/initialData";
 
 const CalculatorPage = () => {
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const { formatPrice } = useCurrency();
-  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [area, setArea] = useState<number | ''>('');
   const [result, setResult] = useState<number | null>(null);
 
