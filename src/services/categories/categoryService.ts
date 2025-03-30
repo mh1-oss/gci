@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import type { Category } from '@/data/initialData';
 import {
@@ -37,12 +36,8 @@ export const fetchCategories = async (): Promise<Category[]> => {
           return [];
         }
         
-        return (adminData || []).map((item: any) => ({
-          id: item.id,
-          name: item.name,
-          description: item.description || '',
-          image: '/placeholder.svg'
-        }));
+        // adminData is now the array of categories returned by the function
+        return (adminData as DbCategory[]).map(mapDbCategoryToCategory);
       }
       
       return [];

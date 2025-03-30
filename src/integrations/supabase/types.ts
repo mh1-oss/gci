@@ -507,6 +507,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_all_categories: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }[]
+      }
       has_role: {
         Args: {
           _user_id: string

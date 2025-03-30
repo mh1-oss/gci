@@ -13,8 +13,10 @@ const CategorySection = () => {
     const getCategories = async () => {
       setLoading(true);
       try {
+        console.log("Fetching categories for home page...");
         const fetchedCategories = await fetchCategories();
-        setCategories(fetchedCategories);
+        console.log("Fetched categories for home page:", fetchedCategories);
+        setCategories(fetchedCategories || []);
       } catch (error) {
         console.error("Error fetching categories:", error);
       } finally {
