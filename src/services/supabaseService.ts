@@ -8,6 +8,17 @@ import type {
   CompanyInfo,
   MediaItem
 } from '@/data/initialData';
+import {
+  mapDbProductToProduct,
+  mapProductToDbProduct,
+  mapDbCategoryToCategory,
+  mapCategoryToDbCategory,
+  mapDbCompanyInfoToCompanyInfo,
+  mapCompanyInfoToDbCompanyInfo,
+  DbProduct,
+  DbCategory,
+  DbCompanyInfo
+} from '@/utils/modelMappers';
 
 // Products
 export const fetchProducts = async (): Promise<Product[]> => {
@@ -26,7 +37,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
       return [];
     }
     
-    return data || [];
+    return (data || []).map(mapDbProductToProduct);
   } catch (error) {
     console.error('Unexpected error fetching products:', error);
     toast({
@@ -51,7 +62,7 @@ export const fetchProductById = async (id: string): Promise<Product | null> => {
       return null;
     }
     
-    return data;
+    return data ? mapDbProductToProduct(data) : null;
   } catch (error) {
     console.error('Unexpected error fetching product by id:', error);
     return null;
@@ -70,7 +81,7 @@ export const fetchProductsByCategory = async (categoryId: string): Promise<Produ
       return [];
     }
     
-    return data || [];
+    return (data || []).map(mapDbProductToProduct);
   } catch (error) {
     console.error('Unexpected error fetching products by category:', error);
     return [];
@@ -92,7 +103,10 @@ export const fetchFeaturedProducts = async (): Promise<Product[]> => {
       return [];
     }
     
-    return data || [];
+    return (data || []).map(product => ({
+      ...mapDbProductToProduct(product),
+      featured: true
+    }));
   } catch (error) {
     console.error('Unexpected error fetching featured products:', error);
     return [];
@@ -101,9 +115,11 @@ export const fetchFeaturedProducts = async (): Promise<Product[]> => {
 
 export const createProduct = async (product: Omit<Product, 'id'>): Promise<Product | null> => {
   try {
+    const dbProduct = mapProductToDbProduct(product);
+    
     const { data, error } = await supabase
       .from('products')
-      .insert([product])
+      .insert([dbProduct])
       .select()
       .single();
     
@@ -122,7 +138,7 @@ export const createProduct = async (product: Omit<Product, 'id'>): Promise<Produ
       description: "تم إضافة المنتج بنجاح",
     });
     
-    return data;
+    return mapDbProductToProduct(data);
   } catch (error) {
     console.error('Unexpected error creating product:', error);
     toast({
@@ -136,9 +152,20 @@ export const createProduct = async (product: Omit<Product, 'id'>): Promise<Produ
 
 export const updateProduct = async (id: string, updates: Partial<Product>): Promise<Product | null> => {
   try {
+    // Convert to database model format
+    const dbUpdates: Partial<DbProduct> = {};
+    
+    if (updates.name !== undefined) dbUpdates.name = updates.name;
+    if (updates.description !== undefined) dbUpdates.description = updates.description;
+    if (updates.categoryId !== undefined) dbUpdates.category_id = updates.categoryId;
+    if (updates.price !== undefined) dbUpdates.price = updates.price;
+    if (updates.image !== undefined && updates.image !== '/placeholder.svg') {
+      dbUpdates.image_url = updates.image;
+    }
+    
     const { data, error } = await supabase
       .from('products')
-      .update(updates)
+      .update(dbUpdates)
       .eq('id', id)
       .select()
       .single();
@@ -158,7 +185,7 @@ export const updateProduct = async (id: string, updates: Partial<Product>): Prom
       description: "تم تحديث المنتج بنجاح",
     });
     
-    return data;
+    return mapDbProductToProduct(data);
   } catch (error) {
     console.error('Unexpected error updating product:', error);
     toast({
@@ -216,7 +243,7 @@ export const fetchCategories = async (): Promise<Category[]> => {
       return [];
     }
     
-    return data || [];
+    return (data || []).map(mapDbCategoryToCategory);
   } catch (error) {
     console.error('Unexpected error fetching categories:', error);
     return [];
@@ -236,7 +263,7 @@ export const fetchCategoryById = async (id: string): Promise<Category | null> =>
       return null;
     }
     
-    return data;
+    return data ? mapDbCategoryToCategory(data) : null;
   } catch (error) {
     console.error('Unexpected error fetching category by id:', error);
     return null;
@@ -245,9 +272,11 @@ export const fetchCategoryById = async (id: string): Promise<Category | null> =>
 
 export const createCategory = async (category: Omit<Category, 'id'>): Promise<Category | null> => {
   try {
+    const dbCategory = mapCategoryToDbCategory(category);
+    
     const { data, error } = await supabase
       .from('categories')
-      .insert([category])
+      .insert([dbCategory])
       .select()
       .single();
     
@@ -266,7 +295,7 @@ export const createCategory = async (category: Omit<Category, 'id'>): Promise<Ca
       description: "تم إضافة الفئة بنجاح",
     });
     
-    return data;
+    return mapDbCategoryToCategory(data);
   } catch (error) {
     console.error('Unexpected error creating category:', error);
     toast({
@@ -280,9 +309,15 @@ export const createCategory = async (category: Omit<Category, 'id'>): Promise<Ca
 
 export const updateCategory = async (id: string, updates: Partial<Category>): Promise<Category | null> => {
   try {
+    // Convert to database model format
+    const dbUpdates: Partial<DbCategory> = {};
+    
+    if (updates.name !== undefined) dbUpdates.name = updates.name;
+    if (updates.description !== undefined) dbUpdates.description = updates.description;
+    
     const { data, error } = await supabase
       .from('categories')
-      .update(updates)
+      .update(dbUpdates)
       .eq('id', id)
       .select()
       .single();
@@ -302,7 +337,7 @@ export const updateCategory = async (id: string, updates: Partial<Category>): Pr
       description: "تم تحديث الفئة بنجاح",
     });
     
-    return data;
+    return mapDbCategoryToCategory(data);
   } catch (error) {
     console.error('Unexpected error updating category:', error);
     toast({
@@ -362,7 +397,7 @@ export const fetchCompanyInfo = async (): Promise<CompanyInfo | null> => {
       return null;
     }
     
-    return data;
+    return data ? mapDbCompanyInfoToCompanyInfo(data) : null;
   } catch (error) {
     console.error('Unexpected error fetching company info:', error);
     return null;
@@ -371,9 +406,11 @@ export const fetchCompanyInfo = async (): Promise<CompanyInfo | null> => {
 
 export const updateCompanyInfo = async (updates: Partial<CompanyInfo>): Promise<CompanyInfo | null> => {
   try {
+    const dbUpdates = mapCompanyInfoToDbCompanyInfo(updates);
+    
     const { data, error } = await supabase
       .from('company_info')
-      .update(updates)
+      .update(dbUpdates)
       .eq('id', 1)
       .select()
       .single();
@@ -393,7 +430,7 @@ export const updateCompanyInfo = async (updates: Partial<CompanyInfo>): Promise<
       description: "تم تحديث معلومات الشركة بنجاح",
     });
     
-    return data;
+    return data ? mapDbCompanyInfoToCompanyInfo(data) : null;
   } catch (error) {
     console.error('Unexpected error updating company info:', error);
     toast({

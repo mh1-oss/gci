@@ -61,6 +61,9 @@ const Header = () => {
     setCurrency(currency === "USD" ? "IQD" : "USD");
   };
 
+  // Display email instead of username since there's no username property
+  const displayName = user?.email ? user.email.split('@')[0] : 'المستخدم';
+
   return (
     <header className={`sticky top-0 z-50 bg-white shadow-sm transition-all duration-300 ${isScrolled ? "py-2" : "py-4"}`} dir="rtl">
       <div className="container-custom">
@@ -126,7 +129,7 @@ const Header = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="flex items-center gap-1">
                     <User className="h-4 w-4" />
-                    {user?.username}
+                    {displayName}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
