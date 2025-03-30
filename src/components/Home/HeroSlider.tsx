@@ -5,27 +5,58 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Banner } from "@/data/initialData";
 import { getBanners } from "@/services/dataService";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
 const HeroSlider = () => {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [sliderHeight, setSliderHeight] = useState(70);
   const [textColor, setTextColor] = useState("#ffffff");
+  const [loading, setLoading] = useState(true);
   const videoRefs = useRef<{[key: string]: HTMLVideoElement | null}>({});
 
   useEffect(() => {
-    getBanners().then(data => {
-      setBanners(data);
-      // Set slider height and text color if provided in the banner data
-      if (data.length > 0 && data[0].sliderHeight) {
-        setSliderHeight(data[0].sliderHeight);
-      }
-      if (data.length > 0 && data[0].textColor) {
-        setTextColor(data[0].textColor);
-      }
-    });
+    fetchBanners();
   }, []);
 
+  const fetchBanners = async () => {
+    setLoading(true);
+    try {
+      // First try to get from Supabase
+      const { data, error } = await supabase
+        .from('banners')
+        .select('*')
+        .order('order', { ascending: true });
+        
+      if (error) {
+        console.error("Error fetching banners from Supabase:", error);
+        // Fallback to local data
+        const localBanners = await getBanners();
+        setBanners(localBanners);
+      } else if (data && data.length > 0) {
+        setBanners(data);
+        // Set slider height and text color if provided in the banner data
+        if (data[0].sliderHeight) {
+          setSliderHeight(data[0].sliderHeight);
+        }
+        if (data[0].textColor) {
+          setTextColor(data[0].textColor);
+        }
+      } else {
+        // Fallback to local data if no banners in Supabase
+        const localBanners = await getBanners();
+        setBanners(localBanners);
+      }
+    } catch (error) {
+      console.error("Error fetching banners:", error);
+      // Fallback to local data
+      const localBanners = await getBanners();
+      setBanners(localBanners);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   useEffect(() => {
     if (banners.length === 0) return;
     
@@ -72,8 +103,22 @@ const HeroSlider = () => {
   };
 
   const isVideo = (url: string) => {
-    return url.match(/\.(mp4|webm|ogg)$/i);
+    return url?.match(/\.(mp4|webm|ogg)$/i);
   };
+
+  if (loading) {
+    return (
+      <div 
+        className="relative bg-gray-800 flex items-center justify-center" 
+        style={{ height: `${sliderHeight}vh`, minHeight: "400px" }}
+      >
+        <div className="animate-pulse flex flex-col items-center">
+          <div className="h-8 w-64 bg-gray-700 rounded mb-4"></div>
+          <div className="h-4 w-48 bg-gray-700 rounded"></div>
+        </div>
+      </div>
+    );
+  }
 
   if (banners.length === 0) {
     return null;
@@ -112,16 +157,16 @@ const HeroSlider = () => {
                 playsInline
               />
             )}
-            <div className="container-custom text-center relative z-10" style={{ color: textColor }}>
+            <div className="container-custom text-center relative z-10" style={{ color: banner.textColor || textColor }}>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 animate-fade-in">
                 {banner.title}
               </h1>
               <p className="text-xl md:text-2xl max-w-2xl mx-auto mb-8 animate-fade-in">
                 {banner.subtitle}
               </p>
-              <Link to={banner.ctaLink}>
+              <Link to={banner.ctaLink || '/products'}>
                 <Button size="lg" className="animate-fade-in">
-                  {banner.ctaText}
+                  {banner.ctaText || 'اكتشف المزيد'}
                 </Button>
               </Link>
             </div>
@@ -130,35 +175,39 @@ const HeroSlider = () => {
       })}
       
       {/* Navigation Arrows */}
-      <button 
-        onClick={goToPrevious}
-        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-black/30 hover:bg-black/50 text-white p-2 rounded-full transition-colors"
-        aria-label="Previous slide"
-      >
-        <ChevronRight size={24} />
-      </button>
-      
-      <button 
-        onClick={goToNext}
-        className="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-black/30 hover:bg-black/50 text-white p-2 rounded-full transition-colors"
-        aria-label="Next slide"
-      >
-        <ChevronLeft size={24} />
-      </button>
-      
-      {/* Indicators */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex space-x-2">
-        {banners.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => goToSlide(index)}
-            className={`w-3 h-3 rounded-full transition-all ${
-              index === currentIndex ? "bg-white w-6" : "bg-white/50"
-            }`}
-            aria-label={`Go to slide ${index + 1}`}
-          />
-        ))}
-      </div>
+      {banners.length > 1 && (
+        <>
+          <button 
+            onClick={goToPrevious}
+            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-black/30 hover:bg-black/50 text-white p-2 rounded-full transition-colors"
+            aria-label="Previous slide"
+          >
+            <ChevronRight size={24} />
+          </button>
+          
+          <button 
+            onClick={goToNext}
+            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-black/30 hover:bg-black/50 text-white p-2 rounded-full transition-colors"
+            aria-label="Next slide"
+          >
+            <ChevronLeft size={24} />
+          </button>
+          
+          {/* Indicators */}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex space-x-2">
+            {banners.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => goToSlide(index)}
+                className={`w-3 h-3 rounded-full transition-all ${
+                  index === currentIndex ? "bg-white w-6" : "bg-white/50"
+                }`}
+                aria-label={`Go to slide ${index + 1}`}
+              />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 };

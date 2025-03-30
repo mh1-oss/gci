@@ -71,6 +71,7 @@ const AdminDashboard = () => {
   const getContentActiveTab = () => {
     const path = location.pathname;
     if (path.includes("/admin/content/reviews")) return "reviews";
+    if (path.includes("/admin/content/banners")) return "banners";
     return "about";
   };
 
@@ -165,7 +166,9 @@ const AdminDashboard = () => {
               <Route index element={<AdminOverview />} />
               <Route path="products/*" element={<AdminProducts />} />
               <Route path="categories/*" element={<AdminCategories />} />
-              <Route path="content/*" element={<AdminContent activeTab={getContentActiveTab()} />} />
+              <Route path="content" element={<AdminContent activeTab={getContentActiveTab()} />} />
+              <Route path="content/reviews" element={<AdminContent activeTab="reviews" />} />
+              <Route path="content/banners" element={<AdminContent activeTab="banners" />} />
               <Route path="settings/*" element={<AdminSettings />} />
               <Route path="stock/*" element={<AdminStock />} />
               <Route path="sales/*" element={<AdminSales />} />

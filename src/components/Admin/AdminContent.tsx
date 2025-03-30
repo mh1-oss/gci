@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AdminAbout from "./AdminAbout";
 import AdminReviews from "./AdminReviews";
+import AdminBanners from "./AdminBanners";
 
 interface AdminContentProps {
   activeTab: string;
@@ -31,6 +32,7 @@ const AdminContent = ({ activeTab }: AdminContentProps) => {
         <TabsList className="mb-8">
           <TabsTrigger value="about">صفحة من نحن</TabsTrigger>
           <TabsTrigger value="reviews">المراجعات</TabsTrigger>
+          <TabsTrigger value="banners">البانرات</TabsTrigger>
         </TabsList>
 
         <TabsContent value="about">
@@ -39,6 +41,10 @@ const AdminContent = ({ activeTab }: AdminContentProps) => {
 
         <TabsContent value="reviews">
           <AdminReviews />
+        </TabsContent>
+
+        <TabsContent value="banners">
+          <AdminBanners />
         </TabsContent>
       </Tabs>
     </div>
