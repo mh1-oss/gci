@@ -11,7 +11,7 @@ import {
 export const fetchCategories = async (): Promise<Category[]> => {
   try {
     console.log('Fetching categories...');
-    // Anyone can access categories with the updated RLS policy
+    // Fetch categories directly without RLS check
     const { data, error } = await supabase
       .from('categories')
       .select('*')
