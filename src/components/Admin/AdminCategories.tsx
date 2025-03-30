@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/context/AuthContext';
 import { 
   Card, 
   CardContent, 
@@ -60,9 +59,8 @@ const AdminCategories = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [authError, setAuthError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  const { isAuthenticated, isAdmin } = useAuth();
 
   useEffect(() => {
     loadCategories();
@@ -70,24 +68,15 @@ const AdminCategories = () => {
 
   const loadCategories = async () => {
     setLoading(true);
+    setError(null);
     try {
-      if (!isAuthenticated) {
-        setAuthError("يجب تسجيل الدخول لعرض الفئات");
-        setLoading(false);
-        return;
-      }
-
-      if (!isAdmin) {
-        setAuthError("يجب أن تكون مسؤولاً لإدارة الفئات");
-        setLoading(false);
-        return;
-      }
-
+      console.log("Fetching categories...");
       const fetchedCategories = await fetchCategories();
+      console.log("Fetched categories:", fetchedCategories);
       setCategories(fetchedCategories);
-      setAuthError(null);
-    } catch (error) {
-      console.error("Error fetching categories:", error);
+    } catch (err) {
+      console.error("Error loading categories:", err);
+      setError("حدث خطأ أثناء تحميل الفئات. يرجى المحاولة مرة أخرى.");
       toast({
         title: "خطأ",
         description: "حدث خطأ أثناء جلب الفئات.",
@@ -108,17 +97,10 @@ const AdminCategories = () => {
       return;
     }
 
-    if (!isAuthenticated || !isAdmin) {
-      toast({
-        title: "خطأ في الصلاحيات",
-        description: "ليس لديك صلاحية لإنشاء فئة جديدة",
-        variant: "destructive"
-      });
-      return;
-    }
-
     setIsSaving(true);
+    setError(null);
     try {
+      console.log("Creating new category:", { name, description });
       const newCategory: Omit<Category, 'id'> = { 
         name, 
         description, 
@@ -136,11 +118,12 @@ const AdminCategories = () => {
         setName('');
         setDescription('');
       }
-    } catch (error) {
-      console.error("Error creating category:", error);
+    } catch (err: any) {
+      console.error("Error creating category:", err);
+      setError(err.message || "حدث خطأ غير متوقع أثناء إنشاء الفئة.");
       toast({
         title: "خطأ",
-        description: "حدث خطأ غير متوقع أثناء إنشاء الفئة.",
+        description: err.message || "حدث خطأ غير متوقع أثناء إنشاء الفئة.",
         variant: "destructive"
       });
     } finally {
@@ -149,15 +132,6 @@ const AdminCategories = () => {
   };
 
   const handleEdit = (category: Category) => {
-    if (!isAuthenticated || !isAdmin) {
-      toast({
-        title: "خطأ في الصلاحيات",
-        description: "ليس لديك صلاحية لتعديل الفئات",
-        variant: "destructive"
-      });
-      return;
-    }
-
     setEditMode(true);
     setEditTarget(category);
     setName(category.name);
@@ -177,17 +151,10 @@ const AdminCategories = () => {
 
     if (!editTarget) return;
 
-    if (!isAuthenticated || !isAdmin) {
-      toast({
-        title: "خطأ في الصلاحيات",
-        description: "ليس لديك صلاحية لتعديل الفئات",
-        variant: "destructive"
-      });
-      return;
-    }
-
     setIsSaving(true);
+    setError(null);
     try {
+      console.log("Updating category:", editTarget.id, { name, description });
       const updatedCategoryData: Partial<Category> = {
         name: name,
         description: description
@@ -208,11 +175,12 @@ const AdminCategories = () => {
         setName('');
         setDescription('');
       }
-    } catch (error) {
-      console.error("Error updating category:", error);
+    } catch (err: any) {
+      console.error("Error updating category:", err);
+      setError(err.message || "حدث خطأ غير متوقع أثناء تحديث الفئة.");
       toast({
         title: "خطأ",
-        description: "حدث خطأ غير متوقع أثناء تحديث الفئة.",
+        description: err.message || "حدث خطأ غير متوقع أثناء تحديث الفئة.",
         variant: "destructive"
       });
     } finally {
@@ -221,37 +189,32 @@ const AdminCategories = () => {
   };
 
   const handleDelete = (category: Category) => {
-    if (!isAuthenticated || !isAdmin) {
-      toast({
-        title: "خطأ في الصلاحيات",
-        description: "ليس لديك صلاحية لحذف الفئات",
-        variant: "destructive"
-      });
-      return;
-    }
-
     setDeleteTarget(category);
     setDeleteDialogOpen(true);
   };
 
   const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    
     setIsDeleting(true);
+    setError(null);
     try {
-      const success = await deleteCategory(deleteTarget?.id || '');
-      if (success) {
-        toast({
-          title: "تم الحذف بنجاح",
-          description: "تم حذف الفئة بنجاح."
-        });
-        setCategories(prevCategories => prevCategories.filter(c => c.id !== deleteTarget?.id));
-        setDeleteDialogOpen(false);
-        setDeleteTarget(null);
-      }
-    } catch (error) {
-      console.error("Error deleting category:", error);
+      console.log("Deleting category:", deleteTarget.id);
+      await deleteCategory(deleteTarget.id);
+      
+      toast({
+        title: "تم الحذف بنجاح",
+        description: "تم حذف الفئة بنجاح."
+      });
+      setCategories(prevCategories => prevCategories.filter(c => c.id !== deleteTarget.id));
+      setDeleteDialogOpen(false);
+      setDeleteTarget(null);
+    } catch (err: any) {
+      console.error("Error deleting category:", err);
+      setError(err.message || "حدث خطأ غير متوقع أثناء حذف الفئة.");
       toast({
         title: "خطأ",
-        description: "حدث خطأ غير متوقع أثناء حذف الفئة.",
+        description: err.message || "حدث خطأ غير متوقع أثناء حذف الفئة.",
         variant: "destructive"
       });
     } finally {
@@ -259,25 +222,28 @@ const AdminCategories = () => {
     }
   };
 
-  if (authError) {
-    return (
-      <Alert variant="destructive" className="mb-6">
-        <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>خطأ في الصلاحيات</AlertTitle>
-        <AlertDescription>{authError}</AlertDescription>
-      </Alert>
-    );
-  }
-
   return (
     <div>
+      {error && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>خطأ</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
       <Card>
         <CardHeader className="flex flex-row justify-between items-center">
           <div>
             <CardTitle>إدارة الفئات</CardTitle>
             <CardDescription>إضافة وتعديل وحذف الفئات الموجودة في الموقع</CardDescription>
           </div>
-          <Button onClick={() => setDialogOpen(true)}>
+          <Button onClick={() => {
+            setEditMode(false);
+            setName('');
+            setDescription('');
+            setDialogOpen(true);
+          }}>
             <Plus className="ml-2 h-4 w-4" />
             إضافة فئة جديدة
           </Button>
@@ -332,7 +298,15 @@ const AdminCategories = () => {
         </CardContent>
       </Card>
 
-      <Dialog open={dialogOpen} onOpenChange={() => setDialogOpen(false)}>
+      <Dialog open={dialogOpen} onOpenChange={(open) => {
+        setDialogOpen(open);
+        if (!open) {
+          setEditMode(false);
+          setEditTarget(null);
+          setName('');
+          setDescription('');
+        }
+      }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>{editMode ? 'تعديل فئة' : 'إضافة فئة جديدة'}</DialogTitle>
@@ -391,7 +365,7 @@ const AdminCategories = () => {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={deleteDialogOpen} onOpenChange={() => setDeleteDialogOpen(false)}>
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>هل أنت متأكد؟</AlertDialogTitle>

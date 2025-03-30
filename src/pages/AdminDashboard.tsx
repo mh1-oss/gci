@@ -1,5 +1,5 @@
 
-import { Routes, Route } from "react-router-dom";
+import { useNavigate, Route, Routes } from "react-router-dom";
 import AdminAuthCheck from "@/components/Admin/AdminAuthCheck";
 import AdminNavTabs from "@/components/Admin/AdminNavTabs";
 import AdminContent from "@/components/Admin/AdminContent";
@@ -11,6 +11,8 @@ import AdminStock from "@/components/Admin/AdminStock";
 import AdminSales from "@/components/Admin/AdminSales";
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
+
   return (
     <AdminAuthCheck>
       <div className="py-6" dir="rtl">

@@ -2,14 +2,11 @@
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import type { CompanyInfo } from '@/data/initialData';
-import {
-  mapDbCompanyInfoToCompanyInfo,
-  mapCompanyInfoToDbCompanyInfo
-} from '@/utils/modelMappers';
 
 // Company Info
 export const fetchCompanyInfo = async (): Promise<CompanyInfo | null> => {
   try {
+    console.log('Fetching company info...');
     const { data, error } = await supabase
       .from('company_info')
       .select('*')
@@ -21,7 +18,26 @@ export const fetchCompanyInfo = async (): Promise<CompanyInfo | null> => {
       return null;
     }
     
-    if (!data) return null;
+    if (!data) {
+      console.log('No company info found');
+      return null;
+    }
+    
+    console.log('Raw company data:', data);
+
+    // Parse the contact data safely
+    let contactObj: any = {};
+    if (data.contact) {
+      try {
+        if (typeof data.contact === 'string') {
+          contactObj = JSON.parse(data.contact);
+        } else if (typeof data.contact === 'object') {
+          contactObj = data.contact;
+        }
+      } catch (err) {
+        console.error('Error parsing contact JSON:', err);
+      }
+    }
 
     // Map the data to the CompanyInfo type
     return {
@@ -30,12 +46,10 @@ export const fetchCompanyInfo = async (): Promise<CompanyInfo | null> => {
       about: data.about || '',
       logo: data.logo_url || '',
       contact: {
-        address: typeof data.contact === 'object' && data.contact ? (data.contact as any).address || '' : '',
-        phone: typeof data.contact === 'object' && data.contact ? (data.contact as any).phone || '' : '',
-        email: typeof data.contact === 'object' && data.contact ? (data.contact as any).email || '' : '',
-        socialMedia: typeof data.contact === 'object' && data.contact && (data.contact as any).socialMedia 
-          ? (data.contact as any).socialMedia 
-          : {}
+        address: contactObj?.address || '',
+        phone: contactObj?.phone || '',
+        email: contactObj?.email || '',
+        socialMedia: contactObj?.socialMedia || {}
       },
       exchangeRate: 1
     };
@@ -47,6 +61,7 @@ export const fetchCompanyInfo = async (): Promise<CompanyInfo | null> => {
 
 export const updateCompanyInfo = async (updates: Partial<CompanyInfo>): Promise<boolean> => {
   try {
+    console.log('Updating company info with:', updates);
     const dbUpdates: any = {};
     
     if (updates.name !== undefined) dbUpdates.name = updates.name;
@@ -55,6 +70,7 @@ export const updateCompanyInfo = async (updates: Partial<CompanyInfo>): Promise<
     if (updates.logo !== undefined) dbUpdates.logo_url = updates.logo;
     
     if (updates.contact) {
+      // Make sure contact data is an object
       dbUpdates.contact = {
         address: updates.contact.address || '',
         email: updates.contact.email || '',
@@ -62,6 +78,8 @@ export const updateCompanyInfo = async (updates: Partial<CompanyInfo>): Promise<
         socialMedia: updates.contact.socialMedia || {}
       };
     }
+    
+    console.log('Database updates:', dbUpdates);
     
     const { error } = await supabase
       .from('company_info')
@@ -73,6 +91,7 @@ export const updateCompanyInfo = async (updates: Partial<CompanyInfo>): Promise<
       return false;
     }
     
+    console.log('Company info updated successfully');
     return true;
   } catch (error) {
     console.error('Unexpected error updating company info:', error);
