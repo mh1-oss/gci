@@ -9,7 +9,7 @@ import {
   CardTitle 
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, RefreshCw } from 'lucide-react';
 import { 
   fetchCategories, 
   createCategory, 
@@ -49,7 +49,10 @@ const AdminCategories = () => {
       console.log("Fetching categories...");
       const fetchedCategories = await fetchCategories();
       console.log("Fetched categories:", fetchedCategories);
-      setCategories(fetchedCategories);
+      setCategories(fetchedCategories || []);
+      if (fetchedCategories.length === 0) {
+        setError("لم يتم العثور على أي فئات. قد تكون هناك مشكلة في الإتصال بقاعدة البيانات.");
+      }
     } catch (err: any) {
       console.error("Error loading categories:", err);
       setError("حدث خطأ أثناء تحميل الفئات. يرجى المحاولة مرة أخرى.");
@@ -92,6 +95,13 @@ const AdminCategories = () => {
         });
         setDialogOpen(false);
         resetForm();
+      } else {
+        setError("فشل إنشاء الفئة. يرجى المحاولة مرة أخرى.");
+        toast({
+          title: "خطأ",
+          description: "فشل إنشاء الفئة. يرجى المحاولة مرة أخرى.",
+          variant: "destructive"
+        });
       }
     } catch (err: any) {
       console.error("Error creating category:", err);
@@ -211,6 +221,10 @@ const AdminCategories = () => {
     resetForm();
   };
 
+  const handleRefresh = () => {
+    loadCategories();
+  };
+
   return (
     <div>
       <ErrorAlert error={error} />
@@ -221,10 +235,16 @@ const AdminCategories = () => {
             <CardTitle>إدارة الفئات</CardTitle>
             <CardDescription>إضافة وتعديل وحذف الفئات الموجودة في الموقع</CardDescription>
           </div>
-          <Button onClick={handleAddNew}>
-            <Plus className="ml-2 h-4 w-4" />
-            إضافة فئة جديدة
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleRefresh} variant="outline">
+              <RefreshCw className="ml-2 h-4 w-4" />
+              تحديث
+            </Button>
+            <Button onClick={handleAddNew}>
+              <Plus className="ml-2 h-4 w-4" />
+              إضافة فئة جديدة
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <CategoryTable 
