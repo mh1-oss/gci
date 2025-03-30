@@ -32,89 +32,71 @@ const AdminDashboard = () => {
     queryKey: ['dashboardStats'],
     queryFn: async () => {
       try {
-        // Use a single Supabase call to reduce auth checks and avoid recursion issues
-        const { data: statsData, error: statsError } = await supabase.rpc(
-          'get_dashboard_stats'
-        );
+        console.log("Fetching dashboard stats...");
+        
+        // Fetch product count
+        const { count: productCount, error: productsError } = await supabase
+          .from('products')
+          .select('*', { count: 'exact', head: true });
 
-        if (statsError) {
-          console.error("Error fetching dashboard stats via RPC:", statsError);
-          // Fallback to direct counts if RPC fails
-          
-          // Fetch product count
-          const { count: productCount, error: productsError } = await supabase
-            .from('products')
-            .select('*', { count: 'exact', head: true });
-
-          if (productsError) {
-            console.error("Error fetching product count:", productsError);
-            throw productsError;
-          }
-
-          // Fetch category count
-          const { count: categoryCount, error: categoriesError } = await supabase
-            .from('categories')
-            .select('*', { count: 'exact', head: true });
-
-          if (categoriesError) {
-            console.error("Error fetching category count:", categoriesError);
-            throw categoriesError;
-          }
-
-          // Fetch order count
-          const { count: orderCount, error: ordersError } = await supabase
-            .from('orders')
-            .select('*', { count: 'exact', head: true });
-
-          if (ordersError) {
-            console.error("Error fetching order count:", ordersError);
-            throw ordersError;
-          }
-
-          // Fetch recent sales (last 7 days)
-          const sevenDaysAgo = new Date();
-          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-          
-          // Fix: Convert date to ISO string for the query
-          const sevenDaysAgoISOString = sevenDaysAgo.toISOString();
-          
-          const { data: recentSalesData, error: salesError } = await supabase
-            .from('sales')
-            .select('total_amount')
-            .gte('created_at', sevenDaysAgoISOString);
-
-          if (salesError) {
-            console.error("Error fetching recent sales:", salesError);
-            throw salesError;
-          }
-
-          // Calculate total sales amount - Fix: Ensure total_amount is converted to a number
-          const recentSalesTotal = recentSalesData?.reduce(
-            (sum, sale) => sum + (typeof sale.total_amount === 'string' ? parseFloat(sale.total_amount) : Number(sale.total_amount)), 
-            0
-          ) || 0;
-          
-          const newStats = {
-            productCount: productCount || 0,
-            categoryCount: categoryCount || 0,
-            orderCount: orderCount || 0,
-            recentSales: recentSalesTotal
-          };
-          
-          setStats(newStats);
-          return newStats;
-        } else {
-          // If RPC was successful, use the returned data
-          const newStats = {
-            productCount: statsData.product_count || 0,
-            categoryCount: statsData.category_count || 0,
-            orderCount: statsData.order_count || 0,
-            recentSales: statsData.recent_sales || 0
-          };
-          
-          setStats(newStats);
-          return newStats;
+        if (productsError) {
+          console.error("Error fetching product count:", productsError);
+          throw productsError;
         }
+
+        // Fetch category count
+        const { count: categoryCount, error: categoriesError } = await supabase
+          .from('categories')
+          .select('*', { count: 'exact', head: true });
+
+        if (categoriesError) {
+          console.error("Error fetching category count:", categoriesError);
+          throw categoriesError;
+        }
+
+        // Fetch order count
+        const { count: orderCount, error: ordersError } = await supabase
+          .from('orders')
+          .select('*', { count: 'exact', head: true });
+
+        if (ordersError) {
+          console.error("Error fetching order count:", ordersError);
+          throw ordersError;
+        }
+
+        // Fetch recent sales (last 7 days)
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        
+        // Convert date to ISO string for the query
+        const sevenDaysAgoISOString = sevenDaysAgo.toISOString();
+        
+        const { data: recentSalesData, error: salesError } = await supabase
+          .from('sales')
+          .select('total_amount')
+          .gte('created_at', sevenDaysAgoISOString);
+
+        if (salesError) {
+          console.error("Error fetching recent sales:", salesError);
+          throw salesError;
+        }
+
+        // Calculate total sales amount
+        const recentSalesTotal = recentSalesData?.reduce(
+          (sum, sale) => sum + (typeof sale.total_amount === 'string' ? parseFloat(sale.total_amount) : Number(sale.total_amount)), 
+          0
+        ) || 0;
+        
+        const newStats = {
+          productCount: productCount || 0,
+          categoryCount: categoryCount || 0,
+          orderCount: orderCount || 0,
+          recentSales: recentSalesTotal
+        };
+        
+        console.log("Dashboard stats fetched:", newStats);
+        setStats(newStats);
+        return newStats;
       } catch (error) {
         console.error("Error fetching dashboard stats:", error);
         toast({

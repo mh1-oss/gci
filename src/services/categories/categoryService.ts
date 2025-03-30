@@ -55,9 +55,6 @@ export const createCategory = async (category: Omit<Category, 'id'>): Promise<Ca
     // Convert to database model format
     const dbCategory = mapCategoryToDbCategory(category);
     
-    // We will no longer check for authentication here, since that's causing recursion issues
-    // Instead, we rely on RLS policies to handle permissions
-    
     const { data, error } = await supabase
       .from('categories')
       .insert([dbCategory])
@@ -78,9 +75,6 @@ export const createCategory = async (category: Omit<Category, 'id'>): Promise<Ca
 
 export const updateCategory = async (id: string, updates: Partial<Category>): Promise<Category | null> => {
   try {
-    // We will no longer check for authentication here, since that's causing recursion issues
-    // Instead, we rely on RLS policies to handle permissions
-    
     // Convert to database model format
     const dbUpdates: Partial<DbCategory> = {};
     
@@ -108,9 +102,6 @@ export const updateCategory = async (id: string, updates: Partial<Category>): Pr
 
 export const deleteCategory = async (id: string): Promise<boolean> => {
   try {
-    // We will no longer check for authentication here, since that's causing recursion issues
-    // Instead, we rely on RLS policies to handle permissions
-    
     const { error } = await supabase
       .from('categories')
       .delete()
