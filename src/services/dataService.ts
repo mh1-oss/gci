@@ -1,3 +1,4 @@
+
 import { Category, Product, Review, Banner, CompanyInfo } from "@/data/initialData";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -245,15 +246,15 @@ export const getCompanyInfo = async (): Promise<CompanyInfo | null> => {
 
     if (!data) return null;
     
-    let contactData = data.contact;
-    if (typeof contactData !== 'object' || contactData === null) {
-      contactData = {
-        address: '',
-        phone: '',
-        email: '',
-        socialMedia: {}
-      };
-    }
+    // Fixed: Properly handle the contact object with type safety
+    const contactData = typeof data.contact === 'object' && data.contact !== null 
+      ? data.contact 
+      : {
+          address: '',
+          phone: '',
+          email: '',
+          socialMedia: {}
+        };
     
     return {
       name: data.name,
@@ -261,10 +262,13 @@ export const getCompanyInfo = async (): Promise<CompanyInfo | null> => {
       about: data.about || '',
       logo: data.logo_url || '/placeholder.svg',
       contact: {
-        address: contactData.address || '',
-        phone: contactData.phone || '',
-        email: contactData.email || '',
-        socialMedia: contactData.socialMedia || {}
+        address: typeof contactData === 'object' && 'address' in contactData ? String(contactData.address || '') : '',
+        phone: typeof contactData === 'object' && 'phone' in contactData ? String(contactData.phone || '') : '',
+        email: typeof contactData === 'object' && 'email' in contactData ? String(contactData.email || '') : '',
+        socialMedia: typeof contactData === 'object' && 'socialMedia' in contactData && 
+          typeof contactData.socialMedia === 'object' && contactData.socialMedia !== null 
+          ? contactData.socialMedia as Record<string, string> 
+          : {}
       },
       exchangeRate: 1
     };

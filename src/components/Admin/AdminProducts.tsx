@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Routes, Route, Link, useNavigate } from "react-router-dom";
 import { Product, Category, MediaItem } from "@/data/initialData";
@@ -559,7 +560,7 @@ const ProductList = () => {
     try {
       setFormLoading(true);
       
-      const updatedProduct = await updateProduct(editingProduct.id, {
+      const updatedProductData = {
         name: formData.name,
         description: formData.description,
         price: parseFloat(formData.price),
@@ -569,16 +570,28 @@ const ProductList = () => {
         colors: formData.colors.split(",").map(color => color.trim()).filter(color => color),
         mediaGallery: formData.mediaGallery,
         specsPdf: formData.specsPdf,
-      });
+      };
       
-      if (updatedProduct) {
-        setProducts(prevProducts => 
-          prevProducts.map(p => p.id === editingProduct.id ? updatedProduct : p)
-        );
+      const success = await updateProduct(editingProduct.id, updatedProductData);
+      
+      if (success) {
+        // Fixed: Ensure we're returning a Product array and not mixing with boolean values
+        setProducts(prevProducts => {
+          return prevProducts.map(p => {
+            if (p.id === editingProduct.id) {
+              return {
+                ...p,
+                ...updatedProductData,
+                id: editingProduct.id // ensure we keep the original ID
+              };
+            }
+            return p;
+          });
+        });
         
         toast({
           title: "Product Updated",
-          description: `${updatedProduct.name} has been updated.`,
+          description: `${editingProduct.name} has been updated.`,
           variant: "default",
         });
       } else {
@@ -778,16 +791,18 @@ const AddProductForm = () => {
         specsPdf: formData.specsPdf,
       };
       
-      const newProduct = await addProduct(newProductData);
+      const success = await addProduct(newProductData);
       
-      if (newProduct) {
+      if (success) {
         toast({
           title: "Product Added",
-          description: `${typeof newProduct === 'object' ? newProduct.name : 'New product'} has been added successfully.`,
+          description: "New product has been added successfully.",
           variant: "default",
         });
         
         navigate("/admin/products");
+      } else {
+        throw new Error("Failed to add product");
       }
     } catch (error) {
       console.error("Error adding product:", error);
