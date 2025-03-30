@@ -14,11 +14,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Header = () => {
   const location = useLocation();
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
   const [categoryData, setCategoryData] = useState(categories);
   const { isAuthenticated, isAdmin, logout } = useAuth();
@@ -161,7 +161,7 @@ const Header = () => {
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="left">
+                <DropdownMenuContent align="end">
                   {isAdmin && (
                     <DropdownMenuItem asChild>
                       <Link to="/admin">
