@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,7 +9,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { 
   Card,
   CardContent, 
-  CardFooter, 
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
@@ -27,18 +25,12 @@ import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { getProducts } from "@/services/dataService";
-import {
-  StockTransaction,
-  mapDbStockTransactionToStockTransaction,
-  mapStockTransactionToDbStockTransaction,
-  DbStockTransaction
-} from "@/utils/modelMappers";
+import { StockTransaction } from "@/utils/modelMappers";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Product } from "@/data/initialData";
+import { getStockTransactions, addStockTransaction, calculateProductStock } from "@/services/stock/stockService";
 
 const AdminStock = () => {
-  const [transactions, setTransactions] = useState<StockTransaction[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<string>("");
   const [transactionType, setTransactionType] = useState<"in" | "out">("in");
@@ -47,65 +39,23 @@ const AdminStock = () => {
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
   
-  const { data: products = [] } = useQuery({
+  // Use React Query for data fetching
+  const { 
+    data: products = [],
+    isLoading: productsLoading 
+  } = useQuery({
     queryKey: ['products'],
     queryFn: getProducts
   });
 
-  useEffect(() => {
-    loadTransactions();
-  }, []);
-
-  const loadTransactions = async () => {
-    try {
-      setLoading(true);
-      
-      // Fetch all stock transactions
-      const { data: transactionData, error: transactionError } = await supabase
-        .from('stock_transactions')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (transactionError) {
-        console.error('Error loading transactions:', transactionError);
-        toast({
-          title: "خطأ في تحميل المعاملات",
-          description: transactionError.message,
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      // Fetch products for product names
-      const { data: productData } = await supabase
-        .from('products')
-        .select('id, name');
-      
-      const productMap = (productData || []).reduce((acc, product) => {
-        acc[product.id] = product.name;
-        return acc;
-      }, {} as Record<string, string>);
-      
-      // Map transactions with product names
-      const mappedTransactions = (transactionData || []).map((transaction: DbStockTransaction) => 
-        mapDbStockTransactionToStockTransaction(
-          transaction, 
-          productMap[transaction.product_id] || 'منتج غير معروف'
-        )
-      );
-      
-      setTransactions(mappedTransactions);
-    } catch (error) {
-      console.error('Unexpected error loading transactions:', error);
-      toast({
-        title: "خطأ غير متوقع",
-        description: "حدث خطأ أثناء تحميل معاملات المخزون",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { 
+    data: transactions = [], 
+    isLoading: transactionsLoading,
+    refetch: refetchTransactions 
+  } = useQuery({
+    queryKey: ['stockTransactions'],
+    queryFn: getStockTransactions
+  });
 
   const handleAddTransaction = async () => {
     if (!selectedProduct) {
@@ -140,43 +90,31 @@ const AdminStock = () => {
         return;
       }
       
-      const transaction = {
+      const newTransaction = {
         product_id: selectedProduct,
         quantity: quantity,
         transaction_type: transactionType,
         notes: notes || null
       };
       
-      const dbTransaction = mapStockTransactionToDbStockTransaction(transaction);
+      const success = await addStockTransaction(newTransaction);
       
-      const { error } = await supabase
-        .from('stock_transactions')
-        .insert([dbTransaction]);
-      
-      if (error) {
-        console.error('Error adding transaction:', error);
+      if (success) {
         toast({
-          title: "خطأ في إضافة المعاملة",
-          description: error.message,
-          variant: "destructive",
+          title: "تمت الإضافة بنجاح",
+          description: `تمت إضافة معاملة جديدة لـ ${productObj.name}`,
         });
-        return;
+        
+        // Reset form and close dialog
+        setSelectedProduct("");
+        setTransactionType("in");
+        setQuantity(1);
+        setNotes("");
+        setShowAddDialog(false);
+        
+        // Refresh transactions list
+        refetchTransactions();
       }
-      
-      toast({
-        title: "تمت الإضافة بنجاح",
-        description: `تمت إضافة معاملة جديدة لـ ${productObj.name}`,
-      });
-      
-      // Reset form and close dialog
-      setSelectedProduct("");
-      setTransactionType("in");
-      setQuantity(1);
-      setNotes("");
-      setShowAddDialog(false);
-      
-      // Refresh transactions list
-      loadTransactions();
     } catch (error) {
       console.error('Unexpected error adding transaction:', error);
       toast({
@@ -189,23 +127,7 @@ const AdminStock = () => {
     }
   };
 
-  const productStockLevels = transactions.reduce((acc, transaction) => {
-    if (!acc[transaction.product_id]) {
-      acc[transaction.product_id] = {
-        product_id: transaction.product_id,
-        product_name: transaction.product_name,
-        stock: 0
-      };
-    }
-    
-    if (transaction.transaction_type === 'in') {
-      acc[transaction.product_id].stock += transaction.quantity;
-    } else {
-      acc[transaction.product_id].stock -= transaction.quantity;
-    }
-    
-    return acc;
-  }, {} as Record<string, { product_id: string, product_name: string, stock: number }>);
+  const productStockLevels = calculateProductStock(transactions);
 
   return (
     <div className="space-y-6" dir="rtl">
@@ -321,7 +243,11 @@ const AdminStock = () => {
             <CardTitle>مستويات المخزون الحالية</CardTitle>
           </CardHeader>
           <CardContent>
-            {Object.values(productStockLevels).length === 0 ? (
+            {productsLoading ? (
+              <div className="flex justify-center items-center h-40">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-brand-blue"></div>
+              </div>
+            ) : Object.values(productStockLevels).length === 0 ? (
               <div className="text-center py-6">
                 <Box className="h-12 w-12 mx-auto text-gray-400 mb-2" />
                 <p className="text-gray-500">لا توجد بيانات مخزون متاحة</p>
@@ -365,7 +291,7 @@ const AdminStock = () => {
           <CardTitle>سجل معاملات المخزون</CardTitle>
         </CardHeader>
         <CardContent>
-          {loading ? (
+          {transactionsLoading ? (
             <div className="flex justify-center items-center h-40">
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-brand-blue"></div>
             </div>
