@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, Routes, Route, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -20,7 +19,7 @@ import { AlertCircle, ArrowRight, Plus, Search, Trash } from "lucide-react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
-import { fetchProducts } from "@/services/dataService";
+import { getProducts } from "@/services/dataService";
 import { 
   Sale, 
   SaleItem,
@@ -46,7 +45,6 @@ const SalesList = () => {
     try {
       setLoading(true);
       
-      // Fetch all sales
       const { data: salesData, error: salesError } = await supabase
         .from('sales')
         .select('*')
@@ -62,7 +60,6 @@ const SalesList = () => {
         return;
       }
 
-      // Fetch products for product names
       const { data: products } = await supabase
         .from('products')
         .select('id, name');
@@ -72,7 +69,6 @@ const SalesList = () => {
         return acc;
       }, {} as Record<string, string>);
 
-      // For each sale, fetch its items
       const salesWithItems = await Promise.all(
         (salesData || []).map(async (sale: DbSale) => {
           const { data: itemsData, error: itemsError } = await supabase
@@ -113,7 +109,6 @@ const SalesList = () => {
 
   const deleteSale = async (id: string) => {
     try {
-      // Delete sale (will cascade delete sale items due to foreign key constraint)
       const { error } = await supabase
         .from('sales')
         .delete()
@@ -134,7 +129,6 @@ const SalesList = () => {
         description: "تم حذف المبيعة بنجاح",
       });
       
-      // Refresh sales list
       loadSales();
     } catch (error) {
       console.error('Unexpected error deleting sale:', error);
@@ -242,7 +236,6 @@ const SaleDetails = () => {
     try {
       setLoading(true);
       
-      // Fetch sale details
       const { data: saleData, error: saleError } = await supabase
         .from('sales')
         .select('*')
@@ -260,7 +253,6 @@ const SaleDetails = () => {
         return;
       }
 
-      // Fetch products for product names
       const { data: products } = await supabase
         .from('products')
         .select('id, name');
@@ -270,7 +262,6 @@ const SaleDetails = () => {
         return acc;
       }, {} as Record<string, string>);
 
-      // Fetch sale items
       const { data: itemsData, error: itemsError } = await supabase
         .from('sale_items')
         .select('*')
@@ -436,7 +427,7 @@ const NewSale = () => {
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ['products'],
-    queryFn: fetchProducts
+    queryFn: getProducts
   });
 
   const addToCart = (product: Product) => {
@@ -489,7 +480,6 @@ const NewSale = () => {
     try {
       setIsSubmitting(true);
       
-      // Create the sale record
       const saleData = {
         customer_name: customerName,
         customer_phone: customerPhone || null,
@@ -513,7 +503,6 @@ const NewSale = () => {
         return;
       }
       
-      // Create sale items for each product in cart
       const saleItems = cartItems.map(item => ({
         sale_id: newSale.id,
         product_id: item.product.id,
@@ -536,7 +525,6 @@ const NewSale = () => {
         return;
       }
       
-      // Create stock transactions (out) for each product sold
       const stockTransactions = cartItems.map(item => ({
         product_id: item.product.id,
         quantity: item.quantity,
@@ -553,7 +541,6 @@ const NewSale = () => {
         description: "تم إنشاء المبيعة وتسجيل المعاملة بنجاح",
       });
       
-      // Navigate to sales list
       navigate('/admin/sales');
     } catch (error) {
       console.error('Unexpected error during checkout:', error);
@@ -637,7 +624,7 @@ const NewSale = () => {
                   
                   <TabsContent value="all" className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {products.map((product) => (
+                      {products && products.map((product: Product) => (
                         <Card key={product.id} className="overflow-hidden">
                           <CardContent className="p-3">
                             <div className="flex flex-col h-full">

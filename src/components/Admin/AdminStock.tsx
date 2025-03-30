@@ -26,7 +26,7 @@ import { AlertCircle, ArrowDown, ArrowUp, Box, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
-import { fetchProducts } from "@/services/dataService";
+import { getProducts } from "@/services/dataService";
 import {
   StockTransaction,
   mapDbStockTransactionToStockTransaction,
@@ -49,7 +49,7 @@ const AdminStock = () => {
   
   const { data: products = [] } = useQuery({
     queryKey: ['products'],
-    queryFn: fetchProducts
+    queryFn: getProducts
   });
 
   useEffect(() => {
@@ -234,7 +234,7 @@ const AdminStock = () => {
                     <SelectValue placeholder="اختر منتج" />
                   </SelectTrigger>
                   <SelectContent>
-                    {products.map(product => (
+                    {products && products.map((product: Product) => (
                       <SelectItem key={product.id} value={product.id}>
                         {product.name}
                       </SelectItem>
