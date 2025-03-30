@@ -23,13 +23,8 @@ const LoginPage = () => {
   useEffect(() => {
     if (isAuthenticated && !loading) {
       console.log('User is authenticated, redirecting to admin');
-      if (isAdmin) {
-        navigate('/admin');
-      } else {
-        // If authenticated but not admin, still redirect to admin
-        // (The AdminDashboard component will handle showing the access denied message)
-        navigate('/admin');
-      }
+      // Always redirect to admin, the dashboard will handle access control
+      navigate('/admin');
     }
   }, [isAuthenticated, isAdmin, loading, navigate]);
 
@@ -54,6 +49,7 @@ const LoginPage = () => {
           title: "تم تسجيل الدخول بنجاح",
           description: "مرحبًا بك مجددًا!",
         });
+        // Always navigate to admin - the dashboard will handle access control
         navigate('/admin');
       } else {
         setErrorMessage('فشل تسجيل الدخول. يرجى التحقق من بيانات الاعتماد الخاصة بك.');

@@ -26,12 +26,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const checkIsAdmin = async (userId: string): Promise<boolean> => {
     try {
       console.log('Checking admin status for user:', userId);
+      
+      // Use the is_admin() function we created to avoid recursion issues
       const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .eq('role', 'admin')
-        .single();
+        .rpc('is_admin');
       
       if (error) {
         console.error('Error checking admin role:', error);
@@ -39,7 +37,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
       
       console.log('Admin check result:', data);
-      return data !== null;
+      return !!data; // Convert to boolean
     } catch (error) {
       console.error('Unexpected error checking admin role:', error);
       return false;
