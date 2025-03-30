@@ -50,7 +50,7 @@ export const fetchCategoryById = async (id: string): Promise<Category | null> =>
   }
 };
 
-export const createCategory = async (category: Omit<Category, 'id'>): Promise<Category | null> => {
+export const createCategory = async (category: Omit<Category, 'id'>): Promise<Category> => {
   try {
     // Convert to database model format
     const dbCategory = mapCategoryToDbCategory(category);
@@ -73,7 +73,7 @@ export const createCategory = async (category: Omit<Category, 'id'>): Promise<Ca
   }
 };
 
-export const updateCategory = async (id: string, updates: Partial<Category>): Promise<Category | null> => {
+export const updateCategory = async (id: string, updates: Partial<Category>): Promise<Category> => {
   try {
     // Convert to database model format
     const dbUpdates: Partial<DbCategory> = {};

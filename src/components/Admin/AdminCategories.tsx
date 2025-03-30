@@ -44,7 +44,7 @@ import {
   createCategory, 
   updateCategory, 
   deleteCategory 
-} from '@/services'; // Updated import path
+} from '@/services/categories/categoryService';
 import { Category } from '@/data/initialData';
 
 const AdminCategories = () => {
