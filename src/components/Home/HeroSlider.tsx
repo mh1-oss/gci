@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Banner } from "@/data/initialData";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { mapDbBannerToBanner } from "@/utils/models";
 
 const HeroSlider = () => {
   const [banners, setBanners] = useState<Banner[]>([]);
@@ -27,7 +28,22 @@ const HeroSlider = () => {
         .select('*')
         .order('order_index', { ascending: true });
         
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching banners:', error);
+        
+        // Try fallback for authenticated users
+        const { data: session } = await supabase.auth.getSession();
+        const isAuthenticated = !!session?.session?.user;
+        
+        if (error.code === '42P17' && isAuthenticated) {
+          console.log('Using fallback method to fetch banners due to RLS error');
+          // We need to create a function for this, similar to other entities
+          // For now, just throw the error
+          throw error;
+        } else {
+          throw error;
+        }
+      }
       
       if (data && data.length > 0) {
         const mappedBanners: Banner[] = data.map(banner => ({

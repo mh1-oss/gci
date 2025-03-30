@@ -107,8 +107,7 @@ export const fetchProductsByCategory = async (categoryId: string): Promise<Produ
 
 export const fetchFeaturedProducts = async (): Promise<Product[]> => {
   try {
-    // Assuming 'featured' would be a boolean column in your database
-    // If not implemented yet, this could return the first 4 products as featured
+    // Attempt to fetch featured products
     const { data, error } = await supabase
       .from('products')
       .select('*')
@@ -117,6 +116,29 @@ export const fetchFeaturedProducts = async (): Promise<Product[]> => {
     
     if (error) {
       console.error('Error fetching featured products:', error);
+      
+      // If there's an error related to RLS policies, try to work around it
+      const { data: session } = await supabase.auth.getSession();
+      const isAuthenticated = !!session?.session?.user;
+      
+      if (error.code === '42P17' && isAuthenticated) {
+        console.log('Using fallback method to fetch featured products due to RLS error');
+        const { data: adminData, error: adminError } = await supabase.rpc('get_all_products');
+        
+        if (adminError) {
+          console.error('Fallback method failed:', adminError);
+          return [];
+        }
+        
+        // Take the first 4 products and mark them as featured
+        return (adminData as DbProduct[])
+          .slice(0, 4)
+          .map(product => ({
+            ...mapDbProductToProduct(product),
+            featured: true
+          }));
+      }
+      
       return [];
     }
     

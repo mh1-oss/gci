@@ -8,3 +8,4 @@ export * from './media/mediaService';
 export * from './sales/salesService';
 export * from './stock/stockService';
 export * from './reviews/reviewsService';
+export * from './banners/bannerService';

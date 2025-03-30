@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Product } from "@/data/initialData";
-import { getFeaturedProducts } from "@/services/dataService";
+import { fetchFeaturedProducts } from "@/services/products/productService";
 import { useCurrency } from "@/context/CurrencyContext";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ const FeaturedProducts = () => {
 
   useEffect(() => {
     setLoading(true);
-    getFeaturedProducts()
+    fetchFeaturedProducts()
       .then(data => {
         setProducts(data);
         setLoading(false);
