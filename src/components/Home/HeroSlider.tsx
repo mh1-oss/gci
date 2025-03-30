@@ -4,8 +4,7 @@ import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Banner } from "@/data/initialData";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
-import { mapDbBannerToBanner } from "@/utils/models";
+import { fetchBanners } from "@/services/banners/bannerService";
 
 const HeroSlider = () => {
   const [banners, setBanners] = useState<Banner[]>([]);
@@ -16,69 +15,27 @@ const HeroSlider = () => {
   const videoRefs = useRef<{[key: string]: HTMLVideoElement | null}>({});
 
   useEffect(() => {
-    fetchBanners();
-  }, []);
-
-  const fetchBanners = async () => {
-    setLoading(true);
-    try {
-      // Fetch banners from database
-      const { data, error } = await supabase
-        .from('banners')
-        .select('*')
-        .order('order_index', { ascending: true });
+    fetchBanners()
+      .then(data => {
+        setBanners(data);
         
-      if (error) {
-        console.error('Error fetching banners:', error);
-        
-        // Try fallback for authenticated users
-        const { data: session } = await supabase.auth.getSession();
-        const isAuthenticated = !!session?.session?.user;
-        
-        if (error.code === '42P17' && isAuthenticated) {
-          console.log('Using fallback method to fetch banners due to RLS error');
-          // We need to create a function for this, similar to other entities
-          // For now, just throw the error
-          throw error;
-        } else {
-          throw error;
+        if (data.length > 0) {
+          // Set slider height and text color if provided in the banner data
+          if (data[0].sliderHeight) {
+            setSliderHeight(data[0].sliderHeight);
+          }
+          if (data[0].textColor) {
+            setTextColor(data[0].textColor);
+          }
         }
-      }
-      
-      if (data && data.length > 0) {
-        const mappedBanners: Banner[] = data.map(banner => ({
-          id: banner.id,
-          title: banner.title,
-          subtitle: banner.subtitle || '',
-          image: banner.image || '',
-          videoUrl: banner.video_url || '',
-          mediaType: (banner.media_type as "image" | "video") || "image",
-          ctaText: banner.cta_text || 'اكتشف المزيد',
-          ctaLink: banner.cta_link || '/products',
-          orderIndex: banner.order_index || 0,
-          sliderHeight: banner.slider_height || 70,
-          textColor: banner.text_color || '#ffffff'
-        }));
-        
-        setBanners(mappedBanners);
-        
-        // Set slider height and text color if provided in the banner data
-        if (mappedBanners[0].sliderHeight) {
-          setSliderHeight(mappedBanners[0].sliderHeight);
-        }
-        if (mappedBanners[0].textColor) {
-          setTextColor(mappedBanners[0].textColor);
-        }
-      } else {
+        setLoading(false);
+      })
+      .catch(error => {
+        console.error("Error fetching banners:", error);
         setBanners([]);
-      }
-    } catch (error) {
-      console.error("Error fetching banners:", error);
-      setBanners([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+        setLoading(false);
+      });
+  }, []);
   
   useEffect(() => {
     if (banners.length === 0) return;

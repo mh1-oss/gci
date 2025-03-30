@@ -1,6 +1,6 @@
 
 import type { Banner } from '@/data/initialData';
-import { DbBanner } from './types';
+import { DbBanner } from '@/services/banners/bannerService';
 
 export function mapDbBannerToBanner(dbBanner: DbBanner): Banner {
   return {
