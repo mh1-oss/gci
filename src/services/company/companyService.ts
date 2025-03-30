@@ -35,15 +35,21 @@ const extractContactInfo = (contactData: Json | null): CompanyInfo['contact'] =>
   }
 
   // Handle object JSON data
-  if (typeof contactData === 'object') {
+  if (typeof contactData === 'object' && !Array.isArray(contactData)) {
+    // Type guard for object type
+    const objData = contactData as { [key: string]: Json | undefined };
+    
     return {
-      address: typeof contactData.address === 'string' ? contactData.address : '',
-      phone: typeof contactData.phone === 'string' ? contactData.phone : '',
-      email: typeof contactData.email === 'string' ? contactData.email : '',
-      socialMedia: typeof contactData.socialMedia === 'object' && contactData.socialMedia ? contactData.socialMedia : {}
+      address: typeof objData.address === 'string' ? objData.address : '',
+      phone: typeof objData.phone === 'string' ? objData.phone : '',
+      email: typeof objData.email === 'string' ? objData.email : '',
+      socialMedia: typeof objData.socialMedia === 'object' && objData.socialMedia && !Array.isArray(objData.socialMedia) 
+        ? objData.socialMedia as Record<string, string> 
+        : {}
     };
   }
 
+  // If it's an array or other unsupported type, return default
   return defaultContact;
 };
 
