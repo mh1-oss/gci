@@ -1,6 +1,5 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import type { Category } from '@/data/initialData';
 import {
   mapDbCategoryToCategory,
@@ -12,21 +11,22 @@ import {
 export const fetchCategories = async (): Promise<Category[]> => {
   try {
     console.log('Fetching categories...');
-    // Use anon key for public access to categories - no auth needed
+    // Anyone can access categories with the updated RLS policy
     const { data, error } = await supabase
       .from('categories')
-      .select('*');
+      .select('*')
+      .order('name');
     
     if (error) {
       console.error('Error fetching categories:', error);
-      return [];
+      throw error;
     }
     
     console.log('Categories fetched:', data);
     return (data || []).map(mapDbCategoryToCategory);
   } catch (error) {
     console.error('Unexpected error fetching categories:', error);
-    return [];
+    throw error;
   }
 };
 
@@ -40,21 +40,22 @@ export const fetchCategoryById = async (id: string): Promise<Category | null> =>
     
     if (error) {
       console.error('Error fetching category by id:', error);
-      return null;
+      throw error;
     }
     
     return data ? mapDbCategoryToCategory(data) : null;
   } catch (error) {
     console.error('Unexpected error fetching category by id:', error);
-    return null;
+    throw error;
   }
 };
 
 export const createCategory = async (category: Omit<Category, 'id'>): Promise<Category | null> => {
   try {
+    // Convert to database model format
     const dbCategory = mapCategoryToDbCategory(category);
     
-    // Check if user is authenticated via the auth status
+    // Check if user is authenticated
     const { data: sessionData } = await supabase.auth.getSession();
     if (!sessionData.session) {
       throw new Error("Authentication required to create category");
@@ -68,7 +69,7 @@ export const createCategory = async (category: Omit<Category, 'id'>): Promise<Ca
     
     if (error) {
       console.error('Error creating category:', error);
-      throw new Error(error.message);
+      throw error;
     }
     
     return mapDbCategoryToCategory(data);
@@ -101,7 +102,7 @@ export const updateCategory = async (id: string, updates: Partial<Category>): Pr
     
     if (error) {
       console.error('Error updating category:', error);
-      throw new Error(error.message);
+      throw error;
     }
     
     return mapDbCategoryToCategory(data);
@@ -126,7 +127,7 @@ export const deleteCategory = async (id: string): Promise<boolean> => {
     
     if (error) {
       console.error('Error deleting category:', error);
-      throw new Error(error.message);
+      throw error;
     }
     
     return true;

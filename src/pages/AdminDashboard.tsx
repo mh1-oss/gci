@@ -1,14 +1,8 @@
 
-import { useNavigate, Route, Routes } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import AdminAuthCheck from "@/components/Admin/AdminAuthCheck";
 import AdminNavTabs from "@/components/Admin/AdminNavTabs";
-import AdminContent from "@/components/Admin/AdminContent";
-import AdminProducts from "@/components/Admin/AdminProducts";
-import AdminCategories from "@/components/Admin/AdminCategories";
-import AdminSettings from "@/components/Admin/AdminSettings";
-import AdminOverview from "@/components/Admin/AdminOverview";
-import AdminStock from "@/components/Admin/AdminStock";
-import AdminSales from "@/components/Admin/AdminSales";
+import AdminTabContent from "@/components/Admin/AdminTabContent";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -26,19 +20,7 @@ const AdminDashboard = () => {
 
           <AdminNavTabs />
           
-          <div className="p-6 bg-white rounded-lg shadow-sm min-h-[500px]">
-            <Routes>
-              <Route index element={<AdminOverview />} />
-              <Route path="products/*" element={<AdminProducts />} />
-              <Route path="categories/*" element={<AdminCategories />} />
-              <Route path="stock/*" element={<AdminStock />} />
-              <Route path="sales/*" element={<AdminSales />} />
-              <Route path="settings/*" element={<AdminSettings />} />
-              <Route path="content" element={<AdminContent activeTab="about" />} />
-              <Route path="content/reviews" element={<AdminContent activeTab="reviews" />} />
-              <Route path="content/banners" element={<AdminContent activeTab="banners" />} />
-            </Routes>
-          </div>
+          <AdminTabContent />
         </div>
       </div>
     </AdminAuthCheck>

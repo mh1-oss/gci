@@ -2,6 +2,50 @@
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import type { CompanyInfo } from '@/data/initialData';
+import { Json } from "@/integrations/supabase/types";
+
+// Helper function to safely extract contact information from JSON
+const extractContactInfo = (contactData: Json | null): CompanyInfo['contact'] => {
+  // Default contact object
+  const defaultContact = {
+    address: '',
+    phone: '',
+    email: '',
+    socialMedia: {}
+  };
+
+  if (!contactData) {
+    return defaultContact;
+  }
+
+  // Handle string JSON data (needs parsing)
+  if (typeof contactData === 'string') {
+    try {
+      const parsed = JSON.parse(contactData);
+      return {
+        address: typeof parsed.address === 'string' ? parsed.address : '',
+        phone: typeof parsed.phone === 'string' ? parsed.phone : '',
+        email: typeof parsed.email === 'string' ? parsed.email : '',
+        socialMedia: typeof parsed.socialMedia === 'object' && parsed.socialMedia ? parsed.socialMedia : {}
+      };
+    } catch (err) {
+      console.error('Error parsing contact JSON:', err);
+      return defaultContact;
+    }
+  }
+
+  // Handle object JSON data
+  if (typeof contactData === 'object') {
+    return {
+      address: typeof contactData.address === 'string' ? contactData.address : '',
+      phone: typeof contactData.phone === 'string' ? contactData.phone : '',
+      email: typeof contactData.email === 'string' ? contactData.email : '',
+      socialMedia: typeof contactData.socialMedia === 'object' && contactData.socialMedia ? contactData.socialMedia : {}
+    };
+  }
+
+  return defaultContact;
+};
 
 // Company Info
 export const fetchCompanyInfo = async (): Promise<CompanyInfo | null> => {
@@ -25,19 +69,8 @@ export const fetchCompanyInfo = async (): Promise<CompanyInfo | null> => {
     
     console.log('Raw company data:', data);
 
-    // Parse the contact data safely
-    let contactObj: any = {};
-    if (data.contact) {
-      try {
-        if (typeof data.contact === 'string') {
-          contactObj = JSON.parse(data.contact);
-        } else if (typeof data.contact === 'object') {
-          contactObj = data.contact;
-        }
-      } catch (err) {
-        console.error('Error parsing contact JSON:', err);
-      }
-    }
+    // Use the helper function to safely extract contact information
+    const contactInfo = extractContactInfo(data.contact);
 
     // Map the data to the CompanyInfo type
     return {
@@ -45,12 +78,7 @@ export const fetchCompanyInfo = async (): Promise<CompanyInfo | null> => {
       slogan: data.slogan || '',
       about: data.about || '',
       logo: data.logo_url || '',
-      contact: {
-        address: contactObj?.address || '',
-        phone: contactObj?.phone || '',
-        email: contactObj?.email || '',
-        socialMedia: contactObj?.socialMedia || {}
-      },
+      contact: contactInfo,
       exchangeRate: 1
     };
   } catch (error) {
@@ -70,7 +98,7 @@ export const updateCompanyInfo = async (updates: Partial<CompanyInfo>): Promise<
     if (updates.logo !== undefined) dbUpdates.logo_url = updates.logo;
     
     if (updates.contact) {
-      // Make sure contact data is an object
+      // Create a properly structured contact object for the database
       dbUpdates.contact = {
         address: updates.contact.address || '',
         email: updates.contact.email || '',
