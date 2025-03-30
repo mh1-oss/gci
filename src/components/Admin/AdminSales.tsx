@@ -1,179 +1,477 @@
 
 import { useState, useEffect } from "react";
-import { useToast } from "@/components/ui/use-toast";
+import { useNavigate, Routes, Route, Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchProducts } from "@/services/supabaseService";
-import { Product } from "@/data/initialData";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { 
+  Table, 
+  TableHeader, 
+  TableBody, 
+  TableRow, 
+  TableHead, 
+  TableCell 
+} from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Plus, Trash, Search, ShoppingCart, FileText, Printer } from "lucide-react";
+import { AlertCircle, ArrowRight, Plus, Search, Trash } from "lucide-react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
+import { useToast } from "@/hooks/use-toast";
+import { fetchProducts } from "@/services/dataService";
+import { 
+  Sale, 
+  SaleItem,
+  mapDbSaleToSale,
+  mapSaleToDbSale,
+  mapSaleItemToDbSaleItem,
+  DbSale,
+  DbSaleItem
+} from "@/utils/modelMappers";
+import { Product } from "@/data/initialData";
 
-interface CartItem {
-  product: Product;
-  quantity: number;
-}
-
-interface Sale {
-  id: string;
-  customer_name: string;
-  customer_phone: string | null;
-  customer_email: string | null;
-  total_amount: number;
-  created_at: string;
-  items: {
-    id: string;
-    product_name: string;
-    quantity: number;
-    unit_price: number;
-    total_price: number;
-  }[];
-}
-
-const AdminSales = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [cart, setCart] = useState<CartItem[]>([]);
+const SalesList = () => {
   const [sales, setSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
-  const [savingSale, setSavingSale] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showCheckout, setShowCheckout] = useState(false);
-  const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
-  const [showReceiptDialog, setShowReceiptDialog] = useState(false);
-  
-  // Customer information
-  const [customerName, setCustomerName] = useState('');
-  const [customerPhone, setCustomerPhone] = useState('');
-  const [customerEmail, setCustomerEmail] = useState('');
-  
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchData();
+    loadSales();
   }, []);
 
-  const fetchData = async () => {
+  const loadSales = async () => {
     try {
       setLoading(true);
-      const productsData = await fetchProducts();
-      setProducts(productsData);
       
-      await fetchSales();
+      // Fetch all sales
+      const { data: salesData, error: salesError } = await supabase
+        .from('sales')
+        .select('*')
+        .order('created_at', { ascending: false });
       
+      if (salesError) {
+        console.error('Error loading sales:', salesError);
+        toast({
+          title: "خطأ في تحميل المبيعات",
+          description: salesError.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Fetch products for product names
+      const { data: products } = await supabase
+        .from('products')
+        .select('id, name');
+      
+      const productMap = (products || []).reduce((acc, product) => {
+        acc[product.id] = product.name;
+        return acc;
+      }, {} as Record<string, string>);
+
+      // For each sale, fetch its items
+      const salesWithItems = await Promise.all(
+        (salesData || []).map(async (sale: DbSale) => {
+          const { data: itemsData, error: itemsError } = await supabase
+            .from('sale_items')
+            .select('*')
+            .eq('sale_id', sale.id);
+          
+          if (itemsError) {
+            console.error('Error loading sale items:', itemsError);
+            return mapDbSaleToSale(sale, []);
+          }
+          
+          const items = (itemsData || []).map((item: DbSaleItem) => ({
+            id: item.id,
+            product_id: item.product_id,
+            product_name: productMap[item.product_id] || 'منتج غير معروف',
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            total_price: item.total_price
+          }));
+          
+          return mapDbSaleToSale(sale, items);
+        })
+      );
+      
+      setSales(salesWithItems);
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error('Unexpected error loading sales:', error);
       toast({
-        title: "خطأ",
-        description: "فشل في تحميل البيانات",
+        title: "خطأ غير متوقع",
+        description: "حدث خطأ أثناء تحميل المبيعات",
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
   };
-  
-  const fetchSales = async () => {
+
+  const deleteSale = async (id: string) => {
     try {
-      const { data: salesData, error: salesError } = await supabase
+      // Delete sale (will cascade delete sale items due to foreign key constraint)
+      const { error } = await supabase
         .from('sales')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .delete()
+        .eq('id', id);
       
-      if (salesError) throw salesError;
+      if (error) {
+        console.error('Error deleting sale:', error);
+        toast({
+          title: "خطأ في حذف المبيعة",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
       
-      const salesWithItems = await Promise.all(
-        salesData.map(async (sale) => {
-          const { data: itemsData, error: itemsError } = await supabase
-            .from('sale_items')
-            .select(`
-              id,
-              quantity,
-              unit_price,
-              total_price,
-              products(name)
-            `)
-            .eq('sale_id', sale.id);
-          
-          if (itemsError) throw itemsError;
-          
-          return {
-            ...sale,
-            items: itemsData.map(item => ({
-              id: item.id,
-              product_name: item.products?.name || 'Unknown Product',
-              quantity: item.quantity,
-              unit_price: item.unit_price,
-              total_price: item.total_price
-            }))
-          };
-        })
-      );
-      
-      setSales(salesWithItems);
-      
-    } catch (error) {
-      console.error('Error fetching sales:', error);
       toast({
-        title: "خطأ",
-        description: "فشل في تحميل بيانات المبيعات",
+        title: "تم بنجاح",
+        description: "تم حذف المبيعة بنجاح",
+      });
+      
+      // Refresh sales list
+      loadSales();
+    } catch (error) {
+      console.error('Unexpected error deleting sale:', error);
+      toast({
+        title: "خطأ غير متوقع",
+        description: "حدث خطأ أثناء حذف المبيعة",
         variant: "destructive",
       });
     }
   };
 
-  const addToCart = (product: Product) => {
-    setCart(currentCart => {
-      const existingItem = currentCart.find(item => item.product.id === product.id);
+  return (
+    <div className="space-y-4" dir="rtl">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">المبيعات</h2>
+        <Button onClick={() => navigate("/admin/sales/new")}>
+          <Plus className="ml-2 h-4 w-4" />
+          مبيعة جديدة
+        </Button>
+      </div>
       
-      if (existingItem) {
-        return currentCart.map(item => 
-          item.product.id === product.id 
-            ? { ...item, quantity: item.quantity + 1 } 
-            : item
-        );
-      } else {
-        return [...currentCart, { product, quantity: 1 }];
+      {loading ? (
+        <div className="flex justify-center items-center h-40">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-brand-blue"></div>
+        </div>
+      ) : sales.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-10">
+            <AlertCircle className="h-16 w-16 text-gray-400 mb-4" />
+            <p className="text-lg font-medium text-gray-600">لا توجد مبيعات بعد</p>
+            <p className="text-gray-500 mb-6">ابدأ بإضافة مبيعة جديدة</p>
+            <Button onClick={() => navigate("/admin/sales/new")}>
+              <Plus className="ml-2 h-4 w-4" />
+              مبيعة جديدة
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>رقم المبيعة</TableHead>
+                <TableHead>اسم العميل</TableHead>
+                <TableHead>المبلغ الإجمالي</TableHead>
+                <TableHead>عدد المنتجات</TableHead>
+                <TableHead>تاريخ البيع</TableHead>
+                <TableHead>الإجراءات</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sales.map((sale) => (
+                <TableRow key={sale.id}>
+                  <TableCell className="font-medium">
+                    {sale.id.substring(0, 8)}...
+                  </TableCell>
+                  <TableCell>{sale.customer_name}</TableCell>
+                  <TableCell>{sale.total_amount.toLocaleString()} د.ع</TableCell>
+                  <TableCell>{sale.items.length}</TableCell>
+                  <TableCell>
+                    {format(new Date(sale.created_at), 'yyyy/MM/dd', { locale: ar })}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex space-x-2 space-x-reverse">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate(`/admin/sales/${sale.id}`)}
+                      >
+                        عرض
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => deleteSale(sale.id)}
+                      >
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const SaleDetails = () => {
+  const [sale, setSale] = useState<Sale | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const saleId = window.location.pathname.split('/').pop();
+
+  useEffect(() => {
+    if (saleId) {
+      loadSaleDetails(saleId);
+    }
+  }, [saleId]);
+
+  const loadSaleDetails = async (id: string) => {
+    try {
+      setLoading(true);
+      
+      // Fetch sale details
+      const { data: saleData, error: saleError } = await supabase
+        .from('sales')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (saleError) {
+        console.error('Error loading sale details:', saleError);
+        toast({
+          title: "خطأ في تحميل تفاصيل المبيعة",
+          description: saleError.message,
+          variant: "destructive",
+        });
+        navigate('/admin/sales');
+        return;
       }
-    });
+
+      // Fetch products for product names
+      const { data: products } = await supabase
+        .from('products')
+        .select('id, name');
+      
+      const productMap = (products || []).reduce((acc, product) => {
+        acc[product.id] = product.name;
+        return acc;
+      }, {} as Record<string, string>);
+
+      // Fetch sale items
+      const { data: itemsData, error: itemsError } = await supabase
+        .from('sale_items')
+        .select('*')
+        .eq('sale_id', id);
+      
+      if (itemsError) {
+        console.error('Error loading sale items:', itemsError);
+        toast({
+          title: "خطأ في تحميل عناصر المبيعة",
+          description: itemsError.message,
+          variant: "destructive",
+        });
+      }
+      
+      const items = (itemsData || []).map((item: DbSaleItem) => ({
+        id: item.id,
+        product_id: item.product_id,
+        product_name: productMap[item.product_id] || 'منتج غير معروف',
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        total_price: item.total_price
+      }));
+      
+      setSale(mapDbSaleToSale(saleData, items));
+    } catch (error) {
+      console.error('Unexpected error loading sale details:', error);
+      toast({
+        title: "خطأ غير متوقع",
+        description: "حدث خطأ أثناء تحميل تفاصيل المبيعة",
+        variant: "destructive",
+      });
+      navigate('/admin/sales');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-40">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-brand-blue"></div>
+      </div>
+    );
+  }
+
+  if (!sale) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-lg text-gray-600">لم يتم العثور على المبيعة</p>
+        <Button
+          variant="link"
+          onClick={() => navigate('/admin/sales')}
+          className="mt-4"
+        >
+          العودة إلى المبيعات
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6" dir="rtl">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">تفاصيل المبيعة #{sale.id.substring(0, 8)}</h2>
+        <Button variant="outline" onClick={() => navigate('/admin/sales')}>
+          العودة إلى المبيعات
+        </Button>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>معلومات العميل</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label>الاسم</Label>
+              <p className="font-medium">{sale.customer_name}</p>
+            </div>
+            {sale.customer_phone && (
+              <div>
+                <Label>رقم الهاتف</Label>
+                <p className="font-medium">{sale.customer_phone}</p>
+              </div>
+            )}
+            {sale.customer_email && (
+              <div>
+                <Label>البريد الإلكتروني</Label>
+                <p className="font-medium">{sale.customer_email}</p>
+              </div>
+            )}
+            <div>
+              <Label>تاريخ البيع</Label>
+              <p className="font-medium">
+                {format(new Date(sale.created_at), 'yyyy/MM/dd hh:mm a', { locale: ar })}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>ملخص المبيعة</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label>إجمالي عدد المنتجات</Label>
+              <p className="font-medium">{sale.items.reduce((sum, item) => sum + item.quantity, 0)}</p>
+            </div>
+            <div>
+              <Label>إجمالي المبلغ</Label>
+              <p className="font-medium text-lg text-brand-blue">{sale.total_amount.toLocaleString()} د.ع</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>المنتجات</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>اسم المنتج</TableHead>
+                <TableHead>الكمية</TableHead>
+                <TableHead>سعر الوحدة</TableHead>
+                <TableHead>المجموع</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sale.items.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell>{item.product_name}</TableCell>
+                  <TableCell>{item.quantity}</TableCell>
+                  <TableCell>{item.unit_price.toLocaleString()} د.ع</TableCell>
+                  <TableCell>{item.total_price.toLocaleString()} د.ع</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+        <CardFooter className="flex justify-end">
+          <div className="text-lg font-bold">
+            الإجمالي: {sale.total_amount.toLocaleString()} د.ع
+          </div>
+        </CardFooter>
+      </Card>
+    </div>
+  );
+};
+
+const NewSale = () => {
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [customerEmail, setCustomerEmail] = useState('');
+  const [cartItems, setCartItems] = useState<Array<{product: Product, quantity: number}>>([]);
+  const [productQuantity, setProductQuantity] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const { data: products = [], isLoading } = useQuery({
+    queryKey: ['products'],
+    queryFn: fetchProducts
+  });
+
+  const addToCart = (product: Product) => {
+    const existingItemIndex = cartItems.findIndex(item => item.product.id === product.id);
     
+    if (existingItemIndex >= 0) {
+      const updatedCart = [...cartItems];
+      updatedCart[existingItemIndex].quantity += productQuantity;
+      setCartItems(updatedCart);
+    } else {
+      setCartItems([...cartItems, { product, quantity: productQuantity }]);
+    }
+    
+    setProductQuantity(1);
     toast({
       title: "تمت الإضافة",
       description: `تمت إضافة ${product.name} إلى السلة`,
     });
   };
-  
+
   const removeFromCart = (productId: string) => {
-    setCart(currentCart => currentCart.filter(item => item.product.id !== productId));
+    setCartItems(cartItems.filter(item => item.product.id !== productId));
   };
-  
-  const updateQuantity = (productId: string, newQuantity: number) => {
-    if (newQuantity < 1) return;
+
+  const getTotal = () => {
+    return cartItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     
-    setCart(currentCart => 
-      currentCart.map(item => 
-        item.product.id === productId 
-          ? { ...item, quantity: newQuantity } 
-          : item
-      )
-    );
-  };
-  
-  const calculateTotal = () => {
-    return cart.reduce((total, item) => total + (item.product.price * item.quantity), 0);
-  };
-  
-  const handleCheckout = async () => {
-    if (cart.length === 0) {
+    if (cartItems.length === 0) {
       toast({
-        title: "خطأ",
-        description: "السلة فارغة",
+        title: "السلة فارغة",
+        description: "يرجى إضافة منتجات إلى السلة قبل إكمال البيع",
         variant: "destructive",
       });
       return;
@@ -181,7 +479,7 @@ const AdminSales = () => {
     
     if (!customerName) {
       toast({
-        title: "خطأ",
+        title: "معلومات ناقصة",
         description: "يرجى إدخال اسم العميل",
         variant: "destructive",
       });
@@ -189,591 +487,273 @@ const AdminSales = () => {
     }
     
     try {
-      setSavingSale(true);
+      setIsSubmitting(true);
       
-      // Create the sale
-      const { data: sale, error: saleError } = await supabase
+      // Create the sale record
+      const saleData = {
+        customer_name: customerName,
+        customer_phone: customerPhone || null,
+        customer_email: customerEmail || null,
+        total_amount: getTotal()
+      };
+      
+      const { data: newSale, error: saleError } = await supabase
         .from('sales')
-        .insert([
-          {
-            customer_name: customerName,
-            customer_phone: customerPhone || null,
-            customer_email: customerEmail || null,
-            total_amount: calculateTotal(),
-          }
-        ])
+        .insert([saleData])
         .select()
         .single();
       
-      if (saleError) throw saleError;
+      if (saleError) {
+        console.error('Error creating sale:', saleError);
+        toast({
+          title: "خطأ في إنشاء المبيعة",
+          description: saleError.message,
+          variant: "destructive",
+        });
+        return;
+      }
       
-      // Create sale items and update stock
-      const saleItems = cart.map(item => ({
-        sale_id: sale.id,
+      // Create sale items for each product in cart
+      const saleItems = cartItems.map(item => ({
+        sale_id: newSale.id,
         product_id: item.product.id,
         quantity: item.quantity,
         unit_price: item.product.price,
-        total_price: item.product.price * item.quantity,
+        total_price: item.product.price * item.quantity
       }));
       
       const { error: itemsError } = await supabase
         .from('sale_items')
         .insert(saleItems);
       
-      if (itemsError) throw itemsError;
-      
-      // Update stock quantities
-      for (const item of cart) {
-        // Get current stock quantity
-        const { data: productData, error: productError } = await supabase
-          .from('products')
-          .select('stock_quantity')
-          .eq('id', item.product.id)
-          .single();
-        
-        if (productError) throw productError;
-        
-        const newQuantity = Math.max(0, productData.stock_quantity - item.quantity);
-        
-        // Update stock quantity
-        const { error: updateError } = await supabase
-          .from('products')
-          .update({ stock_quantity: newQuantity })
-          .eq('id', item.product.id);
-        
-        if (updateError) throw updateError;
-        
-        // Record the stock transaction
-        const { error: transactionError } = await supabase
-          .from('stock_transactions')
-          .insert([
-            {
-              product_id: item.product.id,
-              quantity: item.quantity,
-              transaction_type: 'out',
-              notes: `مبيعات - فاتورة رقم: ${sale.id}`,
-            }
-          ]);
-        
-        if (transactionError) throw transactionError;
+      if (itemsError) {
+        console.error('Error creating sale items:', itemsError);
+        toast({
+          title: "خطأ في إنشاء عناصر المبيعة",
+          description: itemsError.message,
+          variant: "destructive",
+        });
+        return;
       }
       
+      // Create stock transactions (out) for each product sold
+      const stockTransactions = cartItems.map(item => ({
+        product_id: item.product.id,
+        quantity: item.quantity,
+        transaction_type: 'out' as const,
+        notes: `بيع - ${customerName}`
+      }));
+      
+      await supabase
+        .from('stock_transactions')
+        .insert(stockTransactions);
+      
       toast({
-        title: "تم بنجاح",
-        description: "تم تسجيل البيع بنجاح",
+        title: "تم البيع بنجاح",
+        description: "تم إنشاء المبيعة وتسجيل المعاملة بنجاح",
       });
       
-      // Fetch the complete sale with items for the receipt
-      const { data: saleWithItems, error: fetchError } = await supabase
-        .from('sales')
-        .select('*')
-        .eq('id', sale.id)
-        .single();
-      
-      if (fetchError) throw fetchError;
-      
-      const { data: itemsData, error: fetchItemsError } = await supabase
-        .from('sale_items')
-        .select(`
-          id,
-          quantity,
-          unit_price,
-          total_price,
-          products(name)
-        `)
-        .eq('sale_id', sale.id);
-      
-      if (fetchItemsError) throw fetchItemsError;
-      
-      const completeData = {
-        ...saleWithItems,
-        items: itemsData.map(item => ({
-          id: item.id,
-          product_name: item.products?.name || 'Unknown Product',
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          total_price: item.total_price
-        }))
-      };
-      
-      setSelectedSale(completeData);
-      setShowReceiptDialog(true);
-      
-      // Reset the cart and form
-      setCart([]);
-      setCustomerName('');
-      setCustomerPhone('');
-      setCustomerEmail('');
-      setShowCheckout(false);
-      
-      // Refresh data
-      fetchData();
-      
+      // Navigate to sales list
+      navigate('/admin/sales');
     } catch (error) {
-      console.error('Error saving sale:', error);
+      console.error('Unexpected error during checkout:', error);
       toast({
-        title: "خطأ",
-        description: "فشل في تسجيل البيع",
+        title: "خطأ غير متوقع",
+        description: "حدث خطأ أثناء إكمال عملية البيع",
         variant: "destructive",
       });
     } finally {
-      setSavingSale(false);
+      setIsSubmitting(false);
     }
   };
-  
-  const handleShowReceipt = (sale: Sale) => {
-    setSelectedSale(sale);
-    setShowReceiptDialog(true);
-  };
-  
-  const printReceipt = () => {
-    const receiptWindow = window.open('', '_blank');
-    if (!receiptWindow || !selectedSale) return;
-    
-    const printContent = `
-      <!DOCTYPE html>
-      <html dir="rtl">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>إيصال بيع</title>
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            direction: rtl;
-          }
-          .receipt {
-            max-width: 800px;
-            margin: 0 auto;
-            border: 1px solid #ccc;
-            padding: 20px;
-          }
-          .header {
-            text-align: center;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 10px;
-          }
-          .customer-info {
-            margin-bottom: 20px;
-          }
-          table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-          }
-          table, th, td {
-            border: 1px solid #ddd;
-          }
-          th, td {
-            padding: 10px;
-            text-align: right;
-          }
-          th {
-            background-color: #f2f2f2;
-          }
-          .total {
-            text-align: left;
-            font-weight: bold;
-            font-size: 18px;
-            margin-top: 20px;
-          }
-          .footer {
-            text-align: center;
-            margin-top: 30px;
-            font-size: 12px;
-            color: #666;
-          }
-          @media print {
-            body {
-              padding: 0;
-            }
-            .receipt {
-              border: none;
-            }
-            .no-print {
-              display: none;
-            }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="receipt">
-          <div class="header">
-            <h1>إيصال بيع</h1>
-            <p>رقم: ${selectedSale.id}</p>
-            <p>تاريخ: ${new Date(selectedSale.created_at).toLocaleDateString('ar-IQ')}</p>
-          </div>
-          
-          <div class="customer-info">
-            <h3>معلومات العميل:</h3>
-            <p>الاسم: ${selectedSale.customer_name}</p>
-            ${selectedSale.customer_phone ? `<p>الهاتف: ${selectedSale.customer_phone}</p>` : ''}
-            ${selectedSale.customer_email ? `<p>البريد الإلكتروني: ${selectedSale.customer_email}</p>` : ''}
-          </div>
-          
-          <h3>المنتجات:</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>المنتج</th>
-                <th>الكمية</th>
-                <th>السعر الفردي</th>
-                <th>المجموع</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${selectedSale.items.map(item => `
-                <tr>
-                  <td>${item.product_name}</td>
-                  <td>${item.quantity}</td>
-                  <td>${item.unit_price.toLocaleString()} د.ع</td>
-                  <td>${item.total_price.toLocaleString()} د.ع</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-          
-          <div class="total">
-            المجموع الكلي: ${selectedSale.total_amount.toLocaleString()} د.ع
-          </div>
-          
-          <div class="footer">
-            <p>شكراً لتعاملكم معنا!</p>
-            <p class="no-print"><button onclick="window.print()">طباعة الإيصال</button></p>
-          </div>
-        </div>
-        <script>
-          window.onload = function() {
-            window.print();
-          }
-        </script>
-      </body>
-      </html>
-    `;
-    
-    receiptWindow.document.open();
-    receiptWindow.document.write(printContent);
-    receiptWindow.document.close();
-  };
-
-  // Filter products and sales based on search query
-  const filteredProducts = products.filter(product => 
-    product.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-  
-  const filteredSales = sales.filter(sale => 
-    sale.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    sale.items.some(item => item.product_name.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-brand-blue" />
-      </div>
-    );
-  }
 
   return (
-    <div dir="rtl">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">المبيعات والأرباح</h2>
-        <div className="flex space-x-4 space-x-reverse">
-          <Button 
-            className="flex items-center gap-2"
-            variant={showCheckout ? "secondary" : "default"}
-            onClick={() => setShowCheckout(!showCheckout)}
-          >
-            <ShoppingCart className="h-4 w-4" />
-            {cart.length > 0 ? `عربة التسوق (${cart.length})` : "عربة التسوق"}
-          </Button>
-        </div>
+    <div className="space-y-6" dir="rtl">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">مبيعة جديدة</h2>
+        <Button variant="outline" onClick={() => navigate('/admin/sales')}>
+          العودة إلى المبيعات
+        </Button>
       </div>
       
-      <div className="mb-6">
-        <div className="relative">
-          <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="بحث عن منتج أو عميل..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pr-10"
-          />
-        </div>
-      </div>
-      
-      {showCheckout ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>منتجات للبيع</CardTitle>
-                <CardDescription>
-                  اختر المنتجات لإضافتها إلى سلة المشتريات.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredProducts.map(product => (
-                    <Card key={product.id} className="overflow-hidden">
-                      <div className="aspect-square relative">
-                        <img 
-                          src={product.image} 
-                          alt={product.name} 
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <CardContent className="p-4">
-                        <h3 className="font-bold">{product.name}</h3>
-                        <p className="text-sm text-gray-500 mb-2">{product.price.toLocaleString()} د.ع</p>
-                        <Button 
-                          onClick={() => addToCart(product)} 
-                          size="sm" 
-                          className="w-full"
-                        >
-                          إضافة للسلة
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          
-          <div>
-            <Card>
-              <CardHeader>
-                <CardTitle>عربة التسوق</CardTitle>
-                <CardDescription>
-                  المنتجات المضافة إلى السلة.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {cart.length === 0 ? (
-                  <p className="text-center text-gray-500 my-4">السلة فارغة</p>
-                ) : (
-                  <div className="space-y-4">
-                    {cart.map(item => (
-                      <div key={item.product.id} className="flex justify-between items-center border-b pb-2">
-                        <div>
-                          <h4 className="font-medium">{item.product.name}</h4>
-                          <p className="text-sm text-gray-500">{item.product.price.toLocaleString()} د.ع</p>
-                        </div>
-                        <div className="flex items-center space-x-2 space-x-reverse">
-                          <Button 
-                            variant="outline" 
-                            size="icon" 
-                            className="h-8 w-8" 
-                            onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                          >
-                            -
-                          </Button>
-                          <span className="w-8 text-center">{item.quantity}</span>
-                          <Button 
-                            variant="outline" 
-                            size="icon" 
-                            className="h-8 w-8" 
-                            onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                          >
-                            +
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8 text-red-500" 
-                            onClick={() => removeFromCart(item.product.id)}
-                          >
-                            <Trash className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                    
-                    <div className="border-t pt-4">
-                      <p className="text-lg font-bold">
-                        المجموع: {calculateTotal().toLocaleString()} د.ع
-                      </p>
-                    </div>
-                    
-                    <div className="space-y-4 pt-4">
-                      <h4 className="font-medium">معلومات العميل</h4>
-                      <div>
-                        <Label htmlFor="customer-name">اسم العميل *</Label>
-                        <Input
-                          id="customer-name"
-                          value={customerName}
-                          onChange={(e) => setCustomerName(e.target.value)}
-                          className="mt-1"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="customer-phone">رقم الهاتف</Label>
-                        <Input
-                          id="customer-phone"
-                          value={customerPhone}
-                          onChange={(e) => setCustomerPhone(e.target.value)}
-                          className="mt-1"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="customer-email">البريد الإلكتروني</Label>
-                        <Input
-                          id="customer-email"
-                          type="email"
-                          value={customerEmail}
-                          onChange={(e) => setCustomerEmail(e.target.value)}
-                          className="mt-1"
-                        />
-                      </div>
-                    </div>
+      <div className="grid md:grid-cols-3 gap-6">
+        <div className="md:col-span-2 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>معلومات العميل</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="customerName">اسم العميل</Label>
+                    <Input
+                      id="customerName"
+                      placeholder="أدخل اسم العميل"
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                      required
+                    />
                   </div>
-                )}
-              </CardContent>
-              <CardFooter>
-                <Button 
-                  className="w-full" 
-                  onClick={handleCheckout}
-                  disabled={cart.length === 0 || savingSale}
-                >
-                  {savingSale ? (
-                    <>
-                      <Loader2 className="ml-2 h-4 w-4 animate-spin" />
-                      جاري المعالجة...
-                    </>
-                  ) : (
-                    "إنهاء عملية البيع"
-                  )}
-                </Button>
-              </CardFooter>
-            </Card>
-          </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="customerPhone">رقم الهاتف</Label>
+                    <Input
+                      id="customerPhone"
+                      placeholder="أدخل رقم الهاتف"
+                      value={customerPhone}
+                      onChange={(e) => setCustomerPhone(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="customerEmail">البريد الإلكتروني</Label>
+                  <Input
+                    id="customerEmail"
+                    type="email"
+                    placeholder="أدخل البريد الإلكتروني"
+                    value={customerEmail}
+                    onChange={(e) => setCustomerEmail(e.target.value)}
+                  />
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>المنتجات</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="flex justify-center items-center h-40">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-brand-blue"></div>
+                </div>
+              ) : (
+                <Tabs defaultValue="all">
+                  <TabsList className="mb-4">
+                    <TabsTrigger value="all">جميع المنتجات</TabsTrigger>
+                    <TabsTrigger value="search">بحث</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="all" className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {products.map((product) => (
+                        <Card key={product.id} className="overflow-hidden">
+                          <CardContent className="p-3">
+                            <div className="flex flex-col h-full">
+                              <div className="font-medium">{product.name}</div>
+                              <div className="text-sm text-gray-500 mb-2">{product.price.toLocaleString()} د.ع</div>
+                              <div className="mt-auto flex items-center space-x-2 space-x-reverse">
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  value={productQuantity}
+                                  onChange={(e) => setProductQuantity(parseInt(e.target.value) || 1)}
+                                  className="w-20"
+                                />
+                                <Button size="sm" onClick={() => addToCart(product)}>إضافة</Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="search">
+                    <div className="space-y-4">
+                      <div className="relative">
+                        <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                        <Input
+                          placeholder="ابحث عن منتج..."
+                          className="pr-10"
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {/* Search results would go here */}
+                      </div>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              )}
+            </CardContent>
+          </Card>
         </div>
-      ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>سجل المبيعات</CardTitle>
-            <CardDescription>
-              عرض سجل المبيعات السابقة.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>تاريخ البيع</TableHead>
-                  <TableHead>اسم العميل</TableHead>
-                  <TableHead>عدد المنتجات</TableHead>
-                  <TableHead>المجموع</TableHead>
-                  <TableHead>الإجراءات</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredSales.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center">
-                      لا توجد مبيعات مسجلة
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredSales.map((sale) => (
-                    <TableRow key={sale.id}>
-                      <TableCell>
-                        {format(new Date(sale.created_at), 'PPP', { locale: ar })}
-                      </TableCell>
-                      <TableCell className="font-medium">{sale.customer_name}</TableCell>
-                      <TableCell>{sale.items.length}</TableCell>
-                      <TableCell>{sale.total_amount.toLocaleString()} د.ع</TableCell>
-                      <TableCell>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => handleShowReceipt(sale)}
+        
+        <div>
+          <Card className="sticky top-4">
+            <CardHeader>
+              <CardTitle>سلة المشتريات</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {cartItems.length === 0 ? (
+                <p className="text-center text-gray-500 py-4">السلة فارغة</p>
+              ) : (
+                <div className="space-y-4">
+                  {cartItems.map((item) => (
+                    <div key={item.product.id} className="flex justify-between items-center border-b pb-2">
+                      <div>
+                        <div className="font-medium">{item.product.name}</div>
+                        <div className="text-sm text-gray-500">
+                          {item.quantity} × {item.product.price.toLocaleString()} د.ع
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2 space-x-reverse">
+                        <div className="font-medium">
+                          {(item.product.price * item.quantity).toLocaleString()} د.ع
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeFromCart(item.product.id)}
                         >
-                          <FileText className="h-4 w-4" />
+                          <Trash className="h-4 w-4 text-red-500" />
                         </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                      </div>
+                    </div>
+                  ))}
+                  
+                  <div className="flex justify-between items-center pt-2 font-bold">
+                    <div>المجموع</div>
+                    <div>{getTotal().toLocaleString()} د.ع</div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+            <CardFooter>
+              <Button 
+                className="w-full" 
+                disabled={cartItems.length === 0 || !customerName || isSubmitting}
+                onClick={handleSubmit}
+              >
+                {isSubmitting ? (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white ml-2"></div>
+                    جاري إكمال البيع...
+                  </div>
+                ) : (
+                  <>
+                    إكمال البيع
+                    <ArrowRight className="mr-2 h-4 w-4" />
+                  </>
                 )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
-      
-      {/* Receipt Dialog */}
-      <Dialog open={showReceiptDialog} onOpenChange={setShowReceiptDialog}>
-        <DialogContent className="sm:max-w-[600px]" dir="rtl">
-          <DialogHeader>
-            <DialogTitle>إيصال البيع</DialogTitle>
-            <DialogDescription>
-              تفاصيل عملية البيع والمنتجات المباعة.
-            </DialogDescription>
-          </DialogHeader>
-          
-          {selectedSale && (
-            <div className="space-y-4">
-              <div className="border-b pb-2">
-                <p className="text-sm text-gray-500">رقم الإيصال: {selectedSale.id}</p>
-                <p className="text-sm text-gray-500">
-                  التاريخ: {format(new Date(selectedSale.created_at), 'PPP', { locale: ar })}
-                </p>
-              </div>
-              
-              <div className="border-b pb-2">
-                <h4 className="font-medium mb-2">معلومات العميل:</h4>
-                <p>الاسم: {selectedSale.customer_name}</p>
-                {selectedSale.customer_phone && <p>الهاتف: {selectedSale.customer_phone}</p>}
-                {selectedSale.customer_email && <p>البريد الإلكتروني: {selectedSale.customer_email}</p>}
-              </div>
-              
-              <div>
-                <h4 className="font-medium mb-2">المنتجات:</h4>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>المنتج</TableHead>
-                      <TableHead>الكمية</TableHead>
-                      <TableHead>السعر</TableHead>
-                      <TableHead>المجموع</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {selectedSale.items.map(item => (
-                      <TableRow key={item.id}>
-                        <TableCell>{item.product_name}</TableCell>
-                        <TableCell>{item.quantity}</TableCell>
-                        <TableCell>{item.unit_price.toLocaleString()} د.ع</TableCell>
-                        <TableCell>{item.total_price.toLocaleString()} د.ع</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-              
-              <div className="border-t pt-2 flex justify-between items-center">
-                <h4 className="font-bold">المجموع الكلي:</h4>
-                <p className="font-bold text-lg">
-                  {selectedSale.total_amount.toLocaleString()} د.ع
-                </p>
-              </div>
-            </div>
-          )}
-          
-          <DialogFooter>
-            <Button onClick={printReceipt} className="flex items-center gap-2">
-              <Printer className="h-4 w-4" />
-              طباعة الإيصال
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
+      </div>
     </div>
+  );
+};
+
+const AdminSales = () => {
+  return (
+    <Routes>
+      <Route index element={<SalesList />} />
+      <Route path="new" element={<NewSale />} />
+      <Route path=":id" element={<SaleDetails />} />
+    </Routes>
   );
 };
 

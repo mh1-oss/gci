@@ -68,6 +68,37 @@ export interface DbSaleItem {
   quantity: number;
   unit_price: number;
   total_price: number;
+  created_at: string;
+}
+
+// Additional types for our application
+export interface SaleItem {
+  id: string;
+  product_id: string;
+  product_name: string;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+}
+
+export interface Sale {
+  id: string;
+  customer_name: string;
+  customer_phone: string | null;
+  customer_email: string | null;
+  total_amount: number;
+  created_at: string;
+  items: SaleItem[];
+}
+
+export interface StockTransaction {
+  id: string;
+  product_id: string;
+  product_name: string;
+  quantity: number;
+  transaction_type: 'in' | 'out';
+  notes: string | null;
+  created_at: string;
 }
 
 // Mapper functions to convert between DB and app models
@@ -137,5 +168,68 @@ export function mapCompanyInfoToDbCompanyInfo(info: Partial<CompanyInfo>): Parti
     slogan: info.slogan,
     about: info.about,
     logo_url: info.logo !== '/placeholder.svg' ? info.logo : null
+  };
+}
+
+export function mapDbSaleToSale(dbSale: DbSale, saleItems: SaleItem[] = []): Sale {
+  return {
+    id: dbSale.id,
+    customer_name: dbSale.customer_name,
+    customer_phone: dbSale.customer_phone,
+    customer_email: dbSale.customer_email,
+    total_amount: dbSale.total_amount,
+    created_at: dbSale.created_at,
+    items: saleItems
+  };
+}
+
+export function mapSaleToDbSale(sale: Omit<Sale, 'id' | 'items' | 'created_at'>): Omit<DbSale, 'id' | 'created_at'> {
+  return {
+    customer_name: sale.customer_name,
+    customer_phone: sale.customer_phone,
+    customer_email: sale.customer_email,
+    total_amount: sale.total_amount
+  };
+}
+
+export function mapDbSaleItemWithProductToSaleItem(dbSaleItem: DbSaleItem, productName: string): SaleItem {
+  return {
+    id: dbSaleItem.id,
+    product_id: dbSaleItem.product_id,
+    product_name: productName,
+    quantity: dbSaleItem.quantity,
+    unit_price: dbSaleItem.unit_price,
+    total_price: dbSaleItem.total_price
+  };
+}
+
+export function mapSaleItemToDbSaleItem(saleItem: Omit<SaleItem, 'id' | 'product_name'>, saleId: string): Omit<DbSaleItem, 'id' | 'created_at'> {
+  return {
+    sale_id: saleId,
+    product_id: saleItem.product_id,
+    quantity: saleItem.quantity,
+    unit_price: saleItem.unit_price,
+    total_price: saleItem.total_price
+  };
+}
+
+export function mapDbStockTransactionToStockTransaction(dbTransaction: DbStockTransaction, productName: string): StockTransaction {
+  return {
+    id: dbTransaction.id,
+    product_id: dbTransaction.product_id,
+    product_name: productName,
+    quantity: dbTransaction.quantity,
+    transaction_type: dbTransaction.transaction_type,
+    notes: dbTransaction.notes,
+    created_at: dbTransaction.created_at
+  };
+}
+
+export function mapStockTransactionToDbStockTransaction(transaction: Omit<StockTransaction, 'id' | 'product_name' | 'created_at'>): Omit<DbStockTransaction, 'id' | 'created_at'> {
+  return {
+    product_id: transaction.product_id,
+    quantity: transaction.quantity,
+    transaction_type: transaction.transaction_type,
+    notes: transaction.notes
   };
 }

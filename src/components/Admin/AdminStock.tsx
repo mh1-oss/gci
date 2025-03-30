@@ -1,89 +1,105 @@
 
 import { useState, useEffect } from "react";
-import { useToast } from "@/components/ui/use-toast";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchProducts } from "@/services/supabaseService";
-import { Product } from "@/data/initialData";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Package, ArrowUp, ArrowDown, Plus, Search } from "lucide-react";
-
-type StockTransaction = {
-  id: string;
-  product_id: string;
-  product_name: string;
-  quantity: number;
-  transaction_type: 'in' | 'out';
-  notes: string | null;
-  created_at: string;
-};
+import { 
+  Card,
+  CardContent, 
+  CardFooter, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card";
+import { 
+  Table, 
+  TableHeader, 
+  TableBody, 
+  TableRow, 
+  TableHead, 
+  TableCell 
+} from "@/components/ui/table";
+import { AlertCircle, ArrowDown, ArrowUp, Box, Plus } from "lucide-react";
+import { format } from "date-fns";
+import { ar } from "date-fns/locale";
+import { useToast } from "@/hooks/use-toast";
+import { fetchProducts } from "@/services/dataService";
+import {
+  StockTransaction,
+  mapDbStockTransactionToStockTransaction,
+  mapStockTransactionToDbStockTransaction,
+  DbStockTransaction
+} from "@/utils/modelMappers";
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Product } from "@/data/initialData";
 
 const AdminStock = () => {
-  const [products, setProducts] = useState<Product[]>([]);
   const [transactions, setTransactions] = useState<StockTransaction[]>([]);
   const [loading, setLoading] = useState(true);
-  const [openAddDialog, setOpenAddDialog] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  
-  // Form states
-  const [selectedProductId, setSelectedProductId] = useState<string>('');
-  const [transactionType, setTransactionType] = useState<'in' | 'out'>('in');
-  const [quantity, setQuantity] = useState<number>(1);
-  const [notes, setNotes] = useState<string>('');
-  const [processing, setProcessing] = useState(false);
-  
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<string>("");
+  const [transactionType, setTransactionType] = useState<"in" | "out">("in");
+  const [quantity, setQuantity] = useState(1);
+  const [notes, setNotes] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
+  
+  const { data: products = [] } = useQuery({
+    queryKey: ['products'],
+    queryFn: fetchProducts
+  });
 
   useEffect(() => {
-    fetchData();
+    loadTransactions();
   }, []);
 
-  const fetchData = async () => {
+  const loadTransactions = async () => {
     try {
       setLoading(true);
-      const productsData = await fetchProducts();
-      setProducts(productsData);
       
-      const { data: transactionsData, error } = await supabase
+      // Fetch all stock transactions
+      const { data: transactionData, error: transactionError } = await supabase
         .from('stock_transactions')
-        .select(`
-          id,
-          product_id,
-          quantity,
-          transaction_type,
-          notes,
-          created_at,
-          products(name)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
       
-      if (error) {
-        throw error;
+      if (transactionError) {
+        console.error('Error loading transactions:', transactionError);
+        toast({
+          title: "خطأ في تحميل المعاملات",
+          description: transactionError.message,
+          variant: "destructive",
+        });
+        return;
       }
       
-      const formattedTransactions = transactionsData.map((transaction) => ({
-        id: transaction.id,
-        product_id: transaction.product_id,
-        product_name: transaction.products?.name || 'Unknown Product',
-        quantity: transaction.quantity,
-        transaction_type: transaction.transaction_type,
-        notes: transaction.notes,
-        created_at: transaction.created_at,
-      }));
+      // Fetch products for product names
+      const { data: productData } = await supabase
+        .from('products')
+        .select('id, name');
       
-      setTransactions(formattedTransactions);
+      const productMap = (productData || []).reduce((acc, product) => {
+        acc[product.id] = product.name;
+        return acc;
+      }, {} as Record<string, string>);
+      
+      // Map transactions with product names
+      const mappedTransactions = (transactionData || []).map((transaction: DbStockTransaction) => 
+        mapDbStockTransactionToStockTransaction(
+          transaction, 
+          productMap[transaction.product_id] || 'منتج غير معروف'
+        )
+      );
+      
+      setTransactions(mappedTransactions);
     } catch (error) {
-      console.error('Error fetching stock data:', error);
+      console.error('Unexpected error loading transactions:', error);
       toast({
-        title: "خطأ",
-        description: "فشل في تحميل بيانات المخزون",
+        title: "خطأ غير متوقع",
+        description: "حدث خطأ أثناء تحميل معاملات المخزون",
         variant: "destructive",
       });
     } finally {
@@ -92,140 +108,133 @@ const AdminStock = () => {
   };
 
   const handleAddTransaction = async () => {
-    if (!selectedProductId || quantity <= 0) {
+    if (!selectedProduct) {
       toast({
-        title: "خطأ",
-        description: "يرجى تحديد منتج وكمية صالحة",
+        title: "اختر منتج",
+        description: "يرجى اختيار منتج للمتابعة",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (quantity <= 0) {
+      toast({
+        title: "كمية غير صالحة",
+        description: "يجب أن تكون الكمية أكبر من صفر",
         variant: "destructive",
       });
       return;
     }
     
     try {
-      setProcessing(true);
+      setSubmitting(true);
       
-      // First, let's get the current stock quantity
-      const { data: productData, error: productError } = await supabase
-        .from('products')
-        .select('stock_quantity')
-        .eq('id', selectedProductId)
-        .single();
+      const productObj = products.find(p => p.id === selectedProduct);
       
-      if (productError) throw productError;
-      
-      let newQuantity = productData.stock_quantity;
-      
-      if (transactionType === 'in') {
-        newQuantity += quantity;
-      } else {
-        // Check if we have enough stock for outgoing transaction
-        if (productData.stock_quantity < quantity) {
-          toast({
-            title: "خطأ",
-            description: "الكمية المطلوبة أكبر من الكمية المتوفرة في المخزون",
-            variant: "destructive",
-          });
-          return;
-        }
-        newQuantity -= quantity;
+      if (!productObj) {
+        toast({
+          title: "خطأ",
+          description: "المنتج المحدد غير موجود",
+          variant: "destructive",
+        });
+        return;
       }
       
-      // Add the transaction
-      const { data: transaction, error: transactionError } = await supabase
+      const transaction = {
+        product_id: selectedProduct,
+        quantity: quantity,
+        transaction_type: transactionType,
+        notes: notes || null
+      };
+      
+      const dbTransaction = mapStockTransactionToDbStockTransaction(transaction);
+      
+      const { error } = await supabase
         .from('stock_transactions')
-        .insert([
-          {
-            product_id: selectedProductId,
-            quantity: quantity,
-            transaction_type: transactionType,
-            notes: notes || null,
-          }
-        ])
-        .select()
-        .single();
+        .insert([dbTransaction]);
       
-      if (transactionError) throw transactionError;
-      
-      // Update the product stock quantity
-      const { error: updateError } = await supabase
-        .from('products')
-        .update({ stock_quantity: newQuantity })
-        .eq('id', selectedProductId);
-      
-      if (updateError) throw updateError;
+      if (error) {
+        console.error('Error adding transaction:', error);
+        toast({
+          title: "خطأ في إضافة المعاملة",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
       
       toast({
-        title: "تم بنجاح",
-        description: "تم تسجيل حركة المخزون بنجاح",
+        title: "تمت الإضافة بنجاح",
+        description: `تمت إضافة معاملة جديدة لـ ${productObj.name}`,
       });
       
-      // Reset form and refresh data
-      setSelectedProductId('');
-      setTransactionType('in');
+      // Reset form and close dialog
+      setSelectedProduct("");
+      setTransactionType("in");
       setQuantity(1);
-      setNotes('');
-      setOpenAddDialog(false);
-      fetchData();
+      setNotes("");
+      setShowAddDialog(false);
       
+      // Refresh transactions list
+      loadTransactions();
     } catch (error) {
-      console.error('Error adding stock transaction:', error);
+      console.error('Unexpected error adding transaction:', error);
       toast({
-        title: "خطأ",
-        description: "فشل في تسجيل حركة المخزون",
+        title: "خطأ غير متوقع",
+        description: "حدث خطأ أثناء إضافة معاملة المخزون",
         variant: "destructive",
       });
     } finally {
-      setProcessing(false);
+      setSubmitting(false);
     }
   };
 
-  const filteredProducts = products.filter(product => 
-    product.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const filteredTransactions = transactions.filter(transaction => 
-    transaction.product_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (transaction.notes && transaction.notes.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-brand-blue" />
-      </div>
-    );
-  }
+  const productStockLevels = transactions.reduce((acc, transaction) => {
+    if (!acc[transaction.product_id]) {
+      acc[transaction.product_id] = {
+        product_id: transaction.product_id,
+        product_name: transaction.product_name,
+        stock: 0
+      };
+    }
+    
+    if (transaction.transaction_type === 'in') {
+      acc[transaction.product_id].stock += transaction.quantity;
+    } else {
+      acc[transaction.product_id].stock -= transaction.quantity;
+    }
+    
+    return acc;
+  }, {} as Record<string, { product_id: string, product_name: string, stock: number }>);
 
   return (
-    <div dir="rtl">
-      <div className="flex justify-between items-center mb-6">
+    <div className="space-y-6" dir="rtl">
+      <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">إدارة المخزون</h2>
-        <Dialog open={openAddDialog} onOpenChange={setOpenAddDialog}>
+        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
           <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              إضافة حركة مخزون
+            <Button>
+              <Plus className="ml-2 h-4 w-4" />
+              إضافة معاملة
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]" dir="rtl">
+          <DialogContent>
             <DialogHeader>
-              <DialogTitle>إضافة حركة مخزون جديدة</DialogTitle>
+              <DialogTitle>إضافة معاملة مخزون جديدة</DialogTitle>
               <DialogDescription>
-                أدخل تفاصيل حركة المخزون الجديدة هنا.
+                أدخل تفاصيل معاملة المخزون الجديدة
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
+            
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
                 <Label htmlFor="product">المنتج</Label>
-                <Select
-                  value={selectedProductId}
-                  onValueChange={setSelectedProductId}
-                >
-                  <SelectTrigger id="product">
+                <Select value={selectedProduct} onValueChange={setSelectedProduct}>
+                  <SelectTrigger>
                     <SelectValue placeholder="اختر منتج" />
                   </SelectTrigger>
                   <SelectContent>
-                    {products.map((product) => (
+                    {products.map(product => (
                       <SelectItem key={product.id} value={product.id}>
                         {product.name}
                       </SelectItem>
@@ -233,22 +242,34 @@ const AdminStock = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="type">نوع الحركة</Label>
-                <Select
-                  value={transactionType}
-                  onValueChange={(value: 'in' | 'out') => setTransactionType(value)}
+              
+              <div className="space-y-2">
+                <Label htmlFor="type">نوع المعاملة</Label>
+                <Select 
+                  value={transactionType} 
+                  onValueChange={(value) => setTransactionType(value as "in" | "out")}
                 >
-                  <SelectTrigger id="type">
-                    <SelectValue placeholder="اختر نوع الحركة" />
+                  <SelectTrigger>
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="in">إضافة (وارد)</SelectItem>
-                    <SelectItem value="out">سحب (صادر)</SelectItem>
+                    <SelectItem value="in">
+                      <div className="flex items-center">
+                        <ArrowDown className="h-4 w-4 ml-2 text-green-500" />
+                        إضافة للمخزون
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="out">
+                      <div className="flex items-center">
+                        <ArrowUp className="h-4 w-4 ml-2 text-red-500" />
+                        سحب من المخزون
+                      </div>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div className="grid gap-2">
+              
+              <div className="space-y-2">
                 <Label htmlFor="quantity">الكمية</Label>
                 <Input
                   id="quantity"
@@ -258,154 +279,146 @@ const AdminStock = () => {
                   onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
                 />
               </div>
-              <div className="grid gap-2">
+              
+              <div className="space-y-2">
                 <Label htmlFor="notes">ملاحظات</Label>
                 <Textarea
                   id="notes"
+                  placeholder="أضف ملاحظات للمعاملة (اختياري)"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="أدخل أي ملاحظات إضافية هنا"
                 />
               </div>
             </div>
+            
             <DialogFooter>
-              <Button type="submit" onClick={handleAddTransaction} disabled={processing}>
-                {processing ? (
-                  <>
-                    <Loader2 className="ml-2 h-4 w-4 animate-spin" />
-                    جاري المعالجة...
-                  </>
-                ) : (
-                  "حفظ"
-                )}
+              <Button 
+                variant="outline" 
+                onClick={() => setShowAddDialog(false)}
+                disabled={submitting}
+              >
+                إلغاء
+              </Button>
+              <Button 
+                onClick={handleAddTransaction}
+                disabled={submitting}
+              >
+                {submitting ? (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white ml-2"></div>
+                    جاري الإضافة...
+                  </div>
+                ) : "إضافة المعاملة"}
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
-      
-      <div className="mb-6">
-        <div className="relative">
-          <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="بحث عن منتج أو حركة..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pr-10"
-          />
-        </div>
-      </div>
-      
-      <Tabs defaultValue="inventory" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="inventory">المخزون الحالي</TabsTrigger>
-          <TabsTrigger value="transactions">حركة المخزون</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="inventory" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>المخزون الحالي</CardTitle>
-              <CardDescription>
-                عرض مستويات المخزون الحالية لجميع المنتجات.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+
+      <div className="grid md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>مستويات المخزون الحالية</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {Object.values(productStockLevels).length === 0 ? (
+              <div className="text-center py-6">
+                <Box className="h-12 w-12 mx-auto text-gray-400 mb-2" />
+                <p className="text-gray-500">لا توجد بيانات مخزون متاحة</p>
+              </div>
+            ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>اسم المنتج</TableHead>
-                    <TableHead>الفئة</TableHead>
-                    <TableHead>الكمية</TableHead>
-                    <TableHead>سعر البيع</TableHead>
-                    <TableHead>سعر التكلفة</TableHead>
-                    <TableHead>الربح</TableHead>
+                    <TableHead>المنتج</TableHead>
+                    <TableHead>المخزون</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredProducts.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center">
-                        لا توجد منتجات متاحة
+                  {Object.values(productStockLevels).map((item) => (
+                    <TableRow key={item.product_id}>
+                      <TableCell>{item.product_name}</TableCell>
+                      <TableCell>
+                        <span 
+                          className={
+                            item.stock > 10 
+                              ? "text-green-600 font-medium" 
+                              : item.stock > 0 
+                                ? "text-amber-600 font-medium" 
+                                : "text-red-600 font-medium"
+                          }
+                        >
+                          {item.stock}
+                        </span>
                       </TableCell>
                     </TableRow>
-                  ) : (
-                    filteredProducts.map((product) => {
-                      // Find the product in Supabase data to get stock_quantity and cost_price
-                      const productData = products.find(p => p.id === product.id);
-                      const stockQuantity = (productData as any)?.stock_quantity || 0;
-                      const costPrice = (productData as any)?.cost_price || 0;
-                      const profit = product.price - costPrice;
-                      
-                      return (
-                        <TableRow key={product.id}>
-                          <TableCell className="font-medium">{product.name}</TableCell>
-                          <TableCell>{product.categoryId}</TableCell>
-                          <TableCell>{stockQuantity}</TableCell>
-                          <TableCell>{product.price.toLocaleString()} د.ع</TableCell>
-                          <TableCell>{costPrice.toLocaleString()} د.ع</TableCell>
-                          <TableCell>{profit.toLocaleString()} د.ع</TableCell>
-                        </TableRow>
-                      );
-                    })
-                  )}
+                  ))}
                 </TableBody>
               </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="transactions" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>سجل حركة المخزون</CardTitle>
-              <CardDescription>
-                عرض جميع حركات المخزون السابقة.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>سجل معاملات المخزون</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex justify-center items-center h-40">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-brand-blue"></div>
+            </div>
+          ) : transactions.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10">
+              <AlertCircle className="h-16 w-16 text-gray-400 mb-4" />
+              <p className="text-lg font-medium text-gray-600">لا توجد معاملات</p>
+              <p className="text-gray-500 mb-6">ابدأ بإضافة معاملة جديدة للمخزون</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>التاريخ</TableHead>
                     <TableHead>المنتج</TableHead>
                     <TableHead>النوع</TableHead>
                     <TableHead>الكمية</TableHead>
                     <TableHead>ملاحظات</TableHead>
+                    <TableHead>التاريخ</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredTransactions.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center">
-                        لا توجد حركات مخزون سابقة
+                  {transactions.map((transaction) => (
+                    <TableRow key={transaction.id}>
+                      <TableCell>{transaction.product_name}</TableCell>
+                      <TableCell>
+                        {transaction.transaction_type === 'in' ? (
+                          <div className="flex items-center text-green-600">
+                            <ArrowDown className="h-4 w-4 ml-1" />
+                            إضافة
+                          </div>
+                        ) : (
+                          <div className="flex items-center text-red-600">
+                            <ArrowUp className="h-4 w-4 ml-1" />
+                            سحب
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell>{transaction.quantity}</TableCell>
+                      <TableCell>
+                        {transaction.notes || <span className="text-gray-400">-</span>}
+                      </TableCell>
+                      <TableCell>
+                        {format(new Date(transaction.created_at), 'yyyy/MM/dd hh:mm a', { locale: ar })}
                       </TableCell>
                     </TableRow>
-                  ) : (
-                    filteredTransactions.map((transaction) => (
-                      <TableRow key={transaction.id}>
-                        <TableCell>{new Date(transaction.created_at).toLocaleDateString('ar-IQ')}</TableCell>
-                        <TableCell className="font-medium">{transaction.product_name}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center">
-                            {transaction.transaction_type === 'in' ? (
-                              <><ArrowDown className="h-4 w-4 text-green-500 ml-2" /> وارد</>
-                            ) : (
-                              <><ArrowUp className="h-4 w-4 text-red-500 ml-2" /> صادر</>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>{transaction.quantity}</TableCell>
-                        <TableCell>{transaction.notes || "-"}</TableCell>
-                      </TableRow>
-                    ))
-                  )}
+                  ))}
                 </TableBody>
               </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
