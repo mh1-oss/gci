@@ -1,3 +1,4 @@
+
 import * as React from "react"
 
 import type {
@@ -139,7 +140,8 @@ function dispatch(action: Action) {
 
 type Toast = Omit<ToasterToast, "id">
 
-function toast({ ...props }: Toast) {
+// Export a standalone toast function that doesn't require hooks
+export function toast(props: Toast) {
   const id = genId()
 
   const update = (props: ToasterToast) =>
@@ -168,7 +170,8 @@ function toast({ ...props }: Toast) {
   }
 }
 
-function useToast() {
+// This should only be used within React components
+export function useToast() {
   const [state, setState] = React.useState<State>(memoryState)
 
   React.useEffect(() => {
@@ -187,5 +190,3 @@ function useToast() {
     dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
   }
 }
-
-export { useToast, toast }

@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast"; // Import standalone toast function, not the hook
 import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 import { checkIsAdmin } from "@/services/supabaseService";
@@ -22,20 +22,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
-  
-  // Initialize toast separately to avoid circular dependencies
-  const toast = (props: any) => {
-    // Use the imported toast as a function, but with a safety check
-    // in case there are still initialization issues
-    try {
-      const { toast: toastFn } = useToast();
-      return toastFn(props);
-    } catch (error) {
-      console.error("Toast error:", error);
-      // Provide a fallback implementation or silent fail
-      return { id: "error", dismiss: () => {} };
-    }
-  };
   
   // Setup auth listener and initialize state
   useEffect(() => {
