@@ -27,6 +27,16 @@ import { ar } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { getProducts } from "@/services/dataService";
 import { getStockTransactions, addStockTransaction, calculateProductStock } from "@/services/stock/stockService";
+import { 
+  Dialog, 
+  DialogTrigger, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogDescription, 
+  DialogFooter 
+} from "@/components/ui/dialog";
+import { Product } from "@/data/initialData";
 
 const AdminStock = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
