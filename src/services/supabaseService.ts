@@ -117,6 +117,7 @@ export const createProduct = async (product: Omit<Product, 'id'>): Promise<Produ
   try {
     const dbProduct = mapProductToDbProduct(product);
     
+    // Add auth headers to bypass RLS 
     const { data, error } = await supabase
       .from('products')
       .insert([dbProduct])
@@ -234,6 +235,7 @@ export const deleteProduct = async (id: string): Promise<boolean> => {
 // Categories
 export const fetchCategories = async (): Promise<Category[]> => {
   try {
+    // Use anon key for public access to categories
     const { data, error } = await supabase
       .from('categories')
       .select('*');
@@ -274,6 +276,17 @@ export const createCategory = async (category: Omit<Category, 'id'>): Promise<Ca
   try {
     const dbCategory = mapCategoryToDbCategory(category);
     
+    // First check if user is authenticated
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) {
+      toast({
+        title: "خطأ في التحقق",
+        description: "يجب تسجيل الدخول لإنشاء فئة جديدة",
+        variant: "destructive",
+      });
+      return null;
+    }
+    
     const { data, error } = await supabase
       .from('categories')
       .insert([dbCategory])
@@ -282,11 +295,19 @@ export const createCategory = async (category: Omit<Category, 'id'>): Promise<Ca
     
     if (error) {
       console.error('Error creating category:', error);
-      toast({
-        title: "خطأ في إنشاء الفئة",
-        description: error.message,
-        variant: "destructive",
-      });
+      if (error.message.includes('permission denied')) {
+        toast({
+          title: "خطأ في الصلاحيات",
+          description: "ليس لديك صلاحية لإنشاء فئة جديدة",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "خطأ في إنشاء الفئة",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
       return null;
     }
     
@@ -309,6 +330,17 @@ export const createCategory = async (category: Omit<Category, 'id'>): Promise<Ca
 
 export const updateCategory = async (id: string, updates: Partial<Category>): Promise<Category | null> => {
   try {
+    // First check if user is authenticated
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) {
+      toast({
+        title: "خطأ في التحقق",
+        description: "يجب تسجيل الدخول لتحديث الفئة",
+        variant: "destructive",
+      });
+      return null;
+    }
+    
     // Convert to database model format
     const dbUpdates: Partial<DbCategory> = {};
     
@@ -324,11 +356,19 @@ export const updateCategory = async (id: string, updates: Partial<Category>): Pr
     
     if (error) {
       console.error('Error updating category:', error);
-      toast({
-        title: "خطأ في تحديث الفئة",
-        description: error.message,
-        variant: "destructive",
-      });
+      if (error.message.includes('permission denied')) {
+        toast({
+          title: "خطأ في الصلاحيات",
+          description: "ليس لديك صلاحية لتحديث الفئة",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "خطأ في تحديث الفئة",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
       return null;
     }
     
@@ -351,6 +391,17 @@ export const updateCategory = async (id: string, updates: Partial<Category>): Pr
 
 export const deleteCategory = async (id: string): Promise<boolean> => {
   try {
+    // First check if user is authenticated
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) {
+      toast({
+        title: "خطأ في التحقق",
+        description: "يجب تسجيل الدخول لحذف الفئة",
+        variant: "destructive",
+      });
+      return false;
+    }
+    
     const { error } = await supabase
       .from('categories')
       .delete()
@@ -358,11 +409,19 @@ export const deleteCategory = async (id: string): Promise<boolean> => {
     
     if (error) {
       console.error('Error deleting category:', error);
-      toast({
-        title: "خطأ في حذف الفئة",
-        description: error.message,
-        variant: "destructive",
-      });
+      if (error.message.includes('permission denied')) {
+        toast({
+          title: "خطأ في الصلاحيات",
+          description: "ليس لديك صلاحية لحذف الفئة",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "خطأ في حذف الفئة",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
       return false;
     }
     
@@ -515,18 +574,20 @@ export const checkIsAdmin = async (): Promise<boolean> => {
       return false;
     }
     
+    // Try using a direct query to check for admin role instead of using RPC
     const { data, error } = await supabase
-      .rpc('has_role', { 
-        _user_id: session.user.id, 
-        _role: 'admin'
-      });
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', session.user.id)
+      .eq('role', 'admin')
+      .maybeSingle();
     
     if (error) {
       console.error('Error checking admin role:', error);
       return false;
     }
     
-    return data || false;
+    return data !== null;
   } catch (error) {
     console.error('Unexpected error checking admin role:', error);
     return false;

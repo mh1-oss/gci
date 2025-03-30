@@ -1,5 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/AuthContext';
 import { 
   Card, 
   CardContent, 
@@ -36,7 +38,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle
 } from '@/components/ui/alert-dialog';
-import { Loader2, Trash, Edit, Plus } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Loader2, Trash, Edit, Plus, AlertTriangle } from 'lucide-react';
 import { 
   fetchCategories, 
   createCategory, 
@@ -52,11 +55,13 @@ const AdminCategories = () => {
   const [editMode, setEditMode] = useState(false);
   const [editTarget, setEditTarget] = useState<Category | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
-  const [deleteDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [authError, setAuthError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { isAuthenticated, isAdmin } = useAuth();
 
   useEffect(() => {
     loadCategories();
@@ -65,8 +70,21 @@ const AdminCategories = () => {
   const loadCategories = async () => {
     setLoading(true);
     try {
+      if (!isAuthenticated) {
+        setAuthError("يجب تسجيل الدخول لعرض الفئات");
+        setLoading(false);
+        return;
+      }
+
+      if (!isAdmin) {
+        setAuthError("يجب أن تكون مسؤولاً لإدارة الفئات");
+        setLoading(false);
+        return;
+      }
+
       const fetchedCategories = await fetchCategories();
       setCategories(fetchedCategories);
+      setAuthError(null);
     } catch (error) {
       console.error("Error fetching categories:", error);
       toast({
@@ -89,6 +107,15 @@ const AdminCategories = () => {
       return;
     }
 
+    if (!isAuthenticated || !isAdmin) {
+      toast({
+        title: "خطأ في الصلاحيات",
+        description: "ليس لديك صلاحية لإنشاء فئة جديدة",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
       const newCategory: Omit<Category, 'id'> = { 
         name, 
@@ -106,12 +133,6 @@ const AdminCategories = () => {
         setDialogOpen(false);
         setName('');
         setDescription('');
-      } else {
-        toast({
-          title: "فشل الإنشاء",
-          description: "حدث خطأ أثناء إنشاء الفئة.",
-          variant: "destructive"
-        });
       }
     } catch (error) {
       console.error("Error creating category:", error);
@@ -124,6 +145,15 @@ const AdminCategories = () => {
   };
 
   const handleEdit = (category: Category) => {
+    if (!isAuthenticated || !isAdmin) {
+      toast({
+        title: "خطأ في الصلاحيات",
+        description: "ليس لديك صلاحية لتعديل الفئات",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setEditMode(true);
     setEditTarget(category);
     setName(category.name);
@@ -142,6 +172,15 @@ const AdminCategories = () => {
     }
 
     if (!editTarget) return;
+
+    if (!isAuthenticated || !isAdmin) {
+      toast({
+        title: "خطأ في الصلاحيات",
+        description: "ليس لديك صلاحية لتعديل الفئات",
+        variant: "destructive"
+      });
+      return;
+    }
 
     try {
       const updatedCategoryData: Partial<Category> = {
@@ -163,12 +202,6 @@ const AdminCategories = () => {
         setEditTarget(null);
         setName('');
         setDescription('');
-      } else {
-        toast({
-          title: "فشل التحديث",
-          description: "حدث خطأ أثناء تحديث الفئة.",
-          variant: "destructive"
-        });
       }
     } catch (error) {
       console.error("Error updating category:", error);
@@ -181,6 +214,15 @@ const AdminCategories = () => {
   };
 
   const handleDelete = (category: Category) => {
+    if (!isAuthenticated || !isAdmin) {
+      toast({
+        title: "خطأ في الصلاحيات",
+        description: "ليس لديك صلاحية لحذف الفئات",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setDeleteTarget(category);
     setDeleteDialogOpen(true);
   };
@@ -197,12 +239,6 @@ const AdminCategories = () => {
         setCategories(prevCategories => prevCategories.filter(c => c.id !== deleteTarget?.id));
         setDeleteDialogOpen(false);
         setDeleteTarget(null);
-      } else {
-        toast({
-          title: "فشل الحذف",
-          description: "حدث خطأ أثناء حذف الفئة.",
-          variant: "destructive"
-        });
       }
     } catch (error) {
       console.error("Error deleting category:", error);
@@ -215,6 +251,16 @@ const AdminCategories = () => {
       setIsDeleting(false);
     }
   };
+
+  if (authError) {
+    return (
+      <Alert variant="destructive" className="mb-6">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>خطأ في الصلاحيات</AlertTitle>
+        <AlertDescription>{authError}</AlertDescription>
+      </Alert>
+    );
+  }
 
   return (
     <div>
@@ -328,7 +374,7 @@ const AdminCategories = () => {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={deleteDeleteDialogOpen} onOpenChange={() => setDeleteDialogOpen(false)}>
+      <AlertDialog open={deleteDialogOpen} onOpenChange={() => setDeleteDialogOpen(false)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>هل أنت متأكد؟</AlertDialogTitle>
