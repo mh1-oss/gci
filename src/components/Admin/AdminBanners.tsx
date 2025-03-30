@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { 
@@ -156,7 +155,6 @@ const AdminBanners = () => {
     setIsSubmitting(true);
     
     try {
-      // Upload image if provided
       let imageUrl = formData.image;
       if (imageFile) {
         const uploadedUrl = await uploadImage();
@@ -165,7 +163,6 @@ const AdminBanners = () => {
         }
       }
       
-      // Prepare banner data - now with the correct structure for Supabase
       const newBanner = {
         title: formData.title,
         subtitle: formData.subtitle || null,
@@ -174,15 +171,14 @@ const AdminBanners = () => {
         media_type: formData.mediaType,
         cta_text: formData.ctaText,
         cta_link: formData.ctaLink,
-        order_index: banners.length, // Add to the end
+        order_index: banners.length,
         slider_height: formData.sliderHeight,
         text_color: formData.textColor
       };
       
-      // Insert into database
       const { error } = await supabase
         .from('banners')
-        .insert(newBanner);
+        .insert([newBanner]);
       
       if (error) throw error;
       
@@ -191,7 +187,6 @@ const AdminBanners = () => {
         description: 'تم إضافة شريحة العرض بنجاح',
       });
       
-      // Refresh banners
       fetchBanners();
       setShowAddDialog(false);
       resetForm();
@@ -215,7 +210,6 @@ const AdminBanners = () => {
     setIsSubmitting(true);
     
     try {
-      // Upload image if provided
       let imageUrl = formData.image;
       if (imageFile) {
         const uploadedUrl = await uploadImage();
@@ -224,7 +218,6 @@ const AdminBanners = () => {
         }
       }
       
-      // Prepare update data
       const updateData = {
         title: formData.title,
         subtitle: formData.subtitle || null,
@@ -237,7 +230,6 @@ const AdminBanners = () => {
         text_color: formData.textColor
       };
       
-      // Update in database
       const { error } = await supabase
         .from('banners')
         .update(updateData)
@@ -250,7 +242,6 @@ const AdminBanners = () => {
         description: 'تم تحديث شريحة العرض بنجاح',
       });
       
-      // Refresh banners
       fetchBanners();
       setShowEditDialog(false);
       resetForm();
@@ -284,7 +275,6 @@ const AdminBanners = () => {
         description: 'تم حذف شريحة العرض بنجاح',
       });
       
-      // Refresh banners
       fetchBanners();
       setShowDeleteDialog(false);
     } catch (error) {
@@ -311,13 +301,11 @@ const AdminBanners = () => {
     const targetIndex = direction === 'up' ? bannerIndex - 1 : bannerIndex + 1;
     const targetBanner = banners[targetIndex];
     
-    // Swap order indexes
     const updatedBanners = [...banners];
     const tempOrder = updatedBanners[bannerIndex].orderIndex;
     updatedBanners[bannerIndex].orderIndex = updatedBanners[targetIndex].orderIndex;
     updatedBanners[targetIndex].orderIndex = tempOrder;
     
-    // Update database
     try {
       await supabase
         .from('banners')
@@ -329,7 +317,6 @@ const AdminBanners = () => {
         .update({ order_index: updatedBanners[targetIndex].orderIndex })
         .eq('id', targetBanner.id);
       
-      // Update local state
       setBanners([...updatedBanners].sort((a, b) => a.orderIndex - b.orderIndex));
       
       toast({
@@ -483,7 +470,6 @@ const AdminBanners = () => {
         </CardContent>
       </Card>
 
-      {/* Add Banner Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent className="max-w-xl">
           <DialogHeader>
@@ -640,7 +626,6 @@ const AdminBanners = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Banner Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         <DialogContent className="max-w-xl">
           <DialogHeader>
@@ -797,7 +782,6 @@ const AdminBanners = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Banner Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
