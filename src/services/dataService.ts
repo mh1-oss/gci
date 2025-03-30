@@ -1,113 +1,22 @@
-import { Category, Product, Review, Banner, CompanyInfo } from "@/data/initialData";
+
+// DEPRECATED: This file is being phased out in favor of modular service files.
+// Please import from the appropriate service module instead.
+// For example:
+// - For products: import { fetchProducts } from '@/services/products/productService';
+// - For categories: import { fetchCategories } from '@/services/categories/categoryService';
+// - For company info: import { fetchCompanyInfo } from '@/services/company/companyService';
+// - For reviews: import { fetchReviews } from '@/services/reviews/reviewsService';
+// - For banners: import { fetchBanners } from '@/services/banners/bannerService';
+// - For media uploads: import { uploadMedia } from '@/services/media/mediaService';
+
 import { supabase } from "@/integrations/supabase/client";
+import { Product, Review, Banner } from "@/data/initialData";
 
-// DEPRECATED: Use fetchCategories from '@/services/categories/categoryService' instead
-export const getCategories = async (): Promise<Category[]> => {
-  console.warn("getCategories() in dataService.ts is deprecated. Use fetchCategories() from '@/services/categories/categoryService' instead.");
-  try {
-    const { data, error } = await supabase
-      .from('categories')
-      .select('*');
-
-    if (error) {
-      console.error("Error fetching categories from Supabase:", error);
-      return [];
-    }
-
-    if (data && data.length > 0) {
-      return data.map((category: any) => ({
-        id: category.id,
-        name: category.name,
-        description: category.description || '',
-        image: '/placeholder.svg'
-      }));
-    } else {
-      return [];
-    }
-  } catch (error) {
-    console.error("Error fetching categories:", error);
-    return [];
-  }
-};
-
-// DEPRECATED: Use fetchCategoryById from '@/services/categories/categoryService' instead
-export const getCategoryById = async (id: string): Promise<Category | null> => {
-  console.warn("getCategoryById() in dataService.ts is deprecated. Use fetchCategoryById() from '@/services/categories/categoryService' instead.");
-  try {
-    const { data, error } = await supabase
-      .from('categories')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error) return null;
-
-    return data ? {
-      id: data.id,
-      name: data.name,
-      description: data.description || '',
-      image: '/placeholder.svg'
-    } : null;
-  } catch (error) {
-    console.error(`Error fetching category with id ${id}:`, error);
-    return null;
-  }
-};
-
-// DEPRECATED: Use addCategory from '@/services/categories/categoryService' instead
-export const addCategory = async (category: any) => {
-  console.warn("addCategory() in dataService.ts is deprecated. Use createCategory() from '@/services/categories/categoryService' instead.");
-  try {
-    const { error } = await supabase
-      .from('categories')
-      .insert([category]);
-
-    if (error) throw error;
-
-    return true;
-  } catch (error) {
-    console.error('Error adding category:', error);
-    return false;
-  }
-};
-
-// DEPRECATED: Use updateCategory from '@/services/categories/categoryService' instead
-export const updateCategory = async (id: string, category: any) => {
-  console.warn("updateCategory() in dataService.ts is deprecated. Use updateCategory() from '@/services/categories/categoryService' instead.");
-  try {
-    const { error } = await supabase
-      .from('categories')
-      .update(category)
-      .eq('id', id);
-
-    if (error) throw error;
-
-    return true;
-  } catch (error) {
-    console.error('Error updating category:', error);
-    return false;
-  }
-};
-
-// DEPRECATED: Use deleteCategory from '@/services/categories/categoryService' instead
-export const deleteCategory = async (id: string) => {
-  console.warn("deleteCategory() in dataService.ts is deprecated. Use deleteCategory() from '@/services/categories/categoryService' instead.");
-  try {
-    const { error } = await supabase
-      .from('categories')
-      .delete()
-      .eq('id', id);
-
-    if (error) throw error;
-
-    return true;
-  } catch (error) {
-    console.error('Error deleting category:', error);
-    return false;
-  }
-};
+// Non-deprecated functions that haven't been migrated yet
 
 export const getProducts = async (): Promise<Product[]> => {
+  console.warn("getProducts() in dataService.ts is deprecated. Use fetchProducts() from '@/services/products/productService' instead.");
+  
   try {
     const { data, error } = await supabase
       .from('products')
@@ -141,6 +50,8 @@ export const getProducts = async (): Promise<Product[]> => {
 };
 
 export const getProductById = async (id: string): Promise<Product | undefined> => {
+  console.warn("getProductById() in dataService.ts is deprecated. Use fetchProductById() from '@/services/products/productService' instead.");
+  
   try {
     const { data, error } = await supabase
       .from('products')
@@ -172,6 +83,8 @@ export const getProductById = async (id: string): Promise<Product | undefined> =
 };
 
 export const getReviews = async (): Promise<Review[]> => {
+  console.warn("getReviews() in dataService.ts is deprecated. Use fetchReviews() from '@/services/reviews/reviewsService' instead.");
+  
   try {
     const { data, error } = await supabase
       .from('reviews')
@@ -202,6 +115,8 @@ export const getReviews = async (): Promise<Review[]> => {
 };
 
 export const getBanners = async (): Promise<Banner[]> => {
+  console.warn("getBanners() in dataService.ts is deprecated. Use fetchBanners() from '@/services/banners/bannerService' instead.");
+  
   try {
     const { data, error } = await supabase
       .from('banners')
@@ -237,6 +152,8 @@ export const getBanners = async (): Promise<Banner[]> => {
 };
 
 export const getProductsByCategory = async (categoryId: string): Promise<Product[]> => {
+  console.warn("getProductsByCategory() in dataService.ts is deprecated. Use fetchProductsByCategory() from '@/services/products/productService' instead.");
+  
   try {
     const { data, error } = await supabase
       .from('products')
@@ -264,6 +181,8 @@ export const getProductsByCategory = async (categoryId: string): Promise<Product
 };
 
 export const getFeaturedProducts = async (): Promise<Product[]> => {
+  console.warn("getFeaturedProducts() in dataService.ts is deprecated. Use fetchFeaturedProducts() from '@/services/products/productService' instead.");
+  
   try {
     const { data, error } = await supabase
       .from('products')
@@ -291,130 +210,13 @@ export const getFeaturedProducts = async (): Promise<Product[]> => {
   }
 };
 
-export const getCompanyInfo = async (): Promise<CompanyInfo | null> => {
-  try {
-    const { data, error } = await supabase
-      .from('company_info')
-      .select('*')
-      .single();
-
-    if (error) return null;
-
-    if (!data) return null;
-    
-    // Fixed: Properly handle the contact object with type safety
-    const contactData = typeof data.contact === 'object' && data.contact !== null 
-      ? data.contact 
-      : {
-          address: '',
-          phone: '',
-          email: '',
-          socialMedia: {}
-        };
-    
-    return {
-      name: data.name,
-      slogan: data.slogan || '',
-      about: data.about || '',
-      logo: data.logo_url || '/placeholder.svg',
-      contact: {
-        address: typeof contactData === 'object' && 'address' in contactData ? String(contactData.address || '') : '',
-        phone: typeof contactData === 'object' && 'phone' in contactData ? String(contactData.phone || '') : '',
-        email: typeof contactData === 'object' && 'email' in contactData ? String(contactData.email || '') : '',
-        socialMedia: typeof contactData === 'object' && 'socialMedia' in contactData && 
-          typeof contactData.socialMedia === 'object' && contactData.socialMedia !== null 
-          ? contactData.socialMedia as Record<string, string> 
-          : {}
-      },
-      exchangeRate: 1
-    };
-  } catch (error) {
-    console.error('Error fetching company info:', error);
-    return null;
-  }
-};
-
-export const updateCompanyInfo = async (info: any) => {
-  try {
-    const { error } = await supabase
-      .from('company_info')
-      .update(info)
-      .eq('id', 1);
-
-    if (error) throw error;
-
-    return true;
-  } catch (error) {
-    console.error('Error updating company info:', error);
-    return false;
-  }
-};
-
-export const addProduct = async (product: any) => {
-  try {
-    const { error } = await supabase
-      .from('products')
-      .insert([product]);
-
-    if (error) throw error;
-
-    return true;
-  } catch (error) {
-    console.error('Error adding product:', error);
-    return false;
-  }
-};
-
-export const updateProduct = async (id: string, product: any) => {
-  try {
-    const { error } = await supabase
-      .from('products')
-      .update(product)
-      .eq('id', id);
-
-    if (error) throw error;
-
-    return true;
-  } catch (error) {
-    console.error('Error updating product:', error);
-    return false;
-  }
-};
-
-export const deleteProduct = async (id: string) => {
-  try {
-    const { error } = await supabase
-      .from('products')
-      .delete()
-      .eq('id', id);
-
-    if (error) throw error;
-
-    return true;
-  } catch (error) {
-    console.error('Error deleting product:', error);
-    return false;
-  }
-};
-
-export const uploadMedia = async (file: File, bucket: string = 'media'): Promise<string | null> => {
-  try {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Math.random().toString(36).substring(2)}${Date.now()}.${fileExt}`;
-
-    const { error } = await supabase.storage
-      .from(bucket)
-      .upload(fileName, file);
-
-    if (error) throw error;
-
-    const { data } = supabase.storage
-      .from(bucket)
-      .getPublicUrl(fileName);
-
-    return data.publicUrl;
-  } catch (error) {
-    console.error('Error uploading media:', error);
-    return null;
-  }
-};
+// Re-export from the proper service files to maintain backward compatibility
+export * from './products/productService';
+export * from './categories/categoryService';
+export * from './company/companyService';
+export * from './reviews/reviewsService';
+export * from './banners/bannerService';
+export * from './media/mediaService';
+export * from './auth/authService';
+export * from './sales/salesService';
+export * from './stock/stockService';

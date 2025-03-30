@@ -16,6 +16,8 @@ export * from './company/companyService';
 export * from './media/mediaService';
 export * from './sales/salesService';
 export * from './stock/stockService';
+export * from './reviews/reviewsService';
+export * from './banners/bannerService';
 
 // Notify about deprecation when imported
 console.warn('supabaseService.ts is deprecated. Please import directly from the individual service modules.');
