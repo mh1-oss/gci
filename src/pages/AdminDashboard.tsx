@@ -2,7 +2,6 @@
 import { Routes, Route } from "react-router-dom";
 import AdminAuthCheck from "@/components/Admin/AdminAuthCheck";
 import AdminNavTabs from "@/components/Admin/AdminNavTabs";
-import AdminTabContent from "@/components/Admin/AdminTabContent";
 import AdminContent from "@/components/Admin/AdminContent";
 import AdminProducts from "@/components/Admin/AdminProducts";
 import AdminCategories from "@/components/Admin/AdminCategories";
@@ -25,17 +24,19 @@ const AdminDashboard = () => {
 
           <AdminNavTabs />
           
-          <Routes>
-            <Route index element={<AdminOverview />} />
-            <Route path="products" element={<AdminProducts />} />
-            <Route path="categories" element={<AdminCategories />} />
-            <Route path="stock" element={<AdminStock />} />
-            <Route path="sales" element={<AdminSales />} />
-            <Route path="settings" element={<AdminSettings />} />
-            <Route path="content" element={<AdminContent activeTab="about" />} />
-            <Route path="content/reviews" element={<AdminContent activeTab="reviews" />} />
-            <Route path="content/banners" element={<AdminContent activeTab="banners" />} />
-          </Routes>
+          <div className="p-6 bg-white rounded-lg shadow-sm min-h-[500px]">
+            <Routes>
+              <Route index element={<AdminOverview />} />
+              <Route path="products/*" element={<AdminProducts />} />
+              <Route path="categories/*" element={<AdminCategories />} />
+              <Route path="stock/*" element={<AdminStock />} />
+              <Route path="sales/*" element={<AdminSales />} />
+              <Route path="settings/*" element={<AdminSettings />} />
+              <Route path="content" element={<AdminContent activeTab="about" />} />
+              <Route path="content/reviews" element={<AdminContent activeTab="reviews" />} />
+              <Route path="content/banners" element={<AdminContent activeTab="banners" />} />
+            </Routes>
+          </div>
         </div>
       </div>
     </AdminAuthCheck>

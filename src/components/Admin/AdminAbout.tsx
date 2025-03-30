@@ -22,8 +22,28 @@ const AdminAbout = () => {
       try {
         setLoading(true);
         const info = await fetchCompanyInfo();
-        setCompanyInfo(info);
-        setLogoPreview(info?.logo);
+        console.log("Fetched company info:", info);
+        
+        if (info) {
+          setCompanyInfo(info);
+          setLogoPreview(info.logo);
+        } else {
+          // Set default values if no info is found
+          setCompanyInfo({
+            name: 'شركة الذهبية للصناعات الكيمياوية',
+            slogan: 'جودة تدوم مع الوقت',
+            about: '',
+            logo: '/gci-logo.png',
+            contact: {
+              address: '',
+              phone: '',
+              email: '',
+              socialMedia: {}
+            },
+            exchangeRate: 1
+          });
+          setLogoPreview('/gci-logo.png');
+        }
       } catch (error) {
         console.error("Error fetching company info:", error);
         toast({
@@ -53,18 +73,18 @@ const AdminAbout = () => {
     if (file) {
       try {
         const logoUrl = await uploadMedia(file);
-        if (companyInfo) {
+        if (companyInfo && logoUrl) {
           setCompanyInfo({
             ...companyInfo,
             logo: logoUrl
           });
           setLogoPreview(logoUrl);
+          
+          toast({
+            title: "تم تحميل الشعار",
+            description: "تم تحميل شعار الشركة بنجاح.",
+          });
         }
-        
-        toast({
-          title: "تم تحميل الشعار",
-          description: "تم تحميل شعار الشركة بنجاح.",
-        });
       } catch (error) {
         console.error("Error uploading logo:", error);
         toast({
@@ -81,12 +101,17 @@ const AdminAbout = () => {
     
     try {
       setSaving(true);
-      await updateCompanyInfo(companyInfo);
-      toast({
-        title: "تم التحديث بنجاح",
-        description: "تم تحديث معلومات الشركة.",
-        variant: "default",
-      });
+      const success = await updateCompanyInfo(companyInfo);
+      
+      if (success) {
+        toast({
+          title: "تم التحديث بنجاح",
+          description: "تم تحديث معلومات الشركة.",
+          variant: "default",
+        });
+      } else {
+        throw new Error("Failed to update company info");
+      }
     } catch (error) {
       console.error("Error updating company info:", error);
       toast({

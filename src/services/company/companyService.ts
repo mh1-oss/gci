@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import type { CompanyInfo } from '@/data/initialData';
 import {
   mapDbCompanyInfoToCompanyInfo,
@@ -21,47 +21,59 @@ export const fetchCompanyInfo = async (): Promise<CompanyInfo | null> => {
       return null;
     }
     
-    return data ? mapDbCompanyInfoToCompanyInfo(data) : null;
+    if (!data) return null;
+
+    // Map the data to the CompanyInfo type
+    return {
+      name: data.name,
+      slogan: data.slogan || '',
+      about: data.about || '',
+      logo: data.logo_url || '',
+      contact: {
+        address: data.contact?.address || '',
+        phone: data.contact?.phone || '',
+        email: data.contact?.email || '',
+        socialMedia: (data.contact?.socialMedia || {}) as Record<string, string>
+      },
+      exchangeRate: 1
+    };
   } catch (error) {
     console.error('Unexpected error fetching company info:', error);
     return null;
   }
 };
 
-export const updateCompanyInfo = async (updates: Partial<CompanyInfo>): Promise<CompanyInfo | null> => {
+export const updateCompanyInfo = async (updates: Partial<CompanyInfo>): Promise<boolean> => {
   try {
-    const dbUpdates = mapCompanyInfoToDbCompanyInfo(updates);
+    const dbUpdates: any = {};
     
-    const { data, error } = await supabase
+    if (updates.name !== undefined) dbUpdates.name = updates.name;
+    if (updates.slogan !== undefined) dbUpdates.slogan = updates.slogan;
+    if (updates.about !== undefined) dbUpdates.about = updates.about;
+    if (updates.logo !== undefined) dbUpdates.logo_url = updates.logo;
+    
+    if (updates.contact) {
+      dbUpdates.contact = {
+        address: updates.contact.address || '',
+        email: updates.contact.email || '',
+        phone: updates.contact.phone || '',
+        socialMedia: updates.contact.socialMedia || {}
+      };
+    }
+    
+    const { error } = await supabase
       .from('company_info')
       .update(dbUpdates)
-      .eq('id', 1)
-      .select()
-      .single();
+      .eq('id', 1);
     
     if (error) {
       console.error('Error updating company info:', error);
-      toast({
-        title: "خطأ في تحديث معلومات الشركة",
-        description: error.message,
-        variant: "destructive",
-      });
-      return null;
+      return false;
     }
     
-    toast({
-      title: "تم بنجاح",
-      description: "تم تحديث معلومات الشركة بنجاح",
-    });
-    
-    return data ? mapDbCompanyInfoToCompanyInfo(data) : null;
+    return true;
   } catch (error) {
     console.error('Unexpected error updating company info:', error);
-    toast({
-      title: "خطأ غير متوقع",
-      description: "حدث خطأ أثناء تحديث معلومات الشركة",
-      variant: "destructive",
-    });
-    return null;
+    return false;
   }
 };
