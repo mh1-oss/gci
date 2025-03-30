@@ -13,6 +13,7 @@ const AdminContentTabs = ({ currentTab, onTabChange }: AdminContentTabsProps) =>
         value="about" 
         onClick={() => onTabChange("about")}
         data-state={currentTab === "about" ? "active" : "inactive"}
+        className="data-[state=active]:bg-brand-blue data-[state=active]:text-white"
       >
         صفحة من نحن
       </TabsTrigger>
@@ -20,6 +21,7 @@ const AdminContentTabs = ({ currentTab, onTabChange }: AdminContentTabsProps) =>
         value="reviews" 
         onClick={() => onTabChange("reviews")}
         data-state={currentTab === "reviews" ? "active" : "inactive"}
+        className="data-[state=active]:bg-brand-blue data-[state=active]:text-white"
       >
         المراجعات
       </TabsTrigger>
@@ -27,6 +29,7 @@ const AdminContentTabs = ({ currentTab, onTabChange }: AdminContentTabsProps) =>
         value="banners" 
         onClick={() => onTabChange("banners")}
         data-state={currentTab === "banners" ? "active" : "inactive"}
+        className="data-[state=active]:bg-brand-blue data-[state=active]:text-white"
       >
         البانرات
       </TabsTrigger>

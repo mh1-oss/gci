@@ -68,7 +68,7 @@ const Header = () => {
     <header className={`sticky top-0 z-50 bg-white shadow-sm transition-all duration-300 ${isScrolled ? "py-2" : "py-4"}`} dir="rtl">
       <div className="container-custom">
         <div className="flex items-center justify-between">
-          <Link to="/" className="text-2xl font-bold text-brand-blue">
+          <Link to="/" className="text-xl font-bold text-brand-blue">
             شركة الذهبية للصناعات الكيمياوية
           </Link>
 
