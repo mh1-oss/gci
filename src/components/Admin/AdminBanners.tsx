@@ -165,10 +165,10 @@ const AdminBanners = () => {
         }
       }
       
-      // Prepare banner data
+      // Prepare banner data - now with the correct structure for Supabase
       const newBanner = {
         title: formData.title,
-        subtitle: formData.subtitle,
+        subtitle: formData.subtitle || null,
         image: formData.mediaType === 'image' ? imageUrl : null,
         video_url: formData.mediaType === 'video' ? formData.videoUrl : null,
         media_type: formData.mediaType,
@@ -182,7 +182,7 @@ const AdminBanners = () => {
       // Insert into database
       const { error } = await supabase
         .from('banners')
-        .insert([newBanner]);
+        .insert(newBanner);
       
       if (error) throw error;
       
@@ -227,7 +227,7 @@ const AdminBanners = () => {
       // Prepare update data
       const updateData = {
         title: formData.title,
-        subtitle: formData.subtitle,
+        subtitle: formData.subtitle || null,
         image: formData.mediaType === 'image' ? imageUrl : null,
         video_url: formData.mediaType === 'video' ? formData.videoUrl : null,
         media_type: formData.mediaType,
