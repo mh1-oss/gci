@@ -51,7 +51,8 @@ const CalculatorPage = () => {
       return;
     }
 
-    const coveragePerLiter = selectedProduct.coverage;
+    // Default coverage value if not specified
+    const coveragePerLiter = selectedProduct.coverage || 10; 
     const quantityNeeded = area / coveragePerLiter;
     setResult(quantityNeeded);
   };

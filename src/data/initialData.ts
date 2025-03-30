@@ -10,6 +10,7 @@ export interface Product {
   specifications?: Record<string, string>;
   mediaGallery?: MediaItem[];
   specsPdf?: string;
+  coverage?: number; // Adding coverage property for paint products
 }
 
 export interface MediaItem {
