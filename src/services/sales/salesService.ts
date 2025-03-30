@@ -194,12 +194,28 @@ export const deleteSale = async (saleId: string): Promise<boolean> => {
     
     if (error) {
       console.error('Error deleting sale:', error);
-      return false;
+      throw error;
     }
     
     return true;
   } catch (error) {
     console.error('Unexpected error deleting sale:', error);
-    return false;
+    throw error;
   }
 };
+
+// Export mappers directly so they can be used in components
+export { 
+  mapDbSaleToSale, 
+  mapSaleToDbSale, 
+  mapSaleItemToDbSaleItem,
+  mapDbSaleItemWithProductToSaleItem
+};
+
+// Re-export types
+export type { 
+  Sale, 
+  SaleItem, 
+  DbSale, 
+  DbSaleItem 
+} from '@/utils/models';

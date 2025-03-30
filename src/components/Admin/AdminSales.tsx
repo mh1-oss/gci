@@ -2,7 +2,7 @@ import React from 'react';
 import { Sale } from '@/utils/models';
 import { useState, useEffect } from "react";
 import { useNavigate, Routes, Route, Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,18 +17,20 @@ import {
   TableCell 
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertCircle, ArrowRight, Plus, Search, Trash } from "lucide-react";
+import { AlertCircle, ArrowRight, FileText, Plus, Printer, Search, Trash } from "lucide-react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { fetchProducts } from "@/services/products/productService";
 import { 
+  createSale,
+  deleteSale,
   mapDbSaleToSale,
   mapSaleToDbSale,
   mapSaleItemToDbSaleItem,
   DbSale,
   DbSaleItem
-} from '@/utils/models';
+} from '@/services/sales/salesService';
 import { Product } from "@/data/initialData";
 
 const SalesList = () => {
@@ -36,6 +38,26 @@ const SalesList = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteSale,
+    onSuccess: () => {
+      toast({
+        title: "تم بنجاح",
+        description: "تم حذف المبيعة بنجاح",
+      });
+      queryClient.invalidateQueries({ queryKey: ['sales'] });
+    },
+    onError: (error) => {
+      console.error('Error deleting sale:', error);
+      toast({
+        title: "خطأ في حذف المبيعة",
+        description: error instanceof Error ? error.message : "حدث خطأ أثناء حذف المبيعة",
+        variant: "destructive",
+      });
+    }
+  });
 
   useEffect(() => {
     loadSales();
@@ -107,37 +129,142 @@ const SalesList = () => {
     }
   };
 
-  const deleteSale = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('sales')
-        .delete()
-        .eq('id', id);
-      
-      if (error) {
-        console.error('Error deleting sale:', error);
-        toast({
-          title: "خطأ في حذف المبيعة",
-          description: error.message,
-          variant: "destructive",
-        });
-        return;
-      }
-      
+  const handleDeleteSale = (id: string) => {
+    deleteMutation.mutate(id);
+  };
+
+  const printReceipt = (sale: Sale) => {
+    const receiptWindow = window.open('', '_blank');
+    if (!receiptWindow) {
       toast({
-        title: "تم بنجاح",
-        description: "تم حذف المبيعة بنجاح",
+        title: "تنبيه",
+        description: "يرجى السماح بالنوافذ المنبثقة لطباعة الإيصال",
+        variant: "destructive"
       });
-      
-      loadSales();
-    } catch (error) {
-      console.error('Unexpected error deleting sale:', error);
-      toast({
-        title: "خطأ غير متوقع",
-        description: "حدث خطأ أثناء حذف المبيعة",
-        variant: "destructive",
-      });
+      return;
     }
+    
+    receiptWindow.document.write(`
+      <html dir="rtl">
+      <head>
+        <title>إيصال رقم ${sale.id.substring(0, 8)}</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+          }
+          .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+          }
+          .info-section {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+          }
+          .info-block {
+            width: 45%;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+          }
+          th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: right;
+          }
+          th {
+            background-color: #f2f2f2;
+          }
+          .total {
+            text-align: left;
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 10px;
+          }
+          .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+          }
+          @media print {
+            button {
+              display: none;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>إيصال مبيعات</h1>
+          <p>رقم المبيعة: ${sale.id.substring(0, 8)}</p>
+          <p>تاريخ: ${format(new Date(sale.created_at), 'yyyy/MM/dd hh:mm a', { locale: ar })}</p>
+        </div>
+        
+        <div class="info-section">
+          <div class="info-block">
+            <h3>معلومات العميل</h3>
+            <p><strong>الاسم:</strong> ${sale.customer_name}</p>
+            ${sale.customer_phone ? `<p><strong>الهاتف:</strong> ${sale.customer_phone}</p>` : ''}
+            ${sale.customer_email ? `<p><strong>البريد الإلكتروني:</strong> ${sale.customer_email}</p>` : ''}
+          </div>
+          <div class="info-block">
+            <h3>ملخص المبيعة</h3>
+            <p><strong>عدد المنتجات:</strong> ${sale.items.reduce((sum, item) => sum + item.quantity, 0)}</p>
+            <p><strong>إجمالي المبلغ:</strong> ${sale.total_amount.toLocaleString()} د.ع</p>
+          </div>
+        </div>
+        
+        <h3>المنتجات</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>المنتج</th>
+              <th>الكمية</th>
+              <th>سعر الوحدة</th>
+              <th>المجموع</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${sale.items.map(item => `
+              <tr>
+                <td>${item.product_name}</td>
+                <td>${item.quantity}</td>
+                <td>${item.unit_price.toLocaleString()} د.ع</td>
+                <td>${item.total_price.toLocaleString()} د.ع</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        
+        <div class="total">
+          الإجمالي: ${sale.total_amount.toLocaleString()} د.ع
+        </div>
+        
+        <div class="footer">
+          <p>شكراً لتعاملكم معنا</p>
+          <p>هذا الإيصال دليل على عملية الشراء</p>
+        </div>
+        
+        <button onclick="window.print();" style="display: block; margin: 20px auto; padding: 10px 20px;">
+          طباعة الإيصال
+        </button>
+      </body>
+      </html>
+    `);
+    
+    receiptWindow.document.close();
+    setTimeout(() => {
+      receiptWindow.focus();
+      receiptWindow.print();
+    }, 500);
   };
 
   return (
@@ -198,12 +325,21 @@ const SalesList = () => {
                         size="sm"
                         onClick={() => navigate(`/admin/sales/${sale.id}`)}
                       >
+                        <FileText className="h-4 w-4 mr-1" />
                         عرض
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => printReceipt(sale)}
+                      >
+                        <Printer className="h-4 w-4 mr-1" />
+                        طباعة
                       </Button>
                       <Button
                         variant="destructive"
                         size="sm"
-                        onClick={() => deleteSale(sale.id)}
+                        onClick={() => handleDeleteSale(sale.id)}
                       >
                         <Trash className="h-4 w-4" />
                       </Button>
@@ -424,6 +560,7 @@ const NewSale = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ['products'],
@@ -456,29 +593,15 @@ const NewSale = () => {
     return cartItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (cartItems.length === 0) {
-      toast({
-        title: "السلة فارغة",
-        description: "يرجى إضافة منتجات إلى السلة قبل إكمال البيع",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (!customerName) {
-      toast({
-        title: "معلومات ناقصة",
-        description: "يرجى إدخال اسم العميل",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    try {
-      setIsSubmitting(true);
+  const createSaleMutation = useMutation({
+    mutationFn: async () => {
+      if (cartItems.length === 0) {
+        throw new Error("السلة فارغة");
+      }
+      
+      if (!customerName) {
+        throw new Error("يرجى إدخال اسم العميل");
+      }
       
       const saleData = {
         customer_name: customerName,
@@ -495,12 +618,7 @@ const NewSale = () => {
       
       if (saleError) {
         console.error('Error creating sale:', saleError);
-        toast({
-          title: "خطأ في إنشاء المبيعة",
-          description: saleError.message,
-          variant: "destructive",
-        });
-        return;
+        throw new Error(saleError.message);
       }
       
       const saleItems = cartItems.map(item => ({
@@ -517,12 +635,7 @@ const NewSale = () => {
       
       if (itemsError) {
         console.error('Error creating sale items:', itemsError);
-        toast({
-          title: "خطأ في إنشاء عناصر المبيعة",
-          description: itemsError.message,
-          variant: "destructive",
-        });
-        return;
+        throw new Error(itemsError.message);
       }
       
       const stockTransactions = cartItems.map(item => ({
@@ -536,22 +649,178 @@ const NewSale = () => {
         .from('stock_transactions')
         .insert(stockTransactions);
       
+      const items = cartItems.map(item => ({
+        id: '', // This will be replaced with actual IDs
+        product_id: item.product.id,
+        product_name: item.product.name,
+        quantity: item.quantity,
+        unit_price: item.product.price,
+        total_price: item.product.price * item.quantity
+      }));
+      
+      return mapDbSaleToSale(newSale, items);
+    },
+    onSuccess: (newSale) => {
       toast({
         title: "تم البيع بنجاح",
         description: "تم إنشاء المبيعة وتسجيل المعاملة بنجاح",
       });
       
+      printReceipt(newSale);
+      
+      queryClient.invalidateQueries({ queryKey: ['sales'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      
       navigate('/admin/sales');
-    } catch (error) {
-      console.error('Unexpected error during checkout:', error);
+    },
+    onError: (error) => {
+      console.error('Error during checkout:', error);
       toast({
-        title: "خطأ غير متوقع",
-        description: "حدث خطأ أثناء إكمال عملية البيع",
+        title: "خطأ",
+        description: error instanceof Error ? error.message : "حدث خطأ أثناء إكمال عملية البيع",
         variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
     }
+  });
+
+  const printReceipt = (sale: Sale) => {
+    const receiptWindow = window.open('', '_blank');
+    if (!receiptWindow) {
+      toast({
+        title: "تنبيه",
+        description: "يرجى السماح بالنوافذ المنبثقة لطباعة الإيصال",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    receiptWindow.document.write(`
+      <html dir="rtl">
+      <head>
+        <title>إيصال رقم ${sale.id.substring(0, 8)}</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+          }
+          .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+          }
+          .info-section {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+          }
+          .info-block {
+            width: 45%;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+          }
+          th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: right;
+          }
+          th {
+            background-color: #f2f2f2;
+          }
+          .total {
+            text-align: left;
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 10px;
+          }
+          .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+          }
+          @media print {
+            button {
+              display: none;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>إيصال مبيعات</h1>
+          <p>رقم المبيعة: ${sale.id.substring(0, 8)}</p>
+          <p>تاريخ: ${format(new Date(sale.created_at), 'yyyy/MM/dd hh:mm a', { locale: ar })}</p>
+        </div>
+        
+        <div class="info-section">
+          <div class="info-block">
+            <h3>معلومات العميل</h3>
+            <p><strong>الاسم:</strong> ${sale.customer_name}</p>
+            ${sale.customer_phone ? `<p><strong>الهاتف:</strong> ${sale.customer_phone}</p>` : ''}
+            ${sale.customer_email ? `<p><strong>البريد الإلكتروني:</strong> ${sale.customer_email}</p>` : ''}
+          </div>
+          <div class="info-block">
+            <h3>ملخص المبيعة</h3>
+            <p><strong>عدد المنتجات:</strong> ${sale.items.reduce((sum, item) => sum + item.quantity, 0)}</p>
+            <p><strong>إجمالي المبلغ:</strong> ${sale.total_amount.toLocaleString()} د.ع</p>
+          </div>
+        </div>
+        
+        <h3>المنتجات</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>المنتج</th>
+              <th>الكمية</th>
+              <th>سعر الوحدة</th>
+              <th>المجموع</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${sale.items.map(item => `
+              <tr>
+                <td>${item.product_name}</td>
+                <td>${item.quantity}</td>
+                <td>${item.unit_price.toLocaleString()} د.ع</td>
+                <td>${item.total_price.toLocaleString()} د.ع</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        
+        <div class="total">
+          الإجمالي: ${sale.total_amount.toLocaleString()} د.ع
+        </div>
+        
+        <div class="footer">
+          <p>شكراً لتعاملكم معنا</p>
+          <p>هذا الإيصال دليل على عملية الشراء</p>
+        </div>
+        
+        <button onclick="window.print();" style="display: block; margin: 20px auto; padding: 10px 20px;">
+          طباعة الإيصال
+        </button>
+      </body>
+      </html>
+    `);
+    
+    receiptWindow.document.close();
+    setTimeout(() => {
+      receiptWindow.focus();
+      receiptWindow.print();
+    }, 500);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    createSaleMutation.mutate();
   };
 
   return (

@@ -14,8 +14,10 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Minus, Trash2, ShoppingBag } from "lucide-react";
+import { Plus, Minus, Trash2, ShoppingBag, Printer } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import { ar } from "date-fns/locale";
 
 interface CartDrawerProps {
   open: boolean;
@@ -88,13 +90,151 @@ const CartDrawer = ({ open, onOpenChange }: CartDrawerProps) => {
   const { formatPrice } = useCurrency();
   const navigate = useNavigate();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [customerEmail, setCustomerEmail] = useState('');
+
+  const printReceipt = () => {
+    const receiptWindow = window.open('', '_blank');
+    if (!receiptWindow) {
+      toast({
+        title: "تنبيه",
+        description: "يرجى السماح بالنوافذ المنبثقة لطباعة الإيصال",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const now = new Date();
+    
+    receiptWindow.document.write(`
+      <html dir="rtl">
+      <head>
+        <title>إيصال مشتريات</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+          }
+          .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+          }
+          .info-section {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+          }
+          .info-block {
+            width: 45%;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+          }
+          th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: right;
+          }
+          th {
+            background-color: #f2f2f2;
+          }
+          .total {
+            text-align: left;
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 10px;
+          }
+          .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+          }
+          @media print {
+            button {
+              display: none;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>إيصال مشتريات</h1>
+          <p>تاريخ: ${format(now, 'yyyy/MM/dd hh:mm a', { locale: ar })}</p>
+        </div>
+        
+        <div class="info-section">
+          <div class="info-block">
+            <h3>معلومات العميل</h3>
+            <p><strong>الاسم:</strong> ${customerName || 'عميل'}</p>
+            ${customerPhone ? `<p><strong>الهاتف:</strong> ${customerPhone}</p>` : ''}
+            ${customerEmail ? `<p><strong>البريد الإلكتروني:</strong> ${customerEmail}</p>` : ''}
+          </div>
+          <div class="info-block">
+            <h3>ملخص المشتريات</h3>
+            <p><strong>عدد المنتجات:</strong> ${items.reduce((sum, item) => sum + item.quantity, 0)}</p>
+            <p><strong>إجمالي المبلغ:</strong> ${totalPrice.toLocaleString()} د.ع</p>
+          </div>
+        </div>
+        
+        <h3>المنتجات</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>المنتج</th>
+              <th>الكمية</th>
+              <th>سعر الوحدة</th>
+              <th>المجموع</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${items.map(item => `
+              <tr>
+                <td>${item.name}</td>
+                <td>${item.quantity}</td>
+                <td>${item.price.toLocaleString()} د.ع</td>
+                <td>${(item.price * item.quantity).toLocaleString()} د.ع</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        
+        <div class="total">
+          الإجمالي: ${totalPrice.toLocaleString()} د.ع
+        </div>
+        
+        <div class="footer">
+          <p>شكراً لتعاملكم معنا</p>
+          <p>هذا الإيصال دليل على عملية الشراء</p>
+        </div>
+        
+        <button onclick="window.print();" style="display: block; margin: 20px auto; padding: 10px 20px;">
+          طباعة الإيصال
+        </button>
+      </body>
+      </html>
+    `);
+    
+    receiptWindow.document.close();
+    setTimeout(() => {
+      receiptWindow.focus();
+      receiptWindow.print();
+    }, 500);
+  };
 
   const handleCheckout = () => {
     setIsCheckingOut(true);
     
-    // In a real app, this would navigate to a checkout page
-    // For demo purposes, we'll simulate a checkout process
+    // Simulate a checkout process
     setTimeout(() => {
+      printReceipt();
       clearCart();
       onOpenChange(false);
       setIsCheckingOut(false);
@@ -141,15 +281,50 @@ const CartDrawer = ({ open, onOpenChange }: CartDrawerProps) => {
               </div>
             </div>
 
-            <SheetFooter className="flex-col items-stretch gap-2 sm:items-stretch mt-6">
+            <div className="mt-6 space-y-4">
               <Separator className="my-4" />
+              
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">اسم العميل (اختياري)</label>
+                  <input 
+                    type="text" 
+                    className="w-full p-2 border rounded" 
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    placeholder="أدخل اسمك"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">رقم الهاتف (اختياري)</label>
+                  <input 
+                    type="text" 
+                    className="w-full p-2 border rounded" 
+                    value={customerPhone}
+                    onChange={(e) => setCustomerPhone(e.target.value)}
+                    placeholder="أدخل رقم هاتفك"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">البريد الإلكتروني (اختياري)</label>
+                  <input 
+                    type="email" 
+                    className="w-full p-2 border rounded" 
+                    value={customerEmail}
+                    onChange={(e) => setCustomerEmail(e.target.value)}
+                    placeholder="أدخل بريدك الإلكتروني"
+                  />
+                </div>
+              </div>
               
               <div className="flex justify-between py-2">
                 <span className="font-medium">المجموع:</span>
                 <span className="font-bold">{formatPrice(totalPrice)}</span>
               </div>
               
-              <div className="space-y-2 pt-4">
+              <div className="space-y-2">
                 <Button 
                   className="w-full" 
                   onClick={handleCheckout}
@@ -172,7 +347,7 @@ const CartDrawer = ({ open, onOpenChange }: CartDrawerProps) => {
                   </Button>
                 </SheetClose>
               </div>
-            </SheetFooter>
+            </div>
           </>
         )}
       </SheetContent>
