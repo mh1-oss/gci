@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { fetchCompanyInfo } from "@/services/company/companyService";
 import { CompanyInfo } from "@/data/initialData";
@@ -34,17 +35,21 @@ const ContactPage = () => {
   useEffect(() => {
     document.title = "اتصل بنا - الشركة الذهبية للصناعات الكيمياوية";
     
-    const fetchCompanyInfo = async () => {
-      const info = await fetchCompanyInfo();
-      if (info) {
-        setCompanyInfo({
-          ...info,
-          exchangeRate: info.exchangeRate || 1
-        });
+    const fetchData = async () => {
+      try {
+        const info = await fetchCompanyInfo();
+        if (info) {
+          setCompanyInfo({
+            ...info,
+            exchangeRate: info.exchangeRate || 1
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching company info:", error);
       }
     };
     
-    fetchCompanyInfo();
+    fetchData();
   }, []);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {

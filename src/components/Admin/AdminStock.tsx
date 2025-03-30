@@ -25,7 +25,7 @@ import { AlertCircle, ArrowDown, ArrowUp, Box, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
-import { getProducts } from "@/services/dataService";
+import { fetchProducts } from "@/services/products/productService";
 import { getStockTransactions, addStockTransaction, calculateProductStock } from "@/services/stock/stockService";
 import { 
   Dialog, 
@@ -52,7 +52,7 @@ const AdminStock = () => {
     isLoading: productsLoading 
   } = useQuery({
     queryKey: ['products'],
-    queryFn: getProducts
+    queryFn: fetchProducts
   });
 
   const { 
@@ -211,7 +211,7 @@ const AdminStock = () => {
                 <Label htmlFor="notes">ملاحظات</Label>
                 <Textarea
                   id="notes"
-                  placeholder="أضف ملاحظات للمعاملة (اختياري)"
+                  placeholder="أضف ملاحظات للمعاملة (اختيار��)"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                 />

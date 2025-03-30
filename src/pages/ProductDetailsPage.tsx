@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Product, Category, Review, MediaItem, RelatedProduct } from "@/data/initialData";
+import { useState, useEffect } from "react";
+import { Product, Category, MediaItem, RelatedProduct } from "@/data/initialData";
 import { fetchProductById, fetchRelatedProducts } from "@/services/products/productService";
 import { fetchCategoryById } from "@/services/categories/categoryService";
 import { useCurrency } from "@/context/CurrencyContext";
@@ -242,7 +242,7 @@ const ProductDetailsPage = () => {
                   <div>
                     <h3 className="font-semibold mb-2">التنظيف</h3>
                     <p className="text-gray-700">
-                      نظف جميع المعدات مباشرة بعد الاستخدام بالماء للمنتجات ذات الأساس ��لمائي
+                      نظف جميع المعدات مباشرة بعد الاستخدام بالماء للمنتجات ذات الأساس المائي
                       أو المذيب المناسب للمنتجات ذات الأساس المذيب. تخلص من الحاويات الفارغة بشكل مسؤول.
                     </p>
                   </div>

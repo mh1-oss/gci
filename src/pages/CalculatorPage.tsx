@@ -1,13 +1,11 @@
-
 import { useState, useEffect } from "react";
+import { fetchProducts } from "@/services/products/productService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calculator as CalcIcon } from "lucide-react";
-import { getProducts } from "@/services/dataService";
-import { Product } from "@/data/initialData";
 import { useCurrency } from "@/context/CurrencyContext";
 
 const CalculatorPage = () => {
@@ -23,23 +21,19 @@ const CalculatorPage = () => {
   const [result, setResult] = useState<{ liters: number; cans: { size: number; count: number }[] } | null>(null);
   const { formatPrice } = useCurrency();
 
-  // Fetch products on component mount
   useEffect(() => {
     document.title = "GSI - حاسبة الطلاء";
-    getProducts().then(setProducts);
+    fetchProducts().then(setProducts);
   }, []);
 
-  // Calculate area when dimensions change
   useEffect(() => {
     if (length && width) {
-      // For floor/ceiling calculation
       const floorArea = parseFloat(length) * parseFloat(width);
       
-      // For wall calculation
       if (height) {
         const wallArea = 2 * (parseFloat(length) * parseFloat(height) + parseFloat(width) * parseFloat(height));
-        const doorArea = parseInt(doors) * 2; // Assuming standard door size of 2 sq meters
-        const windowArea = parseInt(windows) * 1.5; // Assuming standard window size of 1.5 sq meters
+        const doorArea = parseInt(doors) * 2;
+        const windowArea = parseInt(windows) * 1.5;
         setArea(wallArea - doorArea - windowArea);
       } else {
         setArea(floorArea);
@@ -55,16 +49,13 @@ const CalculatorPage = () => {
     const product = products.find(p => p.id === selectedProductId);
     if (!product) return;
     
-    // Assuming coverage info is in the specifications
     const coveragePerLiter = product.specifications?.["التغطية"] 
       ? parseFloat(product.specifications["التغطية"].split("-")[0]) 
-      : 10; // Default coverage of 10 sq meters per liter
+      : 10;
     
-    // Calculate total liters needed
     const numberOfCoats = parseInt(coats);
     const totalLiters = (area * numberOfCoats) / coveragePerLiter;
     
-    // Calculate cans needed (common paint can sizes: 1L, 4L, 10L)
     const canSizes = [10, 4, 1];
     let remainingLiters = totalLiters;
     const cans: { size: number; count: number }[] = [];
@@ -77,7 +68,6 @@ const CalculatorPage = () => {
       }
     });
     
-    // If there's still some paint needed, add the smallest can
     if (remainingLiters > 0) {
       cans.push({ size: 1, count: 1 });
     }

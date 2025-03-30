@@ -21,7 +21,7 @@ import { AlertCircle, ArrowRight, Plus, Search, Trash } from "lucide-react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
-import { getProducts } from "@/services/dataService";
+import { fetchProducts } from "@/services/products/productService";
 import { 
   mapDbSaleToSale,
   mapSaleToDbSale,
@@ -427,7 +427,7 @@ const NewSale = () => {
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ['products'],
-    queryFn: getProducts
+    queryFn: fetchProducts
   });
 
   const addToCart = (product: Product) => {
