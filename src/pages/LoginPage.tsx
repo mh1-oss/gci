@@ -16,7 +16,7 @@ const LoginPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    document.title = "Modern Paint - Login";
+    document.title = "مودرن بينت - تسجيل الدخول";
     
     // Redirect if already authenticated
     if (isAuthenticated) {
@@ -29,8 +29,8 @@ const LoginPage = () => {
     
     if (!username || !password) {
       toast({
-        title: "Validation Error",
-        description: "Please enter both username and password.",
+        title: "خطأ في التحقق",
+        description: "الرجاء إدخال اسم المستخدم وكلمة المرور.",
         variant: "destructive",
       });
       return;
@@ -46,8 +46,8 @@ const LoginPage = () => {
     } catch (error) {
       console.error("Login error:", error);
       toast({
-        title: "Login Failed",
-        description: "An unexpected error occurred. Please try again.",
+        title: "فشل تسجيل الدخول",
+        description: "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.",
         variant: "destructive",
       });
     } finally {
@@ -56,27 +56,27 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="py-12">
+    <div className="py-12" dir="rtl">
       <div className="container-custom max-w-md mx-auto">
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl text-center">Login to Your Account</CardTitle>
+            <CardTitle className="text-2xl text-center">تسجيل الدخول إلى حسابك</CardTitle>
             <CardDescription className="text-center">
-              Enter your credentials to access your account
+              أدخل بيانات الاعتماد الخاصة بك للوصول إلى حسابك
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit}>
               <div className="mb-4">
                 <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
-                  Username
+                  اسم المستخدم
                 </label>
                 <Input
                   id="username"
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Enter your username"
+                  placeholder="أدخل اسم المستخدم"
                   autoComplete="username"
                   disabled={isLoading}
                 />
@@ -84,14 +84,14 @@ const LoginPage = () => {
               
               <div className="mb-6">
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                  Password
+                  كلمة المرور
                 </label>
                 <Input
                   id="password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
+                  placeholder="أدخل كلمة المرور"
                   autoComplete="current-password"
                   disabled={isLoading}
                 />
@@ -102,13 +102,13 @@ const LoginPage = () => {
                 className="w-full" 
                 disabled={isLoading}
               >
-                {isLoading ? "Logging in..." : "Login"}
+                {isLoading ? "جاري تسجيل الدخول..." : "تسجيل الدخول"}
               </Button>
             </form>
           </CardContent>
           <CardFooter className="flex justify-center">
             <p className="text-sm text-gray-500">
-              Demo login: username "admin" and password "admin123"
+              بيانات تسجيل الدخول التجريبية: اسم المستخدم "admin" وكلمة المرور "admin123"
             </p>
           </CardFooter>
         </Card>

@@ -33,6 +33,8 @@ export interface Banner {
   ctaLink: string;
   mediaType?: 'image' | 'video';
   videoUrl?: string;
+  sliderHeight?: number;
+  textColor?: string;
 }
 
 export interface CompanyInfo {

@@ -18,7 +18,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const { toast } = useToast();
   
@@ -48,15 +48,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(adminUser);
       localStorage.setItem("user", JSON.stringify(adminUser));
       toast({
-        title: "Login successful",
-        description: "Welcome back, Admin!",
+        title: "تم تسجيل الدخول بنجاح",
+        description: "مرحبًا بك مجددًا، مسؤول!",
         variant: "default",
       });
       return true;
     } else {
       toast({
-        title: "Login failed",
-        description: "Invalid username or password.",
+        title: "فشل تسجيل الدخول",
+        description: "اسم المستخدم أو كلمة المرور غير صحيحة.",
         variant: "destructive",
       });
       return false;
@@ -67,8 +67,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
     localStorage.removeItem("user");
     toast({
-      title: "Logged out",
-      description: "You have been successfully logged out.",
+      title: "تم تسجيل الخروج",
+      description: "لقد تم تسجيل خروجك بنجاح.",
       variant: "default",
     });
   };
