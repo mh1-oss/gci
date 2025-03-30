@@ -158,7 +158,7 @@ const AdminDashboard = () => {
               <Route index element={<AdminOverview />} />
               <Route path="products/*" element={<AdminProducts />} />
               <Route path="categories/*" element={<AdminCategories />} />
-              <Route path="content/*" element={<AdminContent />} />
+              <Route path="content/*" element={<AdminContent activeTab="about" />} />
               <Route path="settings/*" element={<AdminSettings />} />
               <Route path="stock/*" element={<AdminStock />} />
               <Route path="sales/*" element={<AdminSales />} />
