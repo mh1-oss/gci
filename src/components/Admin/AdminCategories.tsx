@@ -57,6 +57,7 @@ const AdminCategories = () => {
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [authError, setAuthError] = useState<string | null>(null);
@@ -116,6 +117,7 @@ const AdminCategories = () => {
       return;
     }
 
+    setIsSaving(true);
     try {
       const newCategory: Omit<Category, 'id'> = { 
         name, 
@@ -141,6 +143,8 @@ const AdminCategories = () => {
         description: "حدث خطأ غير متوقع أثناء إنشاء الفئة.",
         variant: "destructive"
       });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -182,6 +186,7 @@ const AdminCategories = () => {
       return;
     }
 
+    setIsSaving(true);
     try {
       const updatedCategoryData: Partial<Category> = {
         name: name,
@@ -210,6 +215,8 @@ const AdminCategories = () => {
         description: "حدث خطأ غير متوقع أثناء تحديث الفئة.",
         variant: "destructive"
       });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -367,8 +374,18 @@ const AdminCategories = () => {
             }}>
               إلغاء
             </Button>
-            <Button onClick={editMode ? handleUpdate : handleCreate}>
-              {editMode ? 'تحديث الفئة' : 'إنشاء فئة'}
+            <Button 
+              onClick={editMode ? handleUpdate : handleCreate}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {editMode ? 'جاري التحديث...' : 'جاري الإنشاء...'}
+                </>
+              ) : (
+                editMode ? 'تحديث الفئة' : 'إنشاء فئة'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

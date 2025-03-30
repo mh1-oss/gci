@@ -275,12 +275,24 @@ export const createCategory = async (category: Omit<Category, 'id'>): Promise<Ca
   try {
     const dbCategory = mapCategoryToDbCategory(category);
     
-    // First check if user is authenticated
+    // First check if user is authenticated via the auth status
     const { data: sessionData } = await supabase.auth.getSession();
     if (!sessionData.session) {
       toast({
         title: "خطأ في التحقق",
         description: "يجب تسجيل الدخول لإنشاء فئة جديدة",
+        variant: "destructive",
+      });
+      return null;
+    }
+    
+    // Check if user is admin using RPC function
+    const { data: isAdmin, error: adminCheckError } = await supabase.rpc('is_admin');
+    if (adminCheckError || !isAdmin) {
+      console.error('Error checking admin status:', adminCheckError);
+      toast({
+        title: "خطأ في الصلاحيات",
+        description: "ليس لديك صلاحية لإنشاء فئة جديدة",
         variant: "destructive",
       });
       return null;
@@ -294,19 +306,11 @@ export const createCategory = async (category: Omit<Category, 'id'>): Promise<Ca
     
     if (error) {
       console.error('Error creating category:', error);
-      if (error.message.includes('permission denied')) {
-        toast({
-          title: "خطأ في الصلاحيات",
-          description: "ليس لديك صلاحية لإنشاء فئة جديدة",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "خطأ في إنشاء الفئة",
-          description: error.message,
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "خطأ في إنشاء الفئة",
+        description: error.message,
+        variant: "destructive",
+      });
       return null;
     }
     
@@ -340,6 +344,18 @@ export const updateCategory = async (id: string, updates: Partial<Category>): Pr
       return null;
     }
     
+    // Check if user is admin using RPC function
+    const { data: isAdmin, error: adminCheckError } = await supabase.rpc('is_admin');
+    if (adminCheckError || !isAdmin) {
+      console.error('Error checking admin status:', adminCheckError);
+      toast({
+        title: "خطأ في الصلاحيات",
+        description: "ليس لديك صلاحية لتحديث الفئة",
+        variant: "destructive",
+      });
+      return null;
+    }
+    
     // Convert to database model format
     const dbUpdates: Partial<DbCategory> = {};
     
@@ -355,19 +371,11 @@ export const updateCategory = async (id: string, updates: Partial<Category>): Pr
     
     if (error) {
       console.error('Error updating category:', error);
-      if (error.message.includes('permission denied')) {
-        toast({
-          title: "خطأ في الصلاحيات",
-          description: "ليس لديك صلاحية لتحديث الفئة",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "خطأ في تحديث الفئة",
-          description: error.message,
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "خطأ في تحديث الفئة",
+        description: error.message,
+        variant: "destructive",
+      });
       return null;
     }
     
@@ -401,6 +409,18 @@ export const deleteCategory = async (id: string): Promise<boolean> => {
       return false;
     }
     
+    // Check if user is admin using RPC function
+    const { data: isAdmin, error: adminCheckError } = await supabase.rpc('is_admin');
+    if (adminCheckError || !isAdmin) {
+      console.error('Error checking admin status:', adminCheckError);
+      toast({
+        title: "خطأ في الصلاحيات",
+        description: "ليس لديك صلاحية لحذف الفئة",
+        variant: "destructive",
+      });
+      return false;
+    }
+    
     const { error } = await supabase
       .from('categories')
       .delete()
@@ -408,19 +428,11 @@ export const deleteCategory = async (id: string): Promise<boolean> => {
     
     if (error) {
       console.error('Error deleting category:', error);
-      if (error.message.includes('permission denied')) {
-        toast({
-          title: "خطأ في الصلاحيات",
-          description: "ليس لديك صلاحية لحذف الفئة",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "خطأ في حذف الفئة",
-          description: error.message,
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "خطأ في حذف الفئة",
+        description: error.message,
+        variant: "destructive",
+      });
       return false;
     }
     
@@ -548,7 +560,7 @@ export const uploadMedia = async (file: File): Promise<string | null> => {
       .getPublicUrl(filePath);
     
     toast({
-      title: "تم ��نجاح",
+      title: "تم بنجاح",
       description: "تم رفع الملف بنجاح",
     });
     
