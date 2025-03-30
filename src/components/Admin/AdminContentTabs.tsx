@@ -1,6 +1,5 @@
 
-import { useNavigate } from "react-router-dom";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface AdminContentTabsProps {
   currentTab: string;
@@ -13,18 +12,21 @@ const AdminContentTabs = ({ currentTab, onTabChange }: AdminContentTabsProps) =>
       <TabsTrigger 
         value="about" 
         onClick={() => onTabChange("about")}
+        data-state={currentTab === "about" ? "active" : "inactive"}
       >
         صفحة من نحن
       </TabsTrigger>
       <TabsTrigger 
         value="reviews" 
         onClick={() => onTabChange("reviews")}
+        data-state={currentTab === "reviews" ? "active" : "inactive"}
       >
         المراجعات
       </TabsTrigger>
       <TabsTrigger 
         value="banners" 
         onClick={() => onTabChange("banners")}
+        data-state={currentTab === "banners" ? "active" : "inactive"}
       >
         البانرات
       </TabsTrigger>

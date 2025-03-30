@@ -69,7 +69,7 @@ const Header = () => {
       <div className="container-custom">
         <div className="flex items-center justify-between">
           <Link to="/" className="text-2xl font-bold text-brand-blue">
-            <img src="/gci-logo.png" alt="GSI" className="h-10" />
+            شركة الذهبية للصناعات الكيمياوية
           </Link>
 
           <nav className="hidden md:flex items-center space-x-6">

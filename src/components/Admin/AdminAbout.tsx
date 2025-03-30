@@ -6,7 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Upload, X } from "lucide-react";
-import { fetchCompanyInfo, updateCompanyInfo, uploadMedia } from "@/services/supabaseService";
+import { fetchCompanyInfo, updateCompanyInfo } from "@/services/company/companyService";
+import { uploadMedia } from "@/services/media/mediaService";
 import { CompanyInfo } from "@/data/initialData";
 
 const AdminAbout = () => {
