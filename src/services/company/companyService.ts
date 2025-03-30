@@ -58,6 +58,24 @@ const extractContactInfo = (contactData: Json | null): CompanyInfo['contact'] =>
   return defaultContact;
 };
 
+// Type for the company_info record from RPC function
+interface CompanyInfoRecord {
+  id: number;
+  name: string;
+  slogan: string | null;
+  about: string | null;
+  logo_url: string | null;
+  contact: Json | null;
+  created_at: string;
+  updated_at: string;
+  // Add any other fields from the company_info table
+  features_title: string | null;
+  features_description: string | null;
+  reviews_title: string | null;
+  reviews_description: string | null;
+  slider_timing: number | null;
+}
+
 // Company Info
 export const fetchCompanyInfo = async (): Promise<CompanyInfo | null> => {
   try {
@@ -104,15 +122,20 @@ export const fetchCompanyInfo = async (): Promise<CompanyInfo | null> => {
           return null;
         }
         
+        const companyRecord = adminData as CompanyInfoRecord[];
+        if (!companyRecord.length) {
+          return null;
+        }
+        
         // Use the helper function to safely extract contact information
-        const contactInfo = extractContactInfo(adminData.contact);
+        const contactInfo = extractContactInfo(companyRecord[0].contact);
         
         // Map the data to the CompanyInfo type
         return {
-          name: adminData.name,
-          slogan: adminData.slogan || '',
-          about: adminData.about || '',
-          logo: adminData.logo_url || '/gci-logo.png',
+          name: companyRecord[0].name,
+          slogan: companyRecord[0].slogan || '',
+          about: companyRecord[0].about || '',
+          logo: companyRecord[0].logo_url || '/gci-logo.png',
           contact: contactInfo,
           exchangeRate: 1
         };

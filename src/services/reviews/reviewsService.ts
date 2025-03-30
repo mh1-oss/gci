@@ -46,7 +46,7 @@ export const fetchReviews = async (): Promise<Review[]> => {
           return [];
         }
         
-        return adminData || [];
+        return adminData as Review[];
       }
       
       toast({

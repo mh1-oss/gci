@@ -517,6 +517,53 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_all_products: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          category_id: string | null
+          cost_price: number
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          name: string
+          price: number
+          stock_quantity: number
+          updated_at: string
+        }[]
+      }
+      get_all_reviews: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          content: string
+          created_at: string
+          customer_name: string
+          id: string
+          image_url: string | null
+          is_approved: boolean | null
+          position: string | null
+          rating: number
+          updated_at: string
+        }[]
+      }
+      get_company_info: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          about: string | null
+          contact: Json | null
+          created_at: string
+          features_description: string | null
+          features_title: string | null
+          id: number
+          logo_url: string | null
+          name: string
+          reviews_description: string | null
+          reviews_title: string | null
+          slider_timing: number | null
+          slogan: string | null
+          updated_at: string
+        }[]
+      }
       has_role: {
         Args: {
           _user_id: string
