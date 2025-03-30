@@ -27,7 +27,7 @@ const AdminDashboard = () => {
   const location = useLocation();
 
   useEffect(() => {
-    document.title = "لوحة تحكم المدير";
+    document.title = "لوحة تحكم المدير - الشركة الذهبية للصناعات الكيمياوية";
     
     // Redirect if not authenticated or not an admin
     if (!isAuthenticated || !isAdmin) {
@@ -65,6 +65,13 @@ const AdminDashboard = () => {
     if (path.includes("/admin/stock")) return "stock";
     if (path.includes("/admin/sales")) return "sales";
     return "overview";
+  };
+
+  // Helper function to determine which content tab is active
+  const getContentActiveTab = () => {
+    const path = location.pathname;
+    if (path.includes("/admin/content/reviews")) return "reviews";
+    return "about";
   };
 
   return (
@@ -158,7 +165,7 @@ const AdminDashboard = () => {
               <Route index element={<AdminOverview />} />
               <Route path="products/*" element={<AdminProducts />} />
               <Route path="categories/*" element={<AdminCategories />} />
-              <Route path="content/*" element={<AdminContent activeTab="about" />} />
+              <Route path="content/*" element={<AdminContent activeTab={getContentActiveTab()} />} />
               <Route path="settings/*" element={<AdminSettings />} />
               <Route path="stock/*" element={<AdminStock />} />
               <Route path="sales/*" element={<AdminSales />} />

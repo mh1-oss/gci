@@ -1,64 +1,47 @@
 
+import { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import AdminOverview from "./AdminOverview";
-import AdminProducts from "./AdminProducts";
-import AdminCategories from "./AdminCategories";
-import AdminSettings from "./AdminSettings";
 import AdminAbout from "./AdminAbout";
 import AdminReviews from "./AdminReviews";
-import AdminStock from "./AdminStock";
-import AdminSales from "./AdminSales";
 
 interface AdminContentProps {
   activeTab: string;
 }
 
 const AdminContent = ({ activeTab }: AdminContentProps) => {
+  const [currentTab, setCurrentTab] = useState(activeTab);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleTabChange = (value: string) => {
+    setCurrentTab(value);
+    if (value === "about") {
+      navigate("/admin/content");
+    } else {
+      navigate(`/admin/content/${value}`);
+    }
+  };
+
   return (
-    <Tabs value={activeTab} className="w-full">
-      <TabsList className="mb-8">
-        <TabsTrigger value="overview">نظرة عامة</TabsTrigger>
-        <TabsTrigger value="products">المنتجات</TabsTrigger>
-        <TabsTrigger value="categories">الفئات</TabsTrigger>
-        <TabsTrigger value="stock">المخزون</TabsTrigger>
-        <TabsTrigger value="sales">المبيعات</TabsTrigger>
-        <TabsTrigger value="about">من نحن</TabsTrigger>
-        <TabsTrigger value="reviews">المراجعات</TabsTrigger>
-        <TabsTrigger value="settings">الإعدادات</TabsTrigger>
-      </TabsList>
+    <div dir="rtl">
+      <h2 className="text-2xl font-bold mb-6">إدارة المحتوى</h2>
+      
+      <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
+        <TabsList className="mb-8">
+          <TabsTrigger value="about">صفحة من نحن</TabsTrigger>
+          <TabsTrigger value="reviews">المراجعات</TabsTrigger>
+        </TabsList>
 
-      <TabsContent value="overview">
-        <AdminOverview />
-      </TabsContent>
+        <TabsContent value="about">
+          <AdminAbout />
+        </TabsContent>
 
-      <TabsContent value="products">
-        <AdminProducts />
-      </TabsContent>
-
-      <TabsContent value="categories">
-        <AdminCategories />
-      </TabsContent>
-
-      <TabsContent value="stock">
-        <AdminStock />
-      </TabsContent>
-
-      <TabsContent value="sales">
-        <AdminSales />
-      </TabsContent>
-
-      <TabsContent value="about">
-        <AdminAbout />
-      </TabsContent>
-
-      <TabsContent value="reviews">
-        <AdminReviews />
-      </TabsContent>
-
-      <TabsContent value="settings">
-        <AdminSettings />
-      </TabsContent>
-    </Tabs>
+        <TabsContent value="reviews">
+          <AdminReviews />
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 

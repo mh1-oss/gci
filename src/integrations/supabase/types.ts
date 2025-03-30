@@ -36,6 +36,7 @@ export type Database = {
       company_info: {
         Row: {
           about: string | null
+          contact: Json | null
           created_at: string
           features_description: string | null
           features_title: string | null
@@ -50,6 +51,7 @@ export type Database = {
         }
         Insert: {
           about?: string | null
+          contact?: Json | null
           created_at?: string
           features_description?: string | null
           features_title?: string | null
@@ -64,6 +66,7 @@ export type Database = {
         }
         Update: {
           about?: string | null
+          contact?: Json | null
           created_at?: string
           features_description?: string | null
           features_title?: string | null
@@ -461,6 +464,10 @@ export type Database = {
           _user_id: string
           _role: Database["public"]["Enums"]["app_role"]
         }
+        Returns: boolean
+      }
+      is_admin: {
+        Args: Record<PropertyKey, never>
         Returns: boolean
       }
     }
