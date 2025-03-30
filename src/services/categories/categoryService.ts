@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import type { Category } from '@/data/initialData';
 import {
@@ -10,7 +11,7 @@ import {
 export const fetchCategories = async (): Promise<Category[]> => {
   try {
     console.log('Fetching categories...');
-    // Fetch categories directly without RLS check
+    // Modify to use a simpler query to avoid recursive RLS policy issues
     const { data, error } = await supabase
       .from('categories')
       .select('*')
@@ -35,7 +36,7 @@ export const fetchCategoryById = async (id: string): Promise<Category | null> =>
       .from('categories')
       .select('*')
       .eq('id', id)
-      .single();
+      .maybeSingle(); // Changed from single() to avoid errors when no data is found
     
     if (error) {
       console.error('Error fetching category by id:', error);
@@ -56,7 +57,7 @@ export const createCategory = async (category: Omit<Category, 'id'>): Promise<Ca
     
     const { data, error } = await supabase
       .from('categories')
-      .insert([dbCategory])
+      .insert(dbCategory) // Remove array wrapping
       .select()
       .single();
     
