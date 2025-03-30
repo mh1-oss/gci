@@ -11,6 +11,24 @@ import {
   MediaItem
 } from '@/data/initialData';
 
+import {
+  fetchProducts as fetchSupabaseProducts,
+  fetchProductById as fetchSupabaseProductById,
+  fetchProductsByCategory as fetchSupabaseProductsByCategory,
+  fetchFeaturedProducts as fetchSupabaseFeaturedProducts,
+  createProduct as createSupabaseProduct,
+  updateProduct as updateSupabaseProduct,
+  deleteProduct as deleteSupabaseProduct,
+  fetchCategories as fetchSupabaseCategories,
+  fetchCategoryById as fetchSupabaseCategoryById,
+  createCategory as createSupabaseCategory,
+  updateCategory as updateSupabaseCategory,
+  deleteCategory as deleteSupabaseCategory,
+  fetchCompanyInfo as fetchSupabaseCompanyInfo,
+  updateCompanyInfo as updateSupabaseCompanyInfo,
+  uploadMedia as uploadSupabaseMedia
+} from './supabaseService';
+
 // Helper function to safely parse localStorage data
 const getLocalStorageData = <T>(key: string, initialData: T): T => {
   try {
@@ -37,27 +55,56 @@ let categories = getLocalStorageData<Category[]>('categories', initialCategories
 let banners = getLocalStorageData<Banner[]>('banners', initialBanners);
 let companyInfo = getLocalStorageData<CompanyInfo>('companyInfo', initialCompanyInfo);
 
+// Flag to determine if we should use Supabase or local storage
+// In a real app, you might want to make this configurable or based on environment
+const useSupabase = true;
+
 // Products
-export const getProducts = (): Promise<Product[]> => {
+export const getProducts = async (): Promise<Product[]> => {
+  if (useSupabase) {
+    const supabaseProducts = await fetchSupabaseProducts();
+    return supabaseProducts;
+  }
+  
   return Promise.resolve([...products]);
 };
 
-export const getProductById = (id: string): Promise<Product | undefined> => {
+export const getProductById = async (id: string): Promise<Product | undefined> => {
+  if (useSupabase) {
+    const product = await fetchSupabaseProductById(id);
+    return product || undefined;
+  }
+  
   const product = products.find(p => p.id === id);
   return Promise.resolve(product);
 };
 
-export const getProductsByCategory = (categoryId: string): Promise<Product[]> => {
+export const getProductsByCategory = async (categoryId: string): Promise<Product[]> => {
+  if (useSupabase) {
+    const filteredProducts = await fetchSupabaseProductsByCategory(categoryId);
+    return filteredProducts;
+  }
+  
   const filteredProducts = products.filter(p => p.categoryId === categoryId);
   return Promise.resolve([...filteredProducts]);
 };
 
-export const getFeaturedProducts = (): Promise<Product[]> => {
+export const getFeaturedProducts = async (): Promise<Product[]> => {
+  if (useSupabase) {
+    const featuredProducts = await fetchSupabaseFeaturedProducts();
+    return featuredProducts;
+  }
+  
   const featuredProducts = products.filter(p => p.featured);
   return Promise.resolve([...featuredProducts]);
 };
 
-export const addProduct = (product: Omit<Product, 'id'>): Promise<Product> => {
+export const addProduct = async (product: Omit<Product, 'id'>): Promise<Product | undefined> => {
+  if (useSupabase) {
+    const newProduct = await createSupabaseProduct(product);
+    return newProduct || undefined;
+  }
+  
   const newProduct = {
     ...product,
     id: `p${Date.now()}`
@@ -69,7 +116,12 @@ export const addProduct = (product: Omit<Product, 'id'>): Promise<Product> => {
   return Promise.resolve(newProduct);
 };
 
-export const updateProduct = (id: string, updates: Partial<Product>): Promise<Product | undefined> => {
+export const updateProduct = async (id: string, updates: Partial<Product>): Promise<Product | undefined> => {
+  if (useSupabase) {
+    const updatedProduct = await updateSupabaseProduct(id, updates);
+    return updatedProduct || undefined;
+  }
+  
   const index = products.findIndex(p => p.id === id);
   
   if (index === -1) {
@@ -92,7 +144,11 @@ export const updateProduct = (id: string, updates: Partial<Product>): Promise<Pr
   return Promise.resolve(updatedProduct);
 };
 
-export const deleteProduct = (id: string): Promise<boolean> => {
+export const deleteProduct = async (id: string): Promise<boolean> => {
+  if (useSupabase) {
+    return deleteSupabaseProduct(id);
+  }
+  
   const initialLength = products.length;
   products = products.filter(p => p.id !== id);
   
@@ -105,16 +161,31 @@ export const deleteProduct = (id: string): Promise<boolean> => {
 };
 
 // Categories
-export const getCategories = (): Promise<Category[]> => {
+export const getCategories = async (): Promise<Category[]> => {
+  if (useSupabase) {
+    const supabaseCategories = await fetchSupabaseCategories();
+    return supabaseCategories;
+  }
+  
   return Promise.resolve([...categories]);
 };
 
-export const getCategoryById = (id: string): Promise<Category | undefined> => {
+export const getCategoryById = async (id: string): Promise<Category | undefined> => {
+  if (useSupabase) {
+    const category = await fetchSupabaseCategoryById(id);
+    return category || undefined;
+  }
+  
   const category = categories.find(c => c.id === id);
   return Promise.resolve(category);
 };
 
-export const addCategory = (category: Omit<Category, 'id'>): Promise<Category> => {
+export const addCategory = async (category: Omit<Category, 'id'>): Promise<Category | undefined> => {
+  if (useSupabase) {
+    const newCategory = await createSupabaseCategory(category);
+    return newCategory || undefined;
+  }
+  
   const newCategory = {
     ...category,
     id: `cat${Date.now()}`
@@ -126,7 +197,12 @@ export const addCategory = (category: Omit<Category, 'id'>): Promise<Category> =
   return Promise.resolve(newCategory);
 };
 
-export const updateCategory = (id: string, updates: Partial<Category>): Promise<Category | undefined> => {
+export const updateCategory = async (id: string, updates: Partial<Category>): Promise<Category | undefined> => {
+  if (useSupabase) {
+    const updatedCategory = await updateSupabaseCategory(id, updates);
+    return updatedCategory || undefined;
+  }
+  
   const index = categories.findIndex(c => c.id === id);
   
   if (index === -1) {
@@ -149,7 +225,11 @@ export const updateCategory = (id: string, updates: Partial<Category>): Promise<
   return Promise.resolve(updatedCategory);
 };
 
-export const deleteCategory = (id: string): Promise<boolean> => {
+export const deleteCategory = async (id: string): Promise<boolean> => {
+  if (useSupabase) {
+    return deleteSupabaseCategory(id);
+  }
+  
   const initialLength = categories.length;
   categories = categories.filter(c => c.id !== id);
   
@@ -162,11 +242,13 @@ export const deleteCategory = (id: string): Promise<boolean> => {
 };
 
 // Banners
-export const getBanners = (): Promise<Banner[]> => {
+export const getBanners = async (): Promise<Banner[]> => {
+  // For now, we'll continue using local storage for banners
   return Promise.resolve([...banners]);
 };
 
-export const updateBanner = (id: string, updates: Partial<Banner>): Promise<Banner | undefined> => {
+export const updateBanner = async (id: string, updates: Partial<Banner>): Promise<Banner | undefined> => {
+  // For now, we'll continue using local storage for banners
   const index = banners.findIndex(b => b.id === id);
   
   if (index === -1) {
@@ -190,11 +272,27 @@ export const updateBanner = (id: string, updates: Partial<Banner>): Promise<Bann
 };
 
 // Company Info
-export const getCompanyInfo = (): Promise<CompanyInfo> => {
+export const getCompanyInfo = async (): Promise<CompanyInfo> => {
+  if (useSupabase) {
+    const info = await fetchSupabaseCompanyInfo();
+    if (info) {
+      return info;
+    }
+    // Fallback to local storage if no data in Supabase
+  }
+  
   return Promise.resolve({...companyInfo});
 };
 
-export const updateCompanyInfo = (updates: Partial<CompanyInfo>): Promise<CompanyInfo> => {
+export const updateCompanyInfo = async (updates: Partial<CompanyInfo>): Promise<CompanyInfo> => {
+  if (useSupabase) {
+    const updatedInfo = await updateSupabaseCompanyInfo(updates);
+    if (updatedInfo) {
+      return updatedInfo;
+    }
+    // Fallback to local storage if update fails
+  }
+  
   companyInfo = {
     ...companyInfo,
     ...updates
@@ -206,18 +304,22 @@ export const updateCompanyInfo = (updates: Partial<CompanyInfo>): Promise<Compan
 };
 
 // Media Upload function
-export const uploadMedia = (file: File): Promise<string> => {
+export const uploadMedia = async (file: File): Promise<string> => {
+  if (useSupabase) {
+    const uploadedUrl = await uploadSupabaseMedia(file);
+    if (uploadedUrl) {
+      return uploadedUrl;
+    }
+    // Fall back to local storage approach if upload fails
+  }
+  
+  // Original implementation as fallback
   return new Promise((resolve, reject) => {
-    // In a real application, you would upload to a server or storage service
-    // Here we're using FileReader to simulate a file upload
     const reader = new FileReader();
     
     reader.onload = (event) => {
-      // Simulating a delay to mimic upload time
       setTimeout(() => {
         if (event.target?.result) {
-          // Return a data URL in this mock implementation
-          // In a real app, this would be the URL from your storage service
           resolve(event.target.result.toString());
         } else {
           reject(new Error("Failed to read file"));
@@ -234,7 +336,8 @@ export const uploadMedia = (file: File): Promise<string> => {
 };
 
 // Reset to initial data (for testing)
-export const resetData = (): Promise<void> => {
+export const resetData = async (): Promise<void> => {
+  // We won't reset Supabase data, only local storage
   products = [...initialProducts];
   categories = [...initialCategories];
   banners = [...initialBanners];
