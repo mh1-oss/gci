@@ -30,10 +30,12 @@ export const fetchCompanyInfo = async (): Promise<CompanyInfo | null> => {
       about: data.about || '',
       logo: data.logo_url || '',
       contact: {
-        address: data.contact?.address || '',
-        phone: data.contact?.phone || '',
-        email: data.contact?.email || '',
-        socialMedia: (data.contact?.socialMedia || {}) as Record<string, string>
+        address: typeof data.contact === 'object' && data.contact ? (data.contact as any).address || '' : '',
+        phone: typeof data.contact === 'object' && data.contact ? (data.contact as any).phone || '' : '',
+        email: typeof data.contact === 'object' && data.contact ? (data.contact as any).email || '' : '',
+        socialMedia: typeof data.contact === 'object' && data.contact && (data.contact as any).socialMedia 
+          ? (data.contact as any).socialMedia 
+          : {}
       },
       exchangeRate: 1
     };
