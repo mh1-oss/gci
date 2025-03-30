@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -22,16 +21,8 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
+import { fetchReviews, updateReview, deleteReview, createReview, type Review } from "@/services/reviews/reviewsService";
 import { supabase } from "@/integrations/supabase/client";
-
-interface Review {
-  id: string;
-  customer_name: string;
-  position: string;
-  content: string;
-  rating: number;
-  image_url?: string;
-}
 
 const AdminReviews = () => {
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -42,22 +33,14 @@ const AdminReviews = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchReviews();
+    getReviews();
   }, []);
 
-  const fetchReviews = async () => {
+  const getReviews = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('reviews')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        throw error;
-      }
-      
-      setReviews(data || []);
+      const fetchedReviews = await fetchReviews();
+      setReviews(fetchedReviews);
     } catch (error) {
       console.error('Error fetching reviews:', error);
       toast({
@@ -91,27 +74,17 @@ const AdminReviews = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('reviews')
-        .delete()
-        .eq('id', id);
+      const success = await deleteReview(id);
       
-      if (error) {
-        throw error;
+      if (success) {
+        setReviews(reviews.filter(review => review.id !== id));
+        toast({
+          title: "تم الحذف",
+          description: "تم حذف المراجعة بنجاح",
+        });
       }
-      
-      setReviews(reviews.filter(review => review.id !== id));
-      toast({
-        title: "تم الحذف",
-        description: "تم حذف المراجعة بنجاح",
-      });
     } catch (error) {
       console.error('Error deleting review:', error);
-      toast({
-        title: "خطأ",
-        description: "فشل في حذف المراجعة.",
-        variant: "destructive",
-      });
     }
   };
 
@@ -120,21 +93,17 @@ const AdminReviews = () => {
     if (!file || !currentReview) return;
 
     try {
-      // Generate a unique file path
       const fileExt = file.name.split('.').pop();
       const filePath = `${Math.random().toString(36).substring(2)}${Date.now()}.${fileExt}`;
       
-      // First create a storage bucket if it doesn't exist
       const { data: bucketData, error: bucketError } = await supabase.storage.getBucket('reviews');
       
       if (bucketError && bucketError.message.includes('does not exist')) {
-        // Bucket doesn't exist, create it
         await supabase.storage.createBucket('reviews', {
           public: true
         });
       }
       
-      // Upload the file
       const { error: uploadError } = await supabase.storage
         .from('reviews')
         .upload(filePath, file);
@@ -143,7 +112,6 @@ const AdminReviews = () => {
         throw uploadError;
       }
       
-      // Get public URL
       const { data: publicUrlData } = supabase.storage
         .from('reviews')
         .getPublicUrl(filePath);
@@ -175,58 +143,34 @@ const AdminReviews = () => {
       const isNew = !currentReview.id;
       
       if (isNew) {
-        // Create new review
-        const { data, error } = await supabase
-          .from('reviews')
-          .insert([{
-            customer_name: currentReview.customer_name,
-            position: currentReview.position,
-            content: currentReview.content,
-            rating: currentReview.rating,
-            image_url: currentReview.image_url
-          }])
-          .select()
-          .single();
+        const savedReview = await createReview({
+          customer_name: currentReview.customer_name,
+          position: currentReview.position,
+          content: currentReview.content,
+          rating: currentReview.rating,
+          image_url: currentReview.image_url
+        });
         
-        if (error) {
-          throw error;
+        if (savedReview) {
+          setReviews([savedReview, ...reviews]);
+          setIsEditOpen(false);
         }
-        
-        setReviews([data, ...reviews]);
       } else {
-        // Update existing review
-        const { data, error } = await supabase
-          .from('reviews')
-          .update({
-            customer_name: currentReview.customer_name,
-            position: currentReview.position,
-            content: currentReview.content,
-            rating: currentReview.rating,
-            image_url: currentReview.image_url
-          })
-          .eq('id', currentReview.id)
-          .select()
-          .single();
+        const updatedReview = await updateReview(currentReview.id, {
+          customer_name: currentReview.customer_name,
+          position: currentReview.position,
+          content: currentReview.content,
+          rating: currentReview.rating,
+          image_url: currentReview.image_url
+        });
         
-        if (error) {
-          throw error;
+        if (updatedReview) {
+          setReviews(reviews.map(r => r.id === updatedReview.id ? updatedReview : r));
+          setIsEditOpen(false);
         }
-        
-        setReviews(reviews.map(r => r.id === data.id ? data : r));
       }
-      
-      setIsEditOpen(false);
-      toast({
-        title: isNew ? "تمت الإضافة" : "تم التحديث",
-        description: isNew ? "تمت إضافة المراجعة بنجاح" : "تم تحديث المراجعة بنجاح",
-      });
     } catch (error) {
       console.error('Error saving review:', error);
-      toast({
-        title: "خطأ",
-        description: "فشل في حفظ المراجعة.",
-        variant: "destructive",
-      });
     }
   };
 

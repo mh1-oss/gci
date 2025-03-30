@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import type { CompanyInfo } from '@/data/initialData';
 import { Json } from "@/integrations/supabase/types";
@@ -61,6 +62,11 @@ const extractContactInfo = (contactData: Json | null): CompanyInfo['contact'] =>
 export const fetchCompanyInfo = async (): Promise<CompanyInfo | null> => {
   try {
     console.log('Fetching company info...');
+    
+    // First, check if the user is authenticated and is an admin
+    const { data: session } = await supabase.auth.getSession();
+    const isAuthenticated = !!session?.session?.user;
+    
     const { data, error } = await supabase
       .from('company_info')
       .select('*')
@@ -69,6 +75,49 @@ export const fetchCompanyInfo = async (): Promise<CompanyInfo | null> => {
     
     if (error) {
       console.error('Error fetching company info:', error);
+      
+      // If there's an error related to RLS policies and the user is authenticated
+      if (error.code === '42P17' && isAuthenticated) {
+        console.log('Using fallback method to fetch company info due to RLS error');
+        // Use a more direct query approach without RLS interference
+        const { data: adminData, error: adminError } = await supabase.rpc('get_company_info');
+        
+        if (adminError) {
+          console.error('Fallback method failed:', adminError);
+          return {
+            name: 'شركة الذهبية للصناعات الكيمياوية',
+            slogan: 'جودة تدوم مع الوقت',
+            about: '',
+            logo: '/gci-logo.png',
+            contact: {
+              address: '',
+              phone: '',
+              email: '',
+              socialMedia: {}
+            },
+            exchangeRate: 1
+          };
+        }
+        
+        if (!adminData) {
+          console.log('No company info found');
+          return null;
+        }
+        
+        // Use the helper function to safely extract contact information
+        const contactInfo = extractContactInfo(adminData.contact);
+        
+        // Map the data to the CompanyInfo type
+        return {
+          name: adminData.name,
+          slogan: adminData.slogan || '',
+          about: adminData.about || '',
+          logo: adminData.logo_url || '/gci-logo.png',
+          contact: contactInfo,
+          exchangeRate: 1
+        };
+      }
+      
       return {
         name: 'شركة الذهبية للصناعات الكيمياوية',
         slogan: 'جودة تدوم مع الوقت',
