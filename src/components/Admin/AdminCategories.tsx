@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -7,37 +8,8 @@ import {
   CardHeader, 
   CardTitle 
 } from '@/components/ui/card';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
-} from '@/components/ui/dialog';
-import { 
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle
-} from '@/components/ui/alert-dialog';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, Trash, Edit, Plus, AlertTriangle } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { 
   fetchCategories, 
   createCategory, 
@@ -45,6 +17,11 @@ import {
   deleteCategory 
 } from '@/services/categories/categoryService';
 import { Category } from '@/data/initialData';
+
+import CategoryTable from './Categories/CategoryTable';
+import CategoryForm from './Categories/CategoryForm';
+import DeleteCategoryDialog from './Categories/DeleteCategoryDialog';
+import ErrorAlert from './Categories/ErrorAlert';
 
 const AdminCategories = () => {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -114,8 +91,7 @@ const AdminCategories = () => {
           description: "تم إنشاء الفئة بنجاح."
         });
         setDialogOpen(false);
-        setName('');
-        setDescription('');
+        resetForm();
       }
     } catch (err: any) {
       console.error("Error creating category:", err);
@@ -169,10 +145,7 @@ const AdminCategories = () => {
           description: "تم تحديث الفئة بنجاح."
         });
         setDialogOpen(false);
-        setEditMode(false);
-        setEditTarget(null);
-        setName('');
-        setDescription('');
+        resetForm();
       }
     } catch (err: any) {
       console.error("Error updating category:", err);
@@ -221,15 +194,26 @@ const AdminCategories = () => {
     }
   };
 
+  const resetForm = () => {
+    setEditMode(false);
+    setEditTarget(null);
+    setName('');
+    setDescription('');
+  };
+
+  const handleAddNew = () => {
+    resetForm();
+    setDialogOpen(true);
+  };
+
+  const handleCancel = () => {
+    setDialogOpen(false);
+    resetForm();
+  };
+
   return (
     <div>
-      {error && (
-        <Alert variant="destructive" className="mb-6">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>خطأ</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+      <ErrorAlert error={error} />
 
       <Card>
         <CardHeader className="flex flex-row justify-between items-center">
@@ -237,156 +221,40 @@ const AdminCategories = () => {
             <CardTitle>إدارة الفئات</CardTitle>
             <CardDescription>إضافة وتعديل وحذف الفئات الموجودة في الموقع</CardDescription>
           </div>
-          <Button onClick={() => {
-            setEditMode(false);
-            setName('');
-            setDescription('');
-            setDialogOpen(true);
-          }}>
+          <Button onClick={handleAddNew}>
             <Plus className="ml-2 h-4 w-4" />
             إضافة فئة جديدة
           </Button>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-          ) : categories.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              لا توجد فئات. أضف فئة جديدة للبدء.
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>اسم الفئة</TableHead>
-                  <TableHead>الوصف</TableHead>
-                  <TableHead className="text-left">الإجراءات</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {categories.map((category) => (
-                  <TableRow key={category.id}>
-                    <TableCell className="font-medium">{category.name}</TableCell>
-                    <TableCell>{category.description}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2 space-x-reverse">
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => handleEdit(category)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => handleDelete(category)}
-                          className="text-red-500"
-                        >
-                          <Trash className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
+          <CategoryTable 
+            categories={categories} 
+            loading={loading} 
+            onEdit={handleEdit} 
+            onDelete={handleDelete} 
+          />
         </CardContent>
       </Card>
 
-      <Dialog open={dialogOpen} onOpenChange={(open) => {
-        setDialogOpen(open);
-        if (!open) {
-          setEditMode(false);
-          setEditTarget(null);
-          setName('');
-          setDescription('');
-        }
-      }}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{editMode ? 'تعديل فئة' : 'إضافة فئة جديدة'}</DialogTitle>
-            <DialogDescription>
-              {editMode ? 'تعديل تفاصيل الفئة.' : 'أدخل تفاصيل الفئة الجديدة.'}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                اسم الفئة
-              </Label>
-              <Input 
-                id="name" 
-                value={name} 
-                onChange={(e) => setName(e.target.value)} 
-                className="col-span-3" 
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="description" className="text-right">
-                الوصف
-              </Label>
-              <Input
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="col-span-3"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="secondary" onClick={() => {
-              setDialogOpen(false);
-              setEditMode(false);
-              setEditTarget(null);
-              setName('');
-              setDescription('');
-            }}>
-              إلغاء
-            </Button>
-            <Button 
-              onClick={editMode ? handleUpdate : handleCreate}
-              disabled={isSaving}
-            >
-              {isSaving ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {editMode ? 'جاري التحديث...' : 'جاري الإنشاء...'}
-                </>
-              ) : (
-                editMode ? 'تحديث الفئة' : 'إنشاء فئة'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CategoryForm
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        name={name}
+        setName={setName}
+        description={description}
+        setDescription={setDescription}
+        editMode={editMode}
+        isSaving={isSaving}
+        onSave={editMode ? handleUpdate : handleCreate}
+        onCancel={handleCancel}
+      />
 
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>هل أنت متأكد؟</AlertDialogTitle>
-            <AlertDialogDescription>
-              سيؤدي هذا الإجراء إلى حذف الفئة نهائيًا ولا يمكن التراجع عنه.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDeleteDialogOpen(false)}>
-              إلغاء
-            </AlertDialogCancel>
-            <AlertDialogAction disabled={isDeleting} onClick={handleDeleteConfirm}>
-              {isDeleting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  جاري الحذف...
-                </>
-              ) : 'حذف'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteCategoryDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        isDeleting={isDeleting}
+        onConfirm={handleDeleteConfirm}
+      />
     </div>
   );
 };
