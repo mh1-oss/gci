@@ -38,7 +38,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useCurrency } from "@/context/CurrencyContext";
 import { Plus, Edit, Trash2, Search, Loader2, Upload, Image, Video, FileText, X } from "lucide-react";
 
@@ -52,6 +52,7 @@ interface ProductFormData {
   colors: string;
   mediaGallery: MediaItem[];
   specsPdf: string;
+  coverage?: string;
 }
 
 interface MediaUploadProps {
@@ -122,6 +123,7 @@ const defaultProductForm: ProductFormData = {
   colors: "",
   mediaGallery: [],
   specsPdf: "",
+  coverage: ""
 };
 
 const ProductForm = ({ 
@@ -148,6 +150,7 @@ const ProductForm = ({
       colors: product.colors ? product.colors.join(", ") : "",
       mediaGallery: product.mediaGallery || [],
       specsPdf: product.specsPdf || "",
+      coverage: product.coverage ? product.coverage.toString() : ""
     } : { ...defaultProductForm }
   );
   
@@ -494,8 +497,8 @@ const ProductList = () => {
       } catch (error) {
         console.error("Error fetching products data:", error);
         toast({
-          title: "Error",
-          description: "Could not load products data.",
+          title: "خطأ",
+          description: "تعذر تحميل بيانات المنتجات.",
           variant: "destructive",
         });
       } finally {
@@ -517,6 +520,7 @@ const ProductList = () => {
   
   const handleDeleteClick = (product: Product) => {
     setProductToDelete(product);
+    setSelectedProduct(product);
     setDeleteDialogOpen(true);
   };
   
@@ -569,6 +573,7 @@ const ProductList = () => {
         colors: formData.colors.split(",").map(color => color.trim()).filter(color => color),
         mediaGallery: formData.mediaGallery,
         specsPdf: formData.specsPdf,
+        coverage: formData.coverage ? Number(formData.coverage) : undefined,
       };
       
       const success = await updateProduct(editingProduct.id, updatedProductData);
@@ -588,18 +593,18 @@ const ProductList = () => {
         });
         
         toast({
-          title: "Product Updated",
-          description: `${editingProduct.name} has been updated.`,
+          title: "تم تحديث المنتج",
+          description: `تم تحديث ${editingProduct.name} بنجاح.`,
           variant: "default",
         });
       } else {
-        throw new Error("Failed to update product");
+        throw new Error("فشل تحديث المنتج");
       }
     } catch (error) {
       console.error("Error updating product:", error);
       toast({
-        title: "Error",
-        description: "Could not update the product.",
+        title: "خطأ",
+        description: "تعذر تحديث المنتج.",
         variant: "destructive",
       });
     } finally {
@@ -610,7 +615,7 @@ const ProductList = () => {
   
   const getCategoryName = (categoryId: string) => {
     const category = categories.find(cat => cat.id === categoryId);
-    return category ? category.name : "Unknown";
+    return category ? category.name : "غير معروف";
   };
   
   return (
@@ -787,6 +792,7 @@ const AddProductForm = () => {
         colors: formData.colors.split(",").map(color => color.trim()).filter(color => color),
         mediaGallery: formData.mediaGallery,
         specsPdf: formData.specsPdf,
+        coverage: formData.coverage ? Number(formData.coverage) : undefined,
       };
       
       const success = await createProduct(newProductData);

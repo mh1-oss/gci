@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CurrencyProvider } from "./context/CurrencyContext";
 import { AuthProvider } from "./context/AuthContext";
+import { CartProvider } from "./context/CartContext";
 import Layout from "./components/Layout/Layout";
 import HomePage from "./pages/HomePage";
 import ProductsPage from "./pages/ProductsPage";
@@ -24,26 +25,28 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <CurrencyProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Layout />}>
-                <Route index element={<HomePage />} />
-                <Route path="products" element={<ProductsPage />} />
-                <Route path="products/:id" element={<ProductDetailsPage />} />
-                <Route path="about" element={<AboutPage />} />
-                <Route path="contact" element={<ContactPage />} />
-                <Route path="visualizer" element={<VisualizerPage />} />
-                <Route path="calculator" element={<CalculatorPage />} />
-                <Route path="login" element={<LoginPage />} />
-                <Route path="admin/*" element={<AdminDashboard />} />
-                <Route path="*" element={<NotFound />} />
-              </Route>
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
+        <CartProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Layout />}>
+                  <Route index element={<HomePage />} />
+                  <Route path="products" element={<ProductsPage />} />
+                  <Route path="products/:id" element={<ProductDetailsPage />} />
+                  <Route path="about" element={<AboutPage />} />
+                  <Route path="contact" element={<ContactPage />} />
+                  <Route path="visualizer" element={<VisualizerPage />} />
+                  <Route path="calculator" element={<CalculatorPage />} />
+                  <Route path="login" element={<LoginPage />} />
+                  <Route path="admin/*" element={<AdminDashboard />} />
+                  <Route path="*" element={<NotFound />} />
+                </Route>
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </CartProvider>
       </CurrencyProvider>
     </AuthProvider>
   </QueryClientProvider>

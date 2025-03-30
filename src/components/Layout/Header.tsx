@@ -1,296 +1,313 @@
-import { useState, useEffect, useRef } from "react";
+
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { categories } from "@/data/initialData";
+import { fetchCategories } from "@/services/categories/categoryService";
+import { Menu, X, ChevronDown, Settings, ShoppingCart, User } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { useCurrency } from "@/context/CurrencyContext";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import CartButton from "@/components/Cart/CartButton";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { fetchCategories } from "@/services/categories/categoryService";
-import { Category } from "@/data/initialData";
-import { 
-  Menu, 
-  X, 
-  User, 
-  DollarSign, 
-  ShoppingCart, 
-  ChevronDown,
-  CreditCard,
-  LogOut,
-  Settings,
-  LayoutDashboard,
-  Palette
-} from "lucide-react";
+import { useMobile } from "@/hooks/use-mobile";
 
 const Header = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [isScrolled, setIsScrolled] = useState(false);
-  const { isAuthenticated, isAdmin, logout, user } = useAuth();
-  const { currency, setCurrency } = useCurrency();
   const location = useLocation();
+  const isMobile = useMobile();
+  const [isOpen, setIsOpen] = useState(false);
+  const [categoryData, setCategoryData] = useState(categories);
+  const { isAuthenticated, isAdmin, logout } = useAuth();
 
   useEffect(() => {
-    fetchCategories().then(setCategories);
-  }, []);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+    const loadCategories = async () => {
+      try {
+        const data = await fetchCategories();
+        if (data) {
+          setCategoryData(data);
+        }
+      } catch (error) {
+        console.error("Failed to load categories:", error);
+      }
     };
     
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    loadCategories();
   }, []);
 
+  // Close mobile menu when location changes
   useEffect(() => {
-    setIsMenuOpen(false);
+    setIsOpen(false);
   }, [location]);
 
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
+  const handleLogout = async () => {
+    await logout();
   };
-
-  const toggleCurrency = () => {
-    setCurrency(currency === "USD" ? "IQD" : "USD");
-  };
-
-  const displayName = user?.email ? user.email.split('@')[0] : 'المستخدم';
 
   return (
-    <header className={`sticky top-0 z-50 bg-white shadow-sm transition-all duration-300 ${isScrolled ? "py-2" : "py-4"}`} dir="rtl">
+    <header className="border-b sticky top-0 z-50 bg-white" dir="rtl">
       <div className="container-custom">
-        <div className="flex items-center justify-between">
-          <Link to="/" className="text-xl font-bold text-brand-blue">
-            شركة الذهبية للصناعات الكيمياوية
-          </Link>
+        <div className="flex items-center justify-between h-16">
+          {/* Logo */}
+          <div className="flex-shrink-0">
+            <Link to="/" className="flex items-center">
+              <img src="/gci-logo.png" alt="GCI Logo" className="h-10" />
+            </Link>
+          </div>
 
-          <nav className="hidden md:flex items-center space-x-6">
-            <Link to="/" className="text-gray-700 hover:text-brand-blue transition-colors mx-3">
+          {/* Desktop Navigation */}
+          <nav className="hidden md:ml-6 md:flex md:space-x-8 md:space-x-reverse">
+            <Link
+              to="/"
+              className={`inline-flex items-center px-1 pt-1 text-sm font-medium border-b-2 ${
+                location.pathname === "/"
+                  ? "text-brand-blue border-brand-blue"
+                  : "text-gray-500 border-transparent hover:border-gray-300 hover:text-gray-700"
+              }`}
+            >
               الرئيسية
             </Link>
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="inline-flex items-center mx-3">
-                  المنتجات <ChevronDown className="mr-1 h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="w-56">
-                <DropdownMenuLabel>الفئات</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link to="/products" className="w-full">جميع المنتجات</Link>
-                </DropdownMenuItem>
-                {categories.map((category) => (
-                  <DropdownMenuItem key={category.id} asChild>
-                    <Link to={`/products?category=${category.id}`} className="w-full">
+            <div className="relative group">
+              <button
+                className={`inline-flex items-center px-1 pt-1 text-sm font-medium border-b-2 group ${
+                  location.pathname.startsWith("/products")
+                    ? "text-brand-blue border-brand-blue"
+                    : "text-gray-500 border-transparent hover:border-gray-300 hover:text-gray-700"
+                }`}
+              >
+                المنتجات
+                <ChevronDown className="h-4 w-4 mr-1 group-hover:rotate-180 transition-transform" />
+              </button>
+              <div className="absolute -left-4 transform top-full p-2 mt-1 w-48 bg-white shadow-lg rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                <div className="py-1">
+                  <Link
+                    to="/products"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
+                  >
+                    جميع المنتجات
+                  </Link>
+                  <div className="border-t my-1"></div>
+                  {categoryData.map((category) => (
+                    <Link
+                      key={category.id}
+                      to={`/products?category=${category.id}`}
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
+                    >
                       {category.name}
                     </Link>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            
-            <Link to="/about" className="text-gray-700 hover:text-brand-blue transition-colors mx-3">
+                  ))}
+                </div>
+              </div>
+            </div>
+            <Link
+              to="/about"
+              className={`inline-flex items-center px-1 pt-1 text-sm font-medium border-b-2 ${
+                location.pathname === "/about"
+                  ? "text-brand-blue border-brand-blue"
+                  : "text-gray-500 border-transparent hover:border-gray-300 hover:text-gray-700"
+              }`}
+            >
               من نحن
             </Link>
-            
-            <Link to="/contact" className="text-gray-700 hover:text-brand-blue transition-colors mx-3">
+            <Link
+              to="/contact"
+              className={`inline-flex items-center px-1 pt-1 text-sm font-medium border-b-2 ${
+                location.pathname === "/contact"
+                  ? "text-brand-blue border-brand-blue"
+                  : "text-gray-500 border-transparent hover:border-gray-300 hover:text-gray-700"
+              }`}
+            >
               اتصل بنا
             </Link>
-
-            <Link to="/visualizer" className="text-gray-700 hover:text-brand-blue transition-colors mx-3">
+            <Link
+              to="/visualizer"
+              className={`inline-flex items-center px-1 pt-1 text-sm font-medium border-b-2 ${
+                location.pathname === "/visualizer"
+                  ? "text-brand-blue border-brand-blue"
+                  : "text-gray-500 border-transparent hover:border-gray-300 hover:text-gray-700"
+              }`}
+            >
               محاكي الألوان
-              <Palette className="inline-block mr-1 h-4 w-4" />
+            </Link>
+            <Link
+              to="/calculator"
+              className={`inline-flex items-center px-1 pt-1 text-sm font-medium border-b-2 ${
+                location.pathname === "/calculator"
+                  ? "text-brand-blue border-brand-blue"
+                  : "text-gray-500 border-transparent hover:border-gray-300 hover:text-gray-700"
+              }`}
+            >
+              حاسبة الطلاء
             </Link>
           </nav>
 
-          <div className="hidden md:flex items-center space-x-4">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={toggleCurrency}
-              className="flex items-center gap-1 mx-2"
-            >
-              <DollarSign className="h-4 w-4" />
-              {currency}
-            </Button>
-            
+          {/* Right side buttons */}
+          <div className="flex items-center gap-2">
+            {/* Cart button */}
+            <CartButton />
+
+            {/* User Menu */}
             {isAuthenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="flex items-center gap-1">
-                    <User className="h-4 w-4" />
-                    {displayName}
+                  <Button variant="ghost" className="p-2">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="bg-brand-blue text-white">
+                        <User className="h-4 w-4" />
+                      </AvatarFallback>
+                    </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>حسابي</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
+                <DropdownMenuContent align="left">
                   {isAdmin && (
                     <DropdownMenuItem asChild>
-                      <Link to="/admin" className="flex items-center w-full">
-                        <LayoutDashboard className="ml-2 h-4 w-4" />
+                      <Link to="/admin">
+                        <Settings className="ml-2 h-4 w-4" />
                         لوحة التحكم
                       </Link>
                     </DropdownMenuItem>
                   )}
-                  <DropdownMenuItem asChild>
-                    <Link to="/orders" className="flex items-center w-full">
-                      <CreditCard className="ml-2 h-4 w-4" />
-                      الطلبات
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/settings" className="flex items-center w-full">
-                      <Settings className="ml-2 h-4 w-4" />
-                      الإعدادات
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={logout} className="text-red-500 flex items-center">
-                    <LogOut className="ml-2 h-4 w-4" />
+                  <DropdownMenuItem onClick={handleLogout}>
                     تسجيل الخروج
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Link to="/login">
-                <Button size="sm" className="flex items-center gap-1">
-                  <User className="h-4 w-4" />
-                  تسجيل الدخول
-                </Button>
-              </Link>
+              <Button asChild variant="ghost" size="sm">
+                <Link to="/login">تسجيل الدخول</Link>
+              </Button>
             )}
-          </div>
 
-          <div className="md:hidden flex items-center space-x-3">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={toggleCurrency}
-              className="flex items-center gap-1"
-            >
-              <DollarSign className="h-4 w-4" />
-              {currency}
-            </Button>
-            
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={toggleMenu}
-              aria-label="Toggle menu"
-            >
-              {isMenuOpen ? <X /> : <Menu />}
-            </Button>
+            {/* Mobile menu button */}
+            <div className="flex md:hidden">
+              <button
+                type="button"
+                className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
+                aria-controls="mobile-menu"
+                aria-expanded="false"
+                onClick={() => setIsOpen(!isOpen)}
+              >
+                <span className="sr-only">
+                  {isOpen ? "إغلاق القائمة" : "فتح القائمة"}
+                </span>
+                {isOpen ? (
+                  <X className="block h-6 w-6" aria-hidden="true" />
+                ) : (
+                  <Menu className="block h-6 w-6" aria-hidden="true" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      {isMenuOpen && (
-        <div className="md:hidden absolute top-full left-0 right-0 bg-white shadow-lg animate-slide-in z-50">
-          <nav className="flex flex-col py-4 px-6 space-y-4">
-            <Link 
-              to="/" 
-              className="text-gray-700 hover:text-brand-blue py-2 transition-colors"
-            >
-              الرئيسية
-            </Link>
-            
-            <div className="py-2">
-              <p className="text-gray-500 mb-2 text-sm font-medium">المنتجات</p>
-              <div className="pr-4 space-y-2">
-                <Link 
-                  to="/products" 
-                  className="block text-gray-700 hover:text-brand-blue transition-colors"
-                >
-                  جميع المنتجات
-                </Link>
-                {categories.map((category) => (
-                  <Link 
-                    key={category.id}
-                    to={`/products?category=${category.id}`} 
-                    className="block text-gray-700 hover:text-brand-blue transition-colors"
-                  >
-                    {category.name}
-                  </Link>
-                ))}
-              </div>
-            </div>
-            
-            <Link 
-              to="/about" 
-              className="text-gray-700 hover:text-brand-blue py-2 transition-colors"
-            >
-              من نحن
-            </Link>
-            
-            <Link 
-              to="/contact" 
-              className="text-gray-700 hover:text-brand-blue py-2 transition-colors"
-            >
-              اتصل بنا
-            </Link>
-
-            <Link 
-              to="/visualizer" 
-              className="text-gray-700 hover:text-brand-blue py-2 transition-colors"
-            >
-              محاكي الألوان
-              <Palette className="inline-block mr-1 h-4 w-4" />
-            </Link>
-            
-            {isAuthenticated ? (
-              <>
-                <div className="border-t border-gray-100 pt-2">
-                  <p className="text-gray-500 mb-2 text-sm font-medium">الحساب</p>
-                  <div className="pr-4 space-y-2">
-                    {isAdmin && (
-                      <Link 
-                        to="/admin" 
-                        className="block text-gray-700 hover:text-brand-blue transition-colors"
-                      >
-                        لوحة التحكم
-                      </Link>
-                    )}
-                    <Link 
-                      to="/orders" 
-                      className="block text-gray-700 hover:text-brand-blue transition-colors"
-                    >
-                      الطلبات
-                    </Link>
-                    <Link 
-                      to="/settings" 
-                      className="block text-gray-700 hover:text-brand-blue transition-colors"
-                    >
-                      الإعدادات
-                    </Link>
-                    <button 
-                      onClick={logout}
-                      className="block w-full text-right text-red-500 hover:text-red-600 transition-colors"
-                    >
-                      تسجيل الخروج
-                    </button>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <Link 
-                to="/login" 
-                className="bg-brand-blue text-white py-2 px-4 rounded-md text-center hover:bg-brand-darkblue transition-colors"
+      {/* Mobile menu, show/hide based on menu state */}
+      <div
+        className={`md:hidden ${isOpen ? "block" : "hidden"}`}
+        id="mobile-menu"
+      >
+        <div className="pt-2 pb-4 space-y-1">
+          <Link
+            to="/"
+            className={`block pl-3 pr-4 py-2 text-base font-medium ${
+              location.pathname === "/"
+                ? "text-brand-blue border-r-4 border-brand-blue bg-indigo-50"
+                : "text-gray-500 border-r-4 border-transparent hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
+            }`}
+          >
+            الرئيسية
+          </Link>
+          <Link
+            to="/products"
+            className={`block pl-3 pr-4 py-2 text-base font-medium ${
+              location.pathname.startsWith("/products")
+                ? "text-brand-blue border-r-4 border-brand-blue bg-indigo-50"
+                : "text-gray-500 border-r-4 border-transparent hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
+            }`}
+          >
+            المنتجات
+          </Link>
+          {/* Categories submenu for mobile */}
+          <div className="pl-6 space-y-1">
+            {categoryData.map((category) => (
+              <Link
+                key={category.id}
+                to={`/products?category=${category.id}`}
+                className="block pl-3 pr-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-700"
               >
-                تسجيل الدخول
+                {category.name}
               </Link>
-            )}
-          </nav>
+            ))}
+          </div>
+          <Link
+            to="/about"
+            className={`block pl-3 pr-4 py-2 text-base font-medium ${
+              location.pathname === "/about"
+                ? "text-brand-blue border-r-4 border-brand-blue bg-indigo-50"
+                : "text-gray-500 border-r-4 border-transparent hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
+            }`}
+          >
+            من نحن
+          </Link>
+          <Link
+            to="/contact"
+            className={`block pl-3 pr-4 py-2 text-base font-medium ${
+              location.pathname === "/contact"
+                ? "text-brand-blue border-r-4 border-brand-blue bg-indigo-50"
+                : "text-gray-500 border-r-4 border-transparent hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
+            }`}
+          >
+            اتصل بنا
+          </Link>
+          <Link
+            to="/visualizer"
+            className={`block pl-3 pr-4 py-2 text-base font-medium ${
+              location.pathname === "/visualizer"
+                ? "text-brand-blue border-r-4 border-brand-blue bg-indigo-50"
+                : "text-gray-500 border-r-4 border-transparent hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
+            }`}
+          >
+            محاكي الألوان
+          </Link>
+          <Link
+            to="/calculator"
+            className={`block pl-3 pr-4 py-2 text-base font-medium ${
+              location.pathname === "/calculator"
+                ? "text-brand-blue border-r-4 border-brand-blue bg-indigo-50"
+                : "text-gray-500 border-r-4 border-transparent hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
+            }`}
+          >
+            حاسبة الطلاء
+          </Link>
+          {!isAuthenticated && (
+            <Link
+              to="/login"
+              className="block pl-3 pr-4 py-2 text-base font-medium text-gray-500 border-r-4 border-transparent hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
+            >
+              تسجيل الدخول
+            </Link>
+          )}
+          {isAdmin && (
+            <Link
+              to="/admin"
+              className="block pl-3 pr-4 py-2 text-base font-medium text-gray-500 border-r-4 border-transparent hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
+            >
+              لوحة التحكم
+            </Link>
+          )}
+          {isAuthenticated && (
+            <button
+              onClick={handleLogout}
+              className="w-full text-right block pl-3 pr-4 py-2 text-base font-medium text-gray-500 border-r-4 border-transparent hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
+            >
+              تسجيل الخروج
+            </button>
+          )}
         </div>
-      )}
+      </div>
     </header>
   );
 };
