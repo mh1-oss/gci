@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { toast } from "@/hooks/use-toast"; // Import standalone toast function, not the hook
+import { toast } from "@/hooks/use-toast"; 
 import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 
@@ -25,7 +25,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Check if a user has admin role
   const checkIsAdmin = async (userId: string): Promise<boolean> => {
     try {
-      // Make a simple query rather than using a complex RPC
+      console.log('Checking admin status for user:', userId);
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
@@ -38,6 +38,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return false;
       }
       
+      console.log('Admin check result:', data);
       return data !== null;
     } catch (error) {
       console.error('Unexpected error checking admin role:', error);
@@ -47,9 +48,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   
   // Setup auth listener and initialize state
   useEffect(() => {
+    console.log('Setting up auth listener');
+    
     // First, set up the auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
+        console.log('Auth state changed:', event, newSession?.user?.id);
         setSession(newSession);
         setUser(newSession?.user ?? null);
         
@@ -58,6 +62,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           // Use setTimeout to avoid Supabase auth deadlock issues
           setTimeout(async () => {
             const isUserAdmin = await checkIsAdmin(newSession.user.id);
+            console.log('User admin status:', isUserAdmin);
             setIsAdmin(isUserAdmin);
           }, 0);
         } else {
@@ -69,12 +74,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Then check for existing session
     const initializeAuth = async () => {
       try {
+        console.log('Initializing auth...');
         const { data: { session: initialSession } } = await supabase.auth.getSession();
+        console.log('Initial session:', initialSession?.user?.id);
+        
         setSession(initialSession);
         setUser(initialSession?.user ?? null);
         
         if (initialSession?.user) {
           const isUserAdmin = await checkIsAdmin(initialSession.user.id);
+          console.log('Initial admin status:', isUserAdmin);
           setIsAdmin(isUserAdmin);
         }
       } catch (error) {
@@ -121,7 +130,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       console.log('Login successful, checking admin status');
       const isUserAdmin = await checkIsAdmin(data.user.id);
+      console.log('Is user admin?', isUserAdmin);
       setIsAdmin(isUserAdmin);
+      
+      if (!isUserAdmin) {
+        console.warn('User is not an admin');
+        toast({
+          title: "تم تسجيل الدخول",
+          description: "لكن ليس لديك صلاحيات إدارية",
+          variant: "warning",
+        });
+      }
       
       return true;
     } catch (error) {

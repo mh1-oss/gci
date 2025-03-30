@@ -14,15 +14,24 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const { login, isAuthenticated, loading } = useAuth();
+  const { login, isAuthenticated, isAdmin, loading } = useAuth();
   const navigate = useNavigate();
+
+  console.log('Login page render state:', { isAuthenticated, isAdmin, loading });
 
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated && !loading) {
-      navigate('/admin');
+      console.log('User is authenticated, redirecting to admin');
+      if (isAdmin) {
+        navigate('/admin');
+      } else {
+        // If authenticated but not admin, still redirect to admin
+        // (The AdminDashboard component will handle showing the access denied message)
+        navigate('/admin');
+      }
     }
-  }, [isAuthenticated, loading, navigate]);
+  }, [isAuthenticated, isAdmin, loading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -36,8 +45,11 @@ const LoginPage = () => {
     }
 
     try {
+      console.log('Logging in with:', email);
       const success = await login(email, password);
+      
       if (success) {
+        console.log('Login successful, redirecting to admin');
         toast({
           title: "تم تسجيل الدخول بنجاح",
           description: "مرحبًا بك مجددًا!",
