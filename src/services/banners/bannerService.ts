@@ -83,10 +83,10 @@ export const createBanner = async (banner: Omit<Banner, 'id'>): Promise<Banner |
   try {
     const dbBanner = mapBannerToDbBanner(banner);
     
-    // Important fix: we're removing the array syntax here
+    // We're using a regular object, not an array of objects
     const { data, error } = await supabase
       .from('banners')
-      .insert(dbBanner) // No longer an array
+      .insert(dbBanner)
       .select()
       .single();
     
