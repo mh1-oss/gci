@@ -7,11 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/context/AuthContext';
 import { Loader2 } from 'lucide-react';
+import { toast } from "@/hooks/use-toast";
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { login, isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
 
@@ -25,12 +27,28 @@ const LoginPage = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setErrorMessage(null);
+
+    if (!email || !password) {
+      setErrorMessage('يرجى إدخال البريد الإلكتروني وكلمة المرور');
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       const success = await login(email, password);
       if (success) {
+        toast({
+          title: "تم تسجيل الدخول بنجاح",
+          description: "مرحبًا بك مجددًا!",
+        });
         navigate('/admin');
+      } else {
+        setErrorMessage('فشل تسجيل الدخول. يرجى التحقق من بيانات الاعتماد الخاصة بك.');
       }
+    } catch (error) {
+      console.error('Error during login:', error);
+      setErrorMessage('حدث خطأ أثناء تسجيل الدخول. يرجى المحاولة مرة أخرى.');
     } finally {
       setIsSubmitting(false);
     }
@@ -54,6 +72,11 @@ const LoginPage = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {errorMessage && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+              {errorMessage}
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">البريد الإلكتروني</Label>

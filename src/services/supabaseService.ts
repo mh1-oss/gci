@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import type { 
@@ -549,7 +548,7 @@ export const uploadMedia = async (file: File): Promise<string | null> => {
       .getPublicUrl(filePath);
     
     toast({
-      title: "تم بنجاح",
+      title: "تم ��نجاح",
       description: "تم رفع الملف بنجاح",
     });
     
@@ -574,13 +573,13 @@ export const checkIsAdmin = async (): Promise<boolean> => {
       return false;
     }
     
-    // Try using a direct query to check for admin role instead of using RPC
+    // Use a direct query instead of RPC to avoid recursion issues
     const { data, error } = await supabase
       .from('user_roles')
       .select('role')
       .eq('user_id', session.user.id)
       .eq('role', 'admin')
-      .maybeSingle();
+      .single();
     
     if (error) {
       console.error('Error checking admin role:', error);

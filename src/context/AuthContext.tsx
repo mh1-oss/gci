@@ -3,7 +3,6 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { toast } from "@/hooks/use-toast"; // Import standalone toast function, not the hook
 import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
-import { checkIsAdmin } from "@/services/supabaseService";
 
 interface AuthContextType {
   user: User | null;
@@ -23,11 +22,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   
+  // Check if a user has admin role
+  const checkIsAdmin = async (userId: string): Promise<boolean> => {
+    try {
+      // Make a simple query rather than using a complex RPC
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .eq('role', 'admin')
+        .single();
+      
+      if (error) {
+        console.error('Error checking admin role:', error);
+        return false;
+      }
+      
+      return data !== null;
+    } catch (error) {
+      console.error('Unexpected error checking admin role:', error);
+      return false;
+    }
+  };
+  
   // Setup auth listener and initialize state
   useEffect(() => {
     // First, set up the auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, newSession) => {
+      async (event, newSession) => {
         setSession(newSession);
         setUser(newSession?.user ?? null);
         
@@ -35,7 +57,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (newSession?.user) {
           // Use setTimeout to avoid Supabase auth deadlock issues
           setTimeout(async () => {
-            const isUserAdmin = await checkIsAdmin();
+            const isUserAdmin = await checkIsAdmin(newSession.user.id);
             setIsAdmin(isUserAdmin);
           }, 0);
         } else {
@@ -45,16 +67,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     );
     
     // Then check for existing session
-    supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
-      setSession(initialSession);
-      setUser(initialSession?.user ?? null);
-      
-      if (initialSession?.user) {
-        checkIsAdmin().then(setIsAdmin);
+    const initializeAuth = async () => {
+      try {
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        setSession(initialSession);
+        setUser(initialSession?.user ?? null);
+        
+        if (initialSession?.user) {
+          const isUserAdmin = await checkIsAdmin(initialSession.user.id);
+          setIsAdmin(isUserAdmin);
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+      } finally {
+        setLoading(false);
       }
-      
-      setLoading(false);
-    });
+    };
+    
+    initializeAuth();
     
     return () => subscription.unsubscribe();
   }, []);
@@ -62,12 +92,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setLoading(true);
+      console.log('Attempting login for:', email);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
       
       if (error) {
+        console.error('Login error:', error.message);
         toast({
           title: "فشل تسجيل الدخول",
           description: error.message,
@@ -76,10 +109,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return false;
       }
       
-      toast({
-        title: "تم تسجيل الدخول بنجاح",
-        description: "مرحبًا بك مجددًا!",
-      });
+      if (!data.user) {
+        console.error('No user returned after login');
+        toast({
+          title: "فشل تسجيل الدخول",
+          description: "لم يتم العثور على المستخدم",
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      console.log('Login successful, checking admin status');
+      const isUserAdmin = await checkIsAdmin(data.user.id);
+      setIsAdmin(isUserAdmin);
+      
       return true;
     } catch (error) {
       console.error('Unexpected error during login:', error);
