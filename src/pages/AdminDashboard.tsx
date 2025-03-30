@@ -57,10 +57,13 @@ const AdminDashboard = () => {
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
         
+        // Fix: Convert date to ISO string for the query
+        const sevenDaysAgoISOString = sevenDaysAgo.toISOString();
+        
         const { data: recentSalesData, error: salesError } = await supabase
           .from('sales')
           .select('total_amount')
-          .gte('created_at', sevenDaysAgo.toISOString());
+          .gte('created_at', sevenDaysAgoISOString);
 
         if (salesError) throw salesError;
 
