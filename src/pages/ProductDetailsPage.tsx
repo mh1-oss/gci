@@ -1,7 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Product, Category, MediaItem, RelatedProduct } from "@/data/initialData";
-import { fetchProductById, fetchRelatedProducts } from "@/services/products/productService";
+import { fetchProductById, fetchFeaturedProducts } from "@/services/products/productService";
 import { fetchCategoryById } from "@/services/categories/categoryService";
 import { useCurrency } from "@/context/CurrencyContext";
 import { Button } from "@/components/ui/button";
