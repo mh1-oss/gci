@@ -277,7 +277,7 @@ const AdminProducts = () => {
         setDeleteDialogOpen(false);
         setSelectedProduct(null);
       } else {
-        throw new Error("فشلت عملية حذف المنتج");
+        throw new Error("فشلت عملي�� حذف المنتج");
       }
     } catch (error) {
       console.error('Error deleting product:', error);
