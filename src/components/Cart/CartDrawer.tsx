@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart, CartItem } from "@/context/CartContext";
 import { useCurrency } from "@/context/CurrencyContext";
@@ -14,11 +14,13 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Minus, Trash2, ShoppingBag, Printer } from "lucide-react";
+import { Plus, Minus, Trash2, ShoppingBag } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { format } from "date-fns";
-import { ar } from "date-fns/locale";
 import { createSaleFromCart } from "@/services/sales/salesService";
+import { printReceipt } from "@/services/receipt/receiptService";
+import { useQuery } from "@tanstack/react-query";
+import { getCompanyInfo } from "@/services/company/companyService";
+import { CompanyInfo } from "@/data/initialData";
 
 interface CartDrawerProps {
   open: boolean;
@@ -94,146 +96,35 @@ const CartDrawer = ({ open, onOpenChange }: CartDrawerProps) => {
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
+  const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
 
-  const printReceipt = () => {
-    const receiptWindow = window.open('', '_blank');
-    if (!receiptWindow) {
-      toast({
-        title: "تنبيه",
-        description: "يرجى السماح بالنوافذ المنبثقة لطباعة الإيصال",
-        variant: "destructive"
-      });
-      return;
+  // Fetch company info for receipt
+  const { data: fetchedCompanyInfo } = useQuery({
+    queryKey: ['companyInfo'],
+    queryFn: getCompanyInfo
+  });
+
+  useEffect(() => {
+    if (fetchedCompanyInfo) {
+      setCompanyInfo(fetchedCompanyInfo);
     }
-    
-    const now = new Date();
-    
-    receiptWindow.document.write(`
-      <html dir="rtl">
-      <head>
-        <title>إيصال مشتريات</title>
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            max-width: 800px;
-            margin: 0 auto;
-          }
-          .header {
-            text-align: center;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #ddd;
-            padding-bottom: 10px;
-          }
-          .info-section {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-          }
-          .info-block {
-            width: 45%;
-          }
-          table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-          }
-          th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: right;
-          }
-          th {
-            background-color: #f2f2f2;
-          }
-          .total {
-            text-align: left;
-            font-weight: bold;
-            font-size: 16px;
-            margin-top: 10px;
-          }
-          .footer {
-            margin-top: 30px;
-            text-align: center;
-            font-size: 12px;
-            color: #666;
-          }
-          @media print {
-            button {
-              display: none;
-            }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <h1>إيصال مشتريات</h1>
-          <p>تاريخ: ${format(now, 'yyyy/MM/dd hh:mm a', { locale: ar })}</p>
-        </div>
-        
-        <div class="info-section">
-          <div class="info-block">
-            <h3>معلومات العميل</h3>
-            <p><strong>الاسم:</strong> ${customerName || 'عميل'}</p>
-            ${customerPhone ? `<p><strong>الهاتف:</strong> ${customerPhone}</p>` : ''}
-            ${customerEmail ? `<p><strong>البريد الإلكتروني:</strong> ${customerEmail}</p>` : ''}
-          </div>
-          <div class="info-block">
-            <h3>ملخص المشتريات</h3>
-            <p><strong>عدد المنتجات:</strong> ${items.reduce((sum, item) => sum + item.quantity, 0)}</p>
-            <p><strong>إجمالي المبلغ:</strong> ${totalPrice.toLocaleString()} د.ع</p>
-          </div>
-        </div>
-        
-        <h3>المنتجات</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>المنتج</th>
-              <th>الكمية</th>
-              <th>سعر الوحدة</th>
-              <th>المجموع</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${items.map(item => `
-              <tr>
-                <td>${item.name}</td>
-                <td>${item.quantity}</td>
-                <td>${item.price.toLocaleString()} د.ع</td>
-                <td>${(item.price * item.quantity).toLocaleString()} د.ع</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-        
-        <div class="total">
-          الإجمالي: ${totalPrice.toLocaleString()} د.ع
-        </div>
-        
-        <div class="footer">
-          <p>شكراً لتعاملكم معنا</p>
-          <p>هذا الإيصال دليل على عملية الشراء</p>
-        </div>
-        
-        <button onclick="window.print();" style="display: block; margin: 20px auto; padding: 10px 20px;">
-          طباعة الإيصال
-        </button>
-      </body>
-      </html>
-    `);
-    
-    receiptWindow.document.close();
-    setTimeout(() => {
-      receiptWindow.focus();
-      receiptWindow.print();
-    }, 500);
-  };
+  }, [fetchedCompanyInfo]);
 
   const handleCheckout = async () => {
     setIsCheckingOut(true);
     
     try {
+      // Validate cart has items
+      if (items.length === 0) {
+        toast({
+          title: "سلة التسوق فارغة",
+          description: "لا يمكن إكمال الطلب بدون منتجات",
+          variant: "destructive",
+        });
+        setIsCheckingOut(false);
+        return;
+      }
+      
       // Save sale to database
       const result = await createSaleFromCart(
         customerName || 'عميل', 
@@ -242,8 +133,12 @@ const CartDrawer = ({ open, onOpenChange }: CartDrawerProps) => {
         items
       );
       
-      if (result.success) {
-        printReceipt();
+      if (result.success && result.saleData) {
+        // Print receipt with company info
+        if (companyInfo) {
+          printReceipt(result.saleData, companyInfo);
+        }
+        
         clearCart();
         onOpenChange(false);
         

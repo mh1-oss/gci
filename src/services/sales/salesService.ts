@@ -136,7 +136,7 @@ export const getSaleById = async (saleId: string): Promise<Sale | null> => {
 export const createSale = async (
   sale: Omit<Sale, 'id' | 'items' | 'created_at'>, 
   items: Array<Omit<SaleItem, 'id' | 'product_name'>>
-): Promise<{ success: boolean; saleId?: string; error?: string }> => {
+): Promise<{ success: boolean; saleId?: string; saleData?: Sale; error?: string }> => {
   try {
     const dbSale = mapSaleToDbSale(sale);
     
@@ -188,7 +188,34 @@ export const createSale = async (
       }
     }
     
-    return { success: true, saleId: newSale.id };
+    // Fetch products for mapping names
+    const { data: products } = await supabase
+      .from('products')
+      .select('id, name');
+    
+    const productMap = (products || []).reduce((acc, product) => {
+      acc[product.id] = product.name;
+      return acc;
+    }, {} as Record<string, string>);
+    
+    // Map sale items with product names
+    const saleItemsWithProductNames = items.map(item => ({
+      id: '', // Actual IDs will come from the database later
+      product_id: item.product_id,
+      product_name: productMap[item.product_id] || 'منتج غير معروف',
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      total_price: item.total_price
+    }));
+    
+    // Create the complete sale object to return
+    const completeSale = mapDbSaleToSale(newSale, saleItemsWithProductNames);
+    
+    return { 
+      success: true, 
+      saleId: newSale.id,
+      saleData: completeSale
+    };
   } catch (error) {
     console.error('Unexpected error creating sale:', error);
     return { 
@@ -230,7 +257,7 @@ export const createSaleFromCart = async (
   customerPhone: string | null, 
   customerEmail: string | null, 
   cartItems: any[]
-): Promise<{ success: boolean; saleId?: string; error?: string }> => {
+): Promise<{ success: boolean; saleId?: string; saleData?: Sale; error?: string }> => {
   try {
     // Calculate total amount from cart items
     const totalAmount = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
