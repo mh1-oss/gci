@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -37,7 +36,7 @@ import {
   deleteProduct 
 } from '@/services/products/productService';
 import { fetchCategories } from '@/services/categories/categoryService';
-import { uploadImage } from '@/services/media/mediaService';
+import { uploadMedia } from '@/services/media/mediaService';
 import { Product, Category } from '@/data/initialData';
 
 const AdminProducts = () => {
@@ -129,7 +128,6 @@ const AdminProducts = () => {
     const { name, value } = e.target;
     
     if (name === 'price') {
-      // Ensure price is a valid number
       const numValue = parseFloat(value);
       setFormData(prev => ({ ...prev, [name]: isNaN(numValue) ? 0 : numValue }));
     } else {
@@ -146,7 +144,6 @@ const AdminProducts = () => {
       const file = e.target.files[0];
       setImageFile(file);
       
-      // Create a preview
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
@@ -192,29 +189,30 @@ const AdminProducts = () => {
     setIsProcessing(true);
     
     try {
-      // Handle image upload if there's a new file
       let imageUrl = formData.image;
       
       if (imageFile) {
-        const uploadResult = await uploadImage(imageFile);
+        const uploadResult = await uploadMedia(imageFile);
         
-        if (uploadResult.url) {
-          imageUrl = uploadResult.url;
+        if (uploadResult) {
+          imageUrl = uploadResult;
         } else {
           throw new Error("فشل تحميل الصورة");
         }
       }
       
-      // Update the product data with the new image URL
       const productData = {
         ...formData,
-        image: imageUrl
+        image: imageUrl,
+        featured: false,
+        colors: [],
+        specifications: {},
+        mediaGallery: []
       };
       
       let result;
       
       if (editMode && selectedProduct) {
-        // Update existing product
         result = await updateProduct(selectedProduct.id, productData);
         
         if (result) {
@@ -223,13 +221,11 @@ const AdminProducts = () => {
             description: "تم تحديث المنتج بنجاح"
           });
           
-          // Update the local products state
           setProducts(prevProducts => 
             prevProducts.map(p => p.id === selectedProduct.id ? { ...p, ...productData } : p)
           );
         }
       } else {
-        // Create new product
         result = await createProduct(productData);
         
         if (result) {
@@ -238,7 +234,6 @@ const AdminProducts = () => {
             description: "تم إنشاء المنتج بنجاح"
           });
           
-          // Add the new product to the local state
           setProducts(prevProducts => [...prevProducts, result]);
         }
       }
@@ -275,7 +270,6 @@ const AdminProducts = () => {
           description: "تم حذف المنتج بنجاح"
         });
         
-        // Remove the product from the local state
         setProducts(prevProducts => 
           prevProducts.filter(p => p.id !== selectedProduct.id)
         );
@@ -386,7 +380,6 @@ const AdminProducts = () => {
         </CardContent>
       </Card>
       
-      {/* Product Form Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md" dir="rtl">
           <DialogHeader>
@@ -451,7 +444,7 @@ const AdminProducts = () => {
                 name="description"
                 value={formData.description}
                 onChange={handleFormChange}
-                placeholder="أدخل وصف المنتج"
+                placeholder="أدخل ��صف المنتج"
                 rows={3}
               />
             </div>
@@ -502,7 +495,6 @@ const AdminProducts = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="sm:max-w-md" dir="rtl">
           <DialogHeader>

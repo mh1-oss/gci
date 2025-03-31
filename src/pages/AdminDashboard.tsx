@@ -1,4 +1,3 @@
-
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import AdminAuthCheck from "@/components/Admin/AdminAuthCheck";
@@ -9,6 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
 
 interface DashboardStats {
   productCount: number;
@@ -27,14 +27,12 @@ const AdminDashboard = () => {
     recentSales: 0
   });
 
-  // Fetch dashboard stats
   const { isLoading } = useQuery({
     queryKey: ['dashboardStats'],
     queryFn: async () => {
       try {
         console.log("Fetching dashboard stats...");
         
-        // Fetch product count
         const { count: productCount, error: productsError } = await supabase
           .from('products')
           .select('*', { count: 'exact', head: true });
@@ -44,7 +42,6 @@ const AdminDashboard = () => {
           throw productsError;
         }
 
-        // Fetch category count
         const { count: categoryCount, error: categoriesError } = await supabase
           .from('categories')
           .select('*', { count: 'exact', head: true });
@@ -54,7 +51,6 @@ const AdminDashboard = () => {
           throw categoriesError;
         }
 
-        // Fetch order count
         const { count: orderCount, error: ordersError } = await supabase
           .from('orders')
           .select('*', { count: 'exact', head: true });
@@ -64,11 +60,9 @@ const AdminDashboard = () => {
           throw ordersError;
         }
 
-        // Fetch recent sales (last 7 days)
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
         
-        // Convert date to ISO string for the query
         const sevenDaysAgoISOString = sevenDaysAgo.toISOString();
         
         const { data: recentSalesData, error: salesError } = await supabase
@@ -81,7 +75,6 @@ const AdminDashboard = () => {
           throw salesError;
         }
 
-        // Calculate total sales amount
         const recentSalesTotal = recentSalesData?.reduce(
           (sum, sale) => sum + (typeof sale.total_amount === 'string' ? parseFloat(sale.total_amount) : Number(sale.total_amount)), 
           0
@@ -107,7 +100,7 @@ const AdminDashboard = () => {
         return stats;
       }
     },
-    refetchInterval: 60000, // Refresh every minute
+    refetchInterval: 60000,
   });
 
   const handleLogout = async () => {
