@@ -2,6 +2,7 @@
 import { Sale } from "@/utils/models";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
+import { toast } from "@/hooks/use-toast";
 
 export const printReceipt = (sale: Sale, companyInfo?: any) => {
   try {
@@ -10,7 +11,12 @@ export const printReceipt = (sale: Sale, companyInfo?: any) => {
     const receiptWindow = window.open('', '_blank');
     if (!receiptWindow) {
       console.error("Failed to open receipt window. Please allow pop-ups.");
-      throw new Error("Failed to open receipt window. Please allow pop-ups.");
+      toast({
+        title: "خطأ في الطباعة",
+        description: "فشل فتح نافذة الإيصال. الرجاء السماح بالنوافذ المنبثقة.",
+        variant: "destructive",
+      });
+      return;
     }
     
     receiptWindow.document.write(`
@@ -141,7 +147,11 @@ export const printReceipt = (sale: Sale, companyInfo?: any) => {
         }
       } catch (error) {
         console.error("Error during print operation:", error);
-        throw error;
+        toast({
+          title: "خطأ في الطباعة",
+          description: "حدث خطأ أثناء عملية الطباعة.",
+          variant: "destructive",
+        });
       }
     }, 1000);
   } catch (error) {
@@ -153,6 +163,3 @@ export const printReceipt = (sale: Sale, companyInfo?: any) => {
     });
   }
 };
-
-// Make sure we have the toast import
-import { toast } from "@/hooks/use-toast";
