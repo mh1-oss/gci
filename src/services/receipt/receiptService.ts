@@ -10,7 +10,7 @@ export const printReceipt = (sale: Sale, companyInfo?: any) => {
     const receiptWindow = window.open('', '_blank');
     if (!receiptWindow) {
       console.error("Failed to open receipt window. Please allow pop-ups.");
-      return;
+      throw new Error("Failed to open receipt window. Please allow pop-ups.");
     }
     
     receiptWindow.document.write(`
@@ -134,14 +134,25 @@ export const printReceipt = (sale: Sale, companyInfo?: any) => {
     // Give the browser time to process and render all the content before focusing and printing
     setTimeout(() => {
       try {
-        receiptWindow.focus();
-        // Prompt the print dialog automatically
-        receiptWindow.print();
+        if (receiptWindow) {
+          receiptWindow.focus();
+          // Prompt the print dialog automatically
+          receiptWindow.print();
+        }
       } catch (error) {
         console.error("Error during print operation:", error);
+        throw error;
       }
     }, 1000);
   } catch (error) {
     console.error("Error generating receipt:", error);
+    toast({
+      title: "خطأ في الطباعة",
+      description: "حدث خطأ أثناء توليد الإيصال. يرجى المحاولة مرة أخرى.",
+      variant: "destructive",
+    });
   }
 };
+
+// Make sure we have the toast import
+import { toast } from "@/hooks/use-toast";

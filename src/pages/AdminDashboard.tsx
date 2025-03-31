@@ -61,7 +61,8 @@ const AdminDashboard = () => {
 
         if (ordersError) {
           console.error("Error fetching order count:", ordersError);
-          throw ordersError;
+          // Don't throw here, just log the error and continue with 0 orders
+          console.log("Using default value 0 for order count");
         }
 
         // Calculate recent sales (last 7 days)
@@ -77,7 +78,8 @@ const AdminDashboard = () => {
 
         if (salesError) {
           console.error("Error fetching recent sales:", salesError);
-          throw salesError;
+          // Don't throw here, just log the error and continue with 0 sales
+          console.log("Using default value 0 for recent sales");
         }
 
         const recentSalesTotal = recentSalesData?.reduce(
