@@ -1,4 +1,3 @@
-
 // Database types representing the Supabase database schema
 export interface DbProduct {
   id: string;
@@ -11,6 +10,7 @@ export interface DbProduct {
   image_url: string | null;
   created_at: string;
   updated_at: string;
+  categories?: { name: string } | null;
 }
 
 export interface DbCategory {

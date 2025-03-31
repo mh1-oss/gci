@@ -24,7 +24,7 @@ interface DbProduct {
   category_id: string;
   created_at: string;
   updated_at: string;
-  categories: { name: string };
+  categories?: { name: string } | null;
 }
 
 const ProductDetailsPage = () => {
@@ -46,7 +46,24 @@ const ProductDetailsPage = () => {
           .single();
         
         if (error) throw error;
-        return data as DbProduct;
+
+        // Make sure we convert to the correct type
+        const result: DbProduct = {
+          id: data.id,
+          name: data.name,
+          description: data.description,
+          image_url: data.image_url,
+          price: data.price,
+          cost_price: data.cost_price,
+          stock_quantity: data.stock_quantity,
+          category_id: data.category_id,
+          created_at: data.created_at,
+          updated_at: data.updated_at,
+          categories: data.categories && typeof data.categories === 'object' ? 
+            data.categories : null
+        };
+        
+        return result;
       } catch (error) {
         console.error('Error fetching product:', error);
         throw error;
@@ -68,7 +85,20 @@ const ProductDetailsPage = () => {
         .limit(4);
       
       if (error) throw error;
-      return data as DbProduct[];
+      
+      // Convert the data to the expected format
+      return data.map(item => ({
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        image_url: item.image_url,
+        price: item.price,
+        cost_price: item.cost_price,
+        stock_quantity: item.stock_quantity,
+        category_id: item.category_id,
+        created_at: item.created_at,
+        updated_at: item.updated_at
+      })) as DbProduct[];
     },
     enabled: !!product?.category_id
   });

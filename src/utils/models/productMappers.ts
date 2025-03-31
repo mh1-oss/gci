@@ -17,7 +17,7 @@ export function mapDbProductToProduct(dbProduct: DbProduct): Product {
   };
 }
 
-export function mapProductToDbProduct(product: Omit<Product, 'id'>): Omit<DbProduct, 'id' | 'created_at' | 'updated_at'> {
+export function mapProductToDbProduct(product: Omit<Product, 'id'>): Omit<DbProduct, 'id' | 'created_at' | 'updated_at' | 'categories'> {
   return {
     name: product.name,
     description: product.description,
