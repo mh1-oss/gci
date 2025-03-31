@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart, CartItem } from "@/context/CartContext";
@@ -39,6 +38,8 @@ const CartItemRow = ({ item }: { item: CartItem }) => {
   const handleDecrement = () => {
     if (item.quantity > 1) {
       updateQuantity(item.id, item.quantity - 1);
+    } else {
+      removeFromCart(item.id);
     }
   };
 
@@ -135,8 +136,19 @@ const CartDrawer = ({ open, onOpenChange }: CartDrawerProps) => {
       );
       
       if (result.success && result.saleData) {
-        if (companyInfo) {
-          printReceipt(result.saleData, companyInfo);
+        try {
+          if (companyInfo) {
+            printReceipt(result.saleData, companyInfo);
+          } else {
+            printReceipt(result.saleData);
+          }
+        } catch (printError) {
+          console.error("Error printing receipt:", printError);
+          toast({
+            title: "تنبيه",
+            description: "تم إتمام الطلب ولكن حدث خطأ أثناء طباعة الإيصال",
+            variant: "default",
+          });
         }
         
         clearCart();
@@ -167,7 +179,6 @@ const CartDrawer = ({ open, onOpenChange }: CartDrawerProps) => {
     }
   };
 
-  // Toggle currency between USD and IQD
   const toggleCurrency = () => {
     setCurrency(currency === 'USD' ? 'IQD' : 'USD');
     toast({

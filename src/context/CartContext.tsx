@@ -41,14 +41,12 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const totalPrice = items.reduce((total, item) => total + (item.price * item.quantity), 0);
   
   useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-    
-    try {
-      localStorage.setItem("cart", JSON.stringify(items));
-    } catch (error) {
-      console.error("Error saving cart to localStorage:", error);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem("cart", JSON.stringify(items));
+      } catch (error) {
+        console.error("Error saving cart to localStorage:", error);
+      }
     }
   }, [items]);
   
@@ -96,7 +94,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
     
-    if (quantity < 1) {
+    if (quantity <= 0) {
       removeFromCart(itemId);
       return;
     }

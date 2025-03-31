@@ -15,6 +15,7 @@ const CartButton = () => {
         variant="ghost"
         className="relative p-2"
         onClick={() => setCartOpen(true)}
+        aria-label="عرض سلة التسوق"
       >
         <ShoppingCart className="h-5 w-5" />
         {totalItems > 0 && (
