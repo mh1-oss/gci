@@ -12,6 +12,21 @@ import { useCart } from '@/context/CartContext';
 import { useCurrency } from '@/context/CurrencyContext';
 import { toast } from '@/hooks/use-toast';
 
+// Define a proper type for the database product that includes categories
+interface DbProduct {
+  id: string;
+  name: string;
+  description: string | null;
+  image_url: string | null;
+  price: number;
+  cost_price: number;
+  stock_quantity: number;
+  category_id: string;
+  created_at: string;
+  updated_at: string;
+  categories: { name: string };
+}
+
 const ProductDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -31,7 +46,7 @@ const ProductDetailsPage = () => {
           .single();
         
         if (error) throw error;
-        return data as (Product & { categories: { name: string } });
+        return data as DbProduct;
       } catch (error) {
         console.error('Error fetching product:', error);
         throw error;
@@ -53,7 +68,7 @@ const ProductDetailsPage = () => {
         .limit(4);
       
       if (error) throw error;
-      return data as Product[];
+      return data as DbProduct[];
     },
     enabled: !!product?.category_id
   });

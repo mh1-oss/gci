@@ -193,6 +193,9 @@ export const fetchCompanyInfo = async (): Promise<CompanyInfo | null> => {
   }
 };
 
+// Create an alias for fetchCompanyInfo as getCompanyInfo
+export const getCompanyInfo = fetchCompanyInfo;
+
 export const updateCompanyInfo = async (updates: Partial<CompanyInfo>): Promise<boolean> => {
   try {
     console.log('Updating company info with:', updates);

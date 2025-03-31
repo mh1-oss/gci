@@ -22,7 +22,7 @@ import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { fetchProducts } from "@/services/products/productService";
-import { getCompanyInfo } from "@/services/company/companyService";
+import { fetchCompanyInfo } from "@/services/company/companyService";
 import { printReceipt } from "@/services/receipt/receiptService";
 import { 
   createSale,
@@ -44,7 +44,7 @@ const SalesList = () => {
 
   const { data: companyInfo } = useQuery({
     queryKey: ['companyInfo'],
-    queryFn: getCompanyInfo
+    queryFn: fetchCompanyInfo
   });
 
   const deleteMutation = useMutation({

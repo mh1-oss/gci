@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart, CartItem } from "@/context/CartContext";
@@ -19,7 +18,7 @@ import { toast } from "@/hooks/use-toast";
 import { createSaleFromCart } from "@/services/sales/salesService";
 import { printReceipt } from "@/services/receipt/receiptService";
 import { useQuery } from "@tanstack/react-query";
-import { getCompanyInfo } from "@/services/company/companyService";
+import { fetchCompanyInfo } from "@/services/company/companyService";
 import { CompanyInfo } from "@/data/initialData";
 
 interface CartDrawerProps {
@@ -98,10 +97,9 @@ const CartDrawer = ({ open, onOpenChange }: CartDrawerProps) => {
   const [customerEmail, setCustomerEmail] = useState('');
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
 
-  // Fetch company info for receipt
   const { data: fetchedCompanyInfo } = useQuery({
     queryKey: ['companyInfo'],
-    queryFn: getCompanyInfo
+    queryFn: fetchCompanyInfo
   });
 
   useEffect(() => {
@@ -114,7 +112,6 @@ const CartDrawer = ({ open, onOpenChange }: CartDrawerProps) => {
     setIsCheckingOut(true);
     
     try {
-      // Validate cart has items
       if (items.length === 0) {
         toast({
           title: "سلة التسوق فارغة",
@@ -125,7 +122,6 @@ const CartDrawer = ({ open, onOpenChange }: CartDrawerProps) => {
         return;
       }
       
-      // Save sale to database
       const result = await createSaleFromCart(
         customerName || 'عميل', 
         customerPhone || null, 
@@ -134,7 +130,6 @@ const CartDrawer = ({ open, onOpenChange }: CartDrawerProps) => {
       );
       
       if (result.success && result.saleData) {
-        // Print receipt with company info
         if (companyInfo) {
           printReceipt(result.saleData, companyInfo);
         }
