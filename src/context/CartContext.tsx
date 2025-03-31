@@ -29,7 +29,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }
     
     try {
-      // Load cart from localStorage on initialization
       const savedCart = localStorage.getItem("cart");
       return savedCart ? JSON.parse(savedCart) : [];
     } catch (error) {
@@ -38,11 +37,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }
   });
   
-  // Calculate totals
   const totalItems = items.reduce((total, item) => total + item.quantity, 0);
   const totalPrice = items.reduce((total, item) => total + (item.price * item.quantity), 0);
   
-  // Save cart to localStorage whenever it changes
   useEffect(() => {
     if (typeof window === 'undefined') {
       return;
@@ -62,16 +59,13 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }
     
     setItems(prevItems => {
-      // Check if the item already exists in the cart
       const existingItemIndex = prevItems.findIndex(item => item.id === newItem.id);
       
       if (existingItemIndex >= 0) {
-        // Update quantity if the item already exists
         const updatedItems = [...prevItems];
         updatedItems[existingItemIndex].quantity += newItem.quantity;
         return updatedItems;
       } else {
-        // Add new item if it doesn't exist yet
         return [...prevItems, { ...newItem }];
       }
     });
@@ -103,7 +97,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }
     
     if (quantity < 1) {
-      console.warn("Attempted to set quantity below 1. Ignoring update.");
+      removeFromCart(itemId);
       return;
     }
     
