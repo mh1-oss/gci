@@ -15,7 +15,7 @@ interface ProductInfoProps {
 const ProductInfo = ({ product }: ProductInfoProps) => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
-  const { formatPrice } = useCurrency();
+  const { formatPrice, currency, setCurrency } = useCurrency();
   const [quantity, setQuantity] = useState(1);
 
   const incrementQuantity = () => setQuantity(prev => prev + 1);
@@ -33,6 +33,15 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
     toast({
       title: "تمت الإضافة إلى السلة",
       description: `تمت إضافة ${product.name} إلى سلة التسوق`,
+    });
+  };
+
+  // Toggle currency
+  const toggleCurrency = () => {
+    setCurrency(currency === 'USD' ? 'IQD' : 'USD');
+    toast({
+      title: "تم تغيير العملة",
+      description: `تم تغيير العملة إلى ${currency === 'USD' ? 'الدينار العراقي' : 'الدولار الأمريكي'}`,
     });
   };
 
@@ -61,22 +70,35 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
             <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
             
             {product.categories && (
-              <p className="text-gray-500 mt-2">
-                الفئة: {product.categories.name}
-              </p>
+              <div 
+                className="inline-block bg-blue-100 text-blue-800 text-sm font-medium px-2 py-1 rounded mt-2 cursor-pointer"
+                onClick={() => navigate(`/products?category=${product.category_id}`)}
+              >
+                {product.categories.name}
+              </div>
             )}
           </div>
           
-          <div>
+          <div className="flex items-center justify-between">
             <span className="text-2xl font-bold text-primary">
               {formatPrice(product.price)}
             </span>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={toggleCurrency}
+            >
+              تبديل العملة: {currency === 'USD' ? 'USD → IQD' : 'IQD → USD'}
+            </Button>
+          </div>
+          
+          <div>
             {product.stock_quantity > 0 ? (
-              <span className="inline-block bg-green-100 text-green-800 text-sm font-medium px-2 py-1 rounded mr-2">
+              <span className="inline-block bg-green-100 text-green-800 text-sm font-medium px-2 py-1 rounded">
                 متوفر
               </span>
             ) : (
-              <span className="inline-block bg-red-100 text-red-800 text-sm font-medium px-2 py-1 rounded mr-2">
+              <span className="inline-block bg-red-100 text-red-800 text-sm font-medium px-2 py-1 rounded">
                 غير متوفر
               </span>
             )}
@@ -94,6 +116,7 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
                 <button 
                   onClick={decrementQuantity}
                   className="px-3 py-1 border-l border-gray-300"
+                  aria-label="تقليل الكمية"
                 >
                   -
                 </button>
@@ -101,6 +124,7 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
                 <button 
                   onClick={incrementQuantity}
                   className="px-3 py-1 border-r border-gray-300"
+                  aria-label="زيادة الكمية"
                 >
                   +
                 </button>

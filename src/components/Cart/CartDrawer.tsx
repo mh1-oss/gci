@@ -65,6 +65,7 @@ const CartItemRow = ({ item }: { item: CartItem }) => {
             type="button"
             className="p-1"
             onClick={handleDecrement}
+            aria-label="Decrease quantity"
           >
             <Minus className="h-3 w-3" />
           </button>
@@ -73,6 +74,7 @@ const CartItemRow = ({ item }: { item: CartItem }) => {
             type="button"
             className="p-1"
             onClick={handleIncrement}
+            aria-label="Increase quantity"
           >
             <Plus className="h-3 w-3" />
           </button>
@@ -81,6 +83,7 @@ const CartItemRow = ({ item }: { item: CartItem }) => {
           type="button"
           className="mr-4 text-red-500 hover:text-red-700"
           onClick={handleRemove}
+          aria-label="Remove item"
         >
           <Trash2 className="h-4 w-4" />
         </button>
@@ -91,7 +94,7 @@ const CartItemRow = ({ item }: { item: CartItem }) => {
 
 const CartDrawer = ({ open, onOpenChange }: CartDrawerProps) => {
   const { items, totalItems, totalPrice, clearCart } = useCart();
-  const { formatPrice } = useCurrency();
+  const { formatPrice, currency, setCurrency } = useCurrency();
   const navigate = useNavigate();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [customerName, setCustomerName] = useState('');
@@ -164,6 +167,15 @@ const CartDrawer = ({ open, onOpenChange }: CartDrawerProps) => {
     }
   };
 
+  // Toggle currency between USD and IQD
+  const toggleCurrency = () => {
+    setCurrency(currency === 'USD' ? 'IQD' : 'USD');
+    toast({
+      title: "تم تغيير العملة",
+      description: `تم تغيير العملة إلى ${currency === 'USD' ? 'الدينار العراقي' : 'الدولار الأمريكي'}`,
+    });
+  };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:max-w-md flex flex-col" dir="rtl">
@@ -189,8 +201,8 @@ const CartDrawer = ({ open, onOpenChange }: CartDrawerProps) => {
           </div>
         ) : (
           <>
-            <ScrollArea className="flex-1">
-              <div className="space-y-1 divide-y pr-4">
+            <ScrollArea className="flex-1 pr-4">
+              <div className="space-y-1 divide-y">
                 {items.map((item) => (
                   <CartItemRow key={item.id} item={item} />
                 ))}
@@ -238,6 +250,17 @@ const CartDrawer = ({ open, onOpenChange }: CartDrawerProps) => {
               <div className="flex justify-between py-2">
                 <span className="font-medium">المجموع:</span>
                 <span className="font-bold">{formatPrice(totalPrice)}</span>
+              </div>
+
+              <div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full mb-2"
+                  onClick={toggleCurrency}
+                >
+                  تغيير العملة: {currency === 'USD' ? 'USD → IQD' : 'IQD → USD'}
+                </Button>
               </div>
               
               <div className="space-y-2">

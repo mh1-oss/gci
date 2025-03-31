@@ -44,7 +44,7 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       return `$${price.toFixed(2)}`;
     } else {
       const iqdPrice = price * exchangeRate;
-      return `${Math.round(iqdPrice).toLocaleString()} IQD`;
+      return `${Math.round(iqdPrice).toLocaleString()} د.ع`;
     }
   };
   

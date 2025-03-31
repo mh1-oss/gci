@@ -1,18 +1,14 @@
-import { useState, useEffect, useRef } from "react";
-import { Routes, Route, Link, useNavigate } from "react-router-dom";
-import { Product, Category, MediaItem } from "@/data/initialData";
+
+import React, { useState, useEffect } from 'react';
+import { useToast } from '@/hooks/use-toast';
 import { 
-  fetchProducts, 
-  createProduct, 
-  updateProduct, 
-  deleteProduct 
-} from "@/services/products/productService";
-import { fetchCategories } from "@/services/categories/categoryService";
-import { uploadMedia } from "@/services/media/mediaService";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle 
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { 
   Table, 
   TableBody, 
@@ -20,841 +16,523 @@ import {
   TableHead, 
   TableHeader, 
   TableRow 
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
+} from '@/components/ui/table';
+import { 
+  Dialog, 
+  DialogContent, 
   DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useToast } from "@/hooks/use-toast";
-import { useCurrency } from "@/context/CurrencyContext";
-import { Plus, Edit, Trash2, Search, Loader2, Upload, Image, Video, FileText, X } from "lucide-react";
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, Edit, Trash2, RefreshCw, Image } from 'lucide-react';
+import { 
+  fetchProducts, 
+  createProduct, 
+  updateProduct, 
+  deleteProduct 
+} from '@/services/products/productService';
+import { fetchCategories } from '@/services/categories/categoryService';
+import { uploadImage } from '@/services/media/mediaService';
+import { Product, Category } from '@/data/initialData';
 
-interface ProductFormData {
-  name: string;
-  description: string;
-  price: string;
-  categoryId: string;
-  image: string;
-  featured: boolean;
-  colors: string;
-  mediaGallery: MediaItem[];
-  specsPdf: string;
-  coverage?: string;
-}
-
-interface MediaUploadProps {
-  onUpload: (file: File) => Promise<void>;
-  accept: string;
-  id: string;
-  icon: React.ReactNode;
-  label: string;
-}
-
-const MediaUpload = ({ onUpload, accept, id, icon, label }: MediaUploadProps) => {
-  const [loading, setLoading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setLoading(true);
-      try {
-        await onUpload(file);
-      } catch (error) {
-        console.error("Upload error:", error);
-      } finally {
-        setLoading(false);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
-      }
-    }
-  };
-  
-  return (
-    <div className="relative">
-      <input
-        type="file"
-        id={id}
-        accept={accept}
-        onChange={handleFileChange}
-        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-        disabled={loading}
-        ref={fileInputRef}
-      />
-      <div className={`border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:bg-gray-50 transition-colors ${loading ? 'bg-gray-50' : ''}`}>
-        {loading ? (
-          <div className="flex flex-col items-center py-4">
-            <Loader2 className="h-8 w-8 animate-spin text-brand-blue mb-2" />
-            <span className="text-sm text-gray-500">جاري التحميل...</span>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center py-4">
-            {icon}
-            <span className="mt-2 text-sm font-medium">{label}</span>
-            <span className="mt-1 text-xs text-gray-500">اضغط أو اسحب وأفلت</span>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-const defaultProductForm: ProductFormData = {
-  name: "",
-  description: "",
-  price: "",
-  categoryId: "",
-  image: "/placeholder.svg",
-  featured: false,
-  colors: "",
-  mediaGallery: [],
-  specsPdf: "",
-  coverage: ""
-};
-
-const ProductForm = ({ 
-  product, 
-  categories, 
-  onSubmit, 
-  onCancel, 
-  isLoading 
-}: { 
-  product?: Product; 
-  categories: Category[]; 
-  onSubmit: (data: ProductFormData) => void;
-  onCancel: () => void;
-  isLoading: boolean;
-}) => {
-  const [formData, setFormData] = useState<ProductFormData>(
-    product ? {
-      name: product.name,
-      description: product.description,
-      price: product.price.toString(),
-      categoryId: product.categoryId,
-      image: product.image,
-      featured: product.featured,
-      colors: product.colors ? product.colors.join(", ") : "",
-      mediaGallery: product.mediaGallery || [],
-      specsPdf: product.specsPdf || "",
-      coverage: product.coverage ? product.coverage.toString() : ""
-    } : { ...defaultProductForm }
-  );
-  
-  const { toast } = useToast();
-  
-  const handleChange = (field: keyof ProductFormData, value: string | boolean | MediaItem[]) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-  
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(formData);
-  };
-  
-  const handleMainImageUpload = async (file: File) => {
-    try {
-      const imageUrl = await uploadMedia(file);
-      handleChange("image", imageUrl);
-      toast({
-        title: "تم تحميل الصورة الرئيسية",
-        description: "تم تحميل الصورة الرئيسية بنجاح.",
-      });
-    } catch (error) {
-      toast({
-        title: "خطأ في التحميل",
-        description: "فشل تحميل الصورة. يرجى المحاولة مرة أخرى.",
-        variant: "destructive",
-      });
-    }
-  };
-  
-  const handleGalleryImageUpload = async (file: File) => {
-    try {
-      const imageUrl = await uploadMedia(file);
-      const newMedia: MediaItem = {
-        url: imageUrl,
-        type: 'image'
-      };
-      handleChange("mediaGallery", [...formData.mediaGallery, newMedia]);
-      toast({
-        title: "تم تحميل الصورة",
-        description: "تم إضافة الصورة إلى معرض الوسائط.",
-      });
-    } catch (error) {
-      toast({
-        title: "خطأ في التحميل",
-        description: "فشل تحميل الصورة. يرجى المحاولة مرة أخرى.",
-        variant: "destructive",
-      });
-    }
-  };
-  
-  const handleVideoUpload = async (file: File) => {
-    try {
-      const videoUrl = await uploadMedia(file);
-      const newMedia: MediaItem = {
-        url: videoUrl,
-        type: 'video'
-      };
-      handleChange("mediaGallery", [...formData.mediaGallery, newMedia]);
-      toast({
-        title: "تم تحميل الفيديو",
-        description: "تم إضافة الفيديو إلى معرض الوسائط.",
-      });
-    } catch (error) {
-      toast({
-        title: "خطأ في التحميل",
-        description: "فشل تحميل الفيديو. يرجى المحاولة مرة أخرى.",
-        variant: "destructive",
-      });
-    }
-  };
-  
-  const handlePdfUpload = async (file: File) => {
-    try {
-      const pdfUrl = await uploadMedia(file);
-      handleChange("specsPdf", pdfUrl);
-      toast({
-        title: "تم تحميل ملف PDF",
-        description: "تم تعيين ملف المواصفات بنجاح.",
-      });
-    } catch (error) {
-      toast({
-        title: "خطأ في التحميل",
-        description: "فشل تحميل ملف PDF. يرجى المحاولة مرة أخرى.",
-        variant: "destructive",
-      });
-    }
-  };
-  
-  const removeMediaItem = (index: number) => {
-    const updatedGallery = [...formData.mediaGallery];
-    updatedGallery.splice(index, 1);
-    handleChange("mediaGallery", updatedGallery);
-  };
-  
-  const removePdf = () => {
-    handleChange("specsPdf", "");
-  };
-  
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6" dir="rtl">
-      <div>
-        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-          اسم المنتج
-        </label>
-        <Input
-          id="name"
-          value={formData.name}
-          onChange={(e) => handleChange("name", e.target.value)}
-          placeholder="أدخل اسم المنتج"
-          required
-        />
-      </div>
-      
-      <div>
-        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-          الوصف
-        </label>
-        <Textarea
-          id="description"
-          value={formData.description}
-          onChange={(e) => handleChange("description", e.target.value)}
-          placeholder="أدخل وصف المنتج"
-          rows={4}
-          required
-        />
-      </div>
-      
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
-            السعر (USD)
-          </label>
-          <Input
-            id="price"
-            type="number"
-            min="0"
-            step="0.01"
-            value={formData.price}
-            onChange={(e) => handleChange("price", e.target.value)}
-            placeholder="0.00"
-            required
-          />
-        </div>
-        
-        <div>
-          <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-            الفئة
-          </label>
-          <Select 
-            value={formData.categoryId} 
-            onValueChange={(value) => handleChange("categoryId", value)}
-          >
-            <SelectTrigger id="category">
-              <SelectValue placeholder="اختر فئة" />
-            </SelectTrigger>
-            <SelectContent>
-              {categories.map((category) => (
-                <SelectItem key={category.id} value={category.id}>
-                  {category.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-      
-      {/* Main Image Upload */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          الصورة الرئيسية
-        </label>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <MediaUpload
-            onUpload={handleMainImageUpload}
-            accept="image/*"
-            id="main-image-upload"
-            icon={<Image className="h-10 w-10 text-gray-400" />}
-            label="تحميل صورة رئيسية"
-          />
-          {formData.image && formData.image !== "/placeholder.svg" && (
-            <div className="relative aspect-square rounded-lg overflow-hidden border border-gray-200">
-              <img src={formData.image} alt="Main" className="w-full h-full object-cover" />
-            </div>
-          )}
-        </div>
-      </div>
-      
-      {/* Media Gallery */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          معرض الوسائط
-        </label>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <MediaUpload
-            onUpload={handleGalleryImageUpload}
-            accept="image/*"
-            id="gallery-image-upload"
-            icon={<Image className="h-10 w-10 text-gray-400" />}
-            label="تحميل صورة للمعرض"
-          />
-          <MediaUpload
-            onUpload={handleVideoUpload}
-            accept="video/*"
-            id="video-upload"
-            icon={<Video className="h-10 w-10 text-gray-400" />}
-            label="تحميل فيديو"
-          />
-        </div>
-        
-        {formData.mediaGallery.length > 0 && (
-          <div className="mt-4">
-            <h4 className="text-sm font-medium text-gray-700 mb-2">الوسائط المحملة:</h4>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {formData.mediaGallery.map((media, index) => (
-                <div key={index} className="relative group">
-                  {media.type === 'video' ? (
-                    <div className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center">
-                      <Video className="h-8 w-8 text-gray-500" />
-                    </div>
-                  ) : (
-                    <div className="aspect-square rounded-lg overflow-hidden">
-                      <img src={media.url} alt={`Gallery ${index + 1}`} className="w-full h-full object-cover" />
-                    </div>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => removeMediaItem(index)}
-                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-      
-      {/* PDF Specs Upload */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          ملف مواصفات PDF
-        </label>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <MediaUpload
-            onUpload={handlePdfUpload}
-            accept=".pdf"
-            id="pdf-upload"
-            icon={<FileText className="h-10 w-10 text-gray-400" />}
-            label="تحميل ملف PDF للمواصفات"
-          />
-          {formData.specsPdf && (
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <div className="flex items-center">
-                <FileText className="h-6 w-6 text-gray-500 mr-2" />
-                <span className="text-sm font-medium truncate max-w-[200px]">
-                  {formData.specsPdf.split('/').pop() || 'specs.pdf'}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={removePdf}
-                className="text-red-500 p-1 hover:bg-gray-200 rounded-full"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-      
-      <div>
-        <label htmlFor="colors" className="block text-sm font-medium text-gray-700 mb-1">
-          الألوان المتاحة (مفصولة بفواصل)
-        </label>
-        <Input
-          id="colors"
-          value={formData.colors}
-          onChange={(e) => handleChange("colors", e.target.value)}
-          placeholder="مثال: أحمر، أزرق، أخضر"
-        />
-      </div>
-      
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id="featured"
-          checked={formData.featured}
-          onCheckedChange={(checked) => handleChange("featured", !!checked)}
-        />
-        <label
-          htmlFor="featured"
-          className="mr-2 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-        >
-          منتج مميز
-        </label>
-      </div>
-      
-      <div className="flex justify-end space-x-4">
-        <Button type="button" variant="outline" onClick={onCancel} className="ml-4">
-          إلغاء
-        </Button>
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? (
-            <>
-              <Loader2 className="ml-2 h-4 w-4 animate-spin" />
-              جاري الحفظ...
-            </>
-          ) : (
-            'حفظ المنتج'
-          )}
-        </Button>
-      </div>
-    </form>
-  );
-};
-
-const ProductList = () => {
+const AdminProducts = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
-  const [formLoading, setFormLoading] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [editMode, setEditMode] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    categoryId: '',
+    price: 0,
+    image: '/placeholder.svg'
+  });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  
   const { toast } = useToast();
-  const { formatPrice } = useCurrency();
   
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [productsData, categoriesData] = await Promise.all([
-          fetchProducts(),
-          fetchCategories()
-        ]);
-        setProducts(productsData);
-        setCategories(categoriesData);
-      } catch (error) {
-        console.error("Error fetching products data:", error);
-        toast({
-          title: "خطأ",
-          description: "تعذر تحميل بيانات المنتجات.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchData();
-  }, [toast]);
+    fetchAllData();
+  }, []);
   
-  const filteredProducts = products.filter(product => 
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-  
-  const handleEditClick = (product: Product) => {
-    setEditingProduct(product);
+  const fetchAllData = async () => {
+    setLoading(true);
+    try {
+      const [productsData, categoriesData] = await Promise.all([
+        fetchProducts(),
+        fetchCategories()
+      ]);
+      
+      setProducts(productsData);
+      setCategories(categoriesData);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      toast({
+        title: "خطأ في تحميل البيانات",
+        description: "حدث خطأ أثناء تحميل المنتجات والفئات",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
   
-  const handleDeleteClick = (product: Product) => {
-    setProductToDelete(product);
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      description: '',
+      categoryId: '',
+      price: 0,
+      image: '/placeholder.svg'
+    });
+    setImageFile(null);
+    setImagePreview(null);
+    setSelectedProduct(null);
+    setEditMode(false);
+  };
+  
+  const handleOpenCreateDialog = () => {
+    resetForm();
+    setDialogOpen(true);
+  };
+  
+  const handleOpenEditDialog = (product: Product) => {
+    setSelectedProduct(product);
+    setFormData({
+      name: product.name,
+      description: product.description,
+      categoryId: product.categoryId,
+      price: product.price,
+      image: product.image
+    });
+    setImagePreview(product.image !== '/placeholder.svg' ? product.image : null);
+    setEditMode(true);
+    setDialogOpen(true);
+  };
+  
+  const handleOpenDeleteDialog = (product: Product) => {
     setSelectedProduct(product);
     setDeleteDialogOpen(true);
   };
   
-  const handleDeleteConfirm = async () => {
-    setIsDeleting(true);
-    try {
-      if (!selectedProduct) return;
-      
-      const success = await deleteProduct(selectedProduct.id);
-      if (success) {
-        toast({
-          title: "تم الحذف بنجاح",
-          description: "تم حذف المنتج بنجاح."
-        });
-        setProducts(prevProducts => prevProducts.filter(p => p.id !== selectedProduct.id));
-        setDeleteDialogOpen(false);
-        setSelectedProduct(null);
-      } else {
-        toast({
-          title: "فشل الحذف",
-          description: "حدث خطأ أثناء حذف المنتج.",
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
-      console.error("Error deleting product:", error);
-      toast({
-        title: "خطأ",
-        description: "حدث خطأ غير متوقع أثناء حذف المنتج.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsDeleting(false);
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    
+    if (name === 'price') {
+      // Ensure price is a valid number
+      const numValue = parseFloat(value);
+      setFormData(prev => ({ ...prev, [name]: isNaN(numValue) ? 0 : numValue }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
     }
   };
   
-  const handleUpdateProduct = async (formData: ProductFormData) => {
-    if (!editingProduct) return;
+  const handleCategoryChange = (value: string) => {
+    setFormData(prev => ({ ...prev, categoryId: value }));
+  };
+  
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setImageFile(file);
+      
+      // Create a preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  
+  const validateForm = () => {
+    if (!formData.name.trim()) {
+      toast({
+        title: "حقل مطلوب",
+        description: "الرجاء إدخال اسم المنتج",
+        variant: "destructive"
+      });
+      return false;
+    }
+    
+    if (formData.price <= 0) {
+      toast({
+        title: "قيمة غير صالحة",
+        description: "الرجاء إدخال سعر صالح للمنتج",
+        variant: "destructive"
+      });
+      return false;
+    }
+    
+    if (!formData.categoryId) {
+      toast({
+        title: "حقل مطلوب",
+        description: "الرجاء اختيار فئة للمنتج",
+        variant: "destructive"
+      });
+      return false;
+    }
+    
+    return true;
+  };
+  
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
+    
+    setIsProcessing(true);
     
     try {
-      setFormLoading(true);
+      // Handle image upload if there's a new file
+      let imageUrl = formData.image;
       
-      const updatedProductData = {
-        name: formData.name,
-        description: formData.description,
-        price: parseFloat(formData.price),
-        categoryId: formData.categoryId,
-        image: formData.image,
-        featured: formData.featured,
-        colors: formData.colors.split(",").map(color => color.trim()).filter(color => color),
-        mediaGallery: formData.mediaGallery,
-        specsPdf: formData.specsPdf,
-        coverage: formData.coverage ? Number(formData.coverage) : undefined,
+      if (imageFile) {
+        const uploadResult = await uploadImage(imageFile);
+        
+        if (uploadResult.url) {
+          imageUrl = uploadResult.url;
+        } else {
+          throw new Error("فشل تحميل الصورة");
+        }
+      }
+      
+      // Update the product data with the new image URL
+      const productData = {
+        ...formData,
+        image: imageUrl
       };
       
-      const success = await updateProduct(editingProduct.id, updatedProductData);
+      let result;
       
-      if (success) {
-        setProducts(prevProducts => {
-          return prevProducts.map(p => {
-            if (p.id === editingProduct.id) {
-              return {
-                ...p,
-                ...updatedProductData,
-                id: editingProduct.id
-              };
-            }
-            return p;
-          });
-        });
+      if (editMode && selectedProduct) {
+        // Update existing product
+        result = await updateProduct(selectedProduct.id, productData);
         
-        toast({
-          title: "تم تحديث المنتج",
-          description: `تم تحديث ${editingProduct.name} بنجاح.`,
-          variant: "default",
-        });
+        if (result) {
+          toast({
+            title: "تم التحديث بنجاح",
+            description: "تم تحديث المنتج بنجاح"
+          });
+          
+          // Update the local products state
+          setProducts(prevProducts => 
+            prevProducts.map(p => p.id === selectedProduct.id ? { ...p, ...productData } : p)
+          );
+        }
       } else {
-        throw new Error("فشل تحديث المنتج");
+        // Create new product
+        result = await createProduct(productData);
+        
+        if (result) {
+          toast({
+            title: "تم الإنشاء بنجاح",
+            description: "تم إنشاء المنتج بنجاح"
+          });
+          
+          // Add the new product to the local state
+          setProducts(prevProducts => [...prevProducts, result]);
+        }
+      }
+      
+      if (result) {
+        setDialogOpen(false);
+        resetForm();
+      } else {
+        throw new Error("فشلت عملية حفظ المنتج");
       }
     } catch (error) {
-      console.error("Error updating product:", error);
+      console.error('Error saving product:', error);
       toast({
         title: "خطأ",
-        description: "تعذر تحديث المنتج.",
-        variant: "destructive",
+        description: "حدث خطأ أثناء حفظ المنتج",
+        variant: "destructive"
       });
     } finally {
-      setFormLoading(false);
-      setEditingProduct(null);
+      setIsProcessing(false);
+    }
+  };
+  
+  const handleDelete = async () => {
+    if (!selectedProduct) return;
+    
+    setIsProcessing(true);
+    
+    try {
+      const success = await deleteProduct(selectedProduct.id);
+      
+      if (success) {
+        toast({
+          title: "تم الحذف بنجاح",
+          description: "تم حذف المنتج بنجاح"
+        });
+        
+        // Remove the product from the local state
+        setProducts(prevProducts => 
+          prevProducts.filter(p => p.id !== selectedProduct.id)
+        );
+        
+        setDeleteDialogOpen(false);
+        setSelectedProduct(null);
+      } else {
+        throw new Error("فشلت عملية حذف المنتج");
+      }
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء حذف المنتج",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessing(false);
     }
   };
   
   const getCategoryName = (categoryId: string) => {
     const category = categories.find(cat => cat.id === categoryId);
-    return category ? category.name : "غير معروف";
+    return category ? category.name : 'غير مصنف';
   };
   
   return (
-    <div dir="rtl">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <div className="relative w-full sm:w-auto">
-          <Input
-            placeholder="البحث عن المنتجات..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pr-10"
-          />
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-        </div>
-        
-        <Button onClick={() => navigate("/admin/products/add")}>
-          <Plus className="h-4 w-4 ml-2" />
-          إضافة منتج
-        </Button>
-      </div>
+    <div>
+      <Card>
+        <CardHeader className="flex flex-row justify-between items-center">
+          <div>
+            <CardTitle>إدارة المنتجات</CardTitle>
+            <CardDescription>إضافة وتعديل وحذف المنتجات الموجودة في الموقع</CardDescription>
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={fetchAllData} variant="outline">
+              <RefreshCw className="h-4 w-4 ml-2" />
+              تحديث
+            </Button>
+            <Button onClick={handleOpenCreateDialog}>
+              <Plus className="h-4 w-4 ml-2" />
+              إضافة منتج جديد
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex justify-center items-center h-40">
+              <p>جاري تحميل البيانات...</p>
+            </div>
+          ) : products.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-500">لا توجد منتجات متاحة حالياً</p>
+              <Button onClick={handleOpenCreateDialog} variant="outline" className="mt-4">
+                <Plus className="h-4 w-4 ml-2" />
+                إضافة منتج جديد
+              </Button>
+            </div>
+          ) : (
+            <div className="overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>الصورة</TableHead>
+                    <TableHead>اسم المنتج</TableHead>
+                    <TableHead>الفئة</TableHead>
+                    <TableHead>السعر</TableHead>
+                    <TableHead>الإجراءات</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {products.map(product => (
+                    <TableRow key={product.id}>
+                      <TableCell>
+                        <img 
+                          src={product.image} 
+                          alt={product.name} 
+                          className="w-12 h-12 object-contain rounded border"
+                        />
+                      </TableCell>
+                      <TableCell>{product.name}</TableCell>
+                      <TableCell>{getCategoryName(product.categoryId)}</TableCell>
+                      <TableCell>${product.price.toFixed(2)}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => handleOpenEditDialog(product)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => handleOpenDeleteDialog(product)}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
       
-      {loading ? (
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-brand-blue" />
-        </div>
-      ) : filteredProducts.length > 0 ? (
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>الاسم</TableHead>
-                <TableHead>الفئة</TableHead>
-                <TableHead>السعر</TableHead>
-                <TableHead>مميز</TableHead>
-                <TableHead className="text-left">الإجراءات</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredProducts.map((product) => (
-                <TableRow key={product.id}>
-                  <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell>{getCategoryName(product.categoryId)}</TableCell>
-                  <TableCell>{formatPrice(product.price)}</TableCell>
-                  <TableCell>{product.featured ? "نعم" : "لا"}</TableCell>
-                  <TableCell className="text-left">
-                    <div className="flex justify-start space-x-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => handleEditClick(product)}
-                        className="ml-2"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => handleDeleteClick(product)}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      ) : (
-        <div className="text-center py-10 border rounded-lg">
-          <p className="text-gray-500">لم يتم العثور على منتجات</p>
-        </div>
-      )}
-      
-      <Dialog open={!!editingProduct} onOpenChange={(open) => !open && setEditingProduct(null)}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      {/* Product Form Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-md" dir="rtl">
           <DialogHeader>
-            <DialogTitle>تعديل المنتج</DialogTitle>
+            <DialogTitle>{editMode ? 'تعديل منتج' : 'إضافة منتج جديد'}</DialogTitle>
             <DialogDescription>
-              قم بإجراء تغييرات على تفاصيل المنتج أدناه.
+              {editMode 
+                ? 'قم بتعديل بيانات المنتج في النموذج أدناه' 
+                : 'أدخل بيانات المنتج الجديد في النموذج أدناه'
+              }
             </DialogDescription>
           </DialogHeader>
           
-          {editingProduct && (
-            <ProductForm
-              product={editingProduct}
-              categories={categories}
-              onSubmit={handleUpdateProduct}
-              onCancel={() => setEditingProduct(null)}
-              isLoading={formLoading}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>تأكيد الحذف</DialogTitle>
-            <DialogDescription>
-              هل أنت متأكد أنك تريد حذف المنتج "{productToDelete?.name}"؟ لا يمكن التراجع عن هذا الإجراء.
-            </DialogDescription>
-          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">اسم المنتج</Label>
+              <Input 
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleFormChange}
+                placeholder="أدخل اسم المنتج"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="category">الفئة</Label>
+              <Select 
+                value={formData.categoryId} 
+                onValueChange={handleCategoryChange}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر فئة" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map(category => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="price">السعر</Label>
+              <Input 
+                id="price"
+                name="price"
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.price}
+                onChange={handleFormChange}
+                placeholder="أدخل سعر المنتج"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="description">الوصف</Label>
+              <Textarea 
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleFormChange}
+                placeholder="أدخل وصف المنتج"
+                rows={3}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="image">صورة المنتج</Label>
+              <div className="flex items-center gap-4">
+                {imagePreview || formData.image !== '/placeholder.svg' ? (
+                  <img 
+                    src={imagePreview || formData.image} 
+                    alt="Product preview" 
+                    className="w-20 h-20 object-contain border rounded"
+                  />
+                ) : (
+                  <div className="w-20 h-20 flex items-center justify-center bg-gray-100 border rounded">
+                    <Image className="h-8 w-8 text-gray-400" />
+                  </div>
+                )}
+                <Input 
+                  id="image"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="flex-1"
+                />
+              </div>
+            </div>
+          </div>
+          
           <DialogFooter>
             <Button 
               variant="outline" 
-              onClick={() => setDeleteDialogOpen(false)}
-              disabled={formLoading}
-              className="ml-4"
+              onClick={() => setDialogOpen(false)}
+              disabled={isProcessing}
             >
               إلغاء
             </Button>
             <Button 
-              variant="destructive" 
-              onClick={handleDeleteConfirm}
-              disabled={formLoading}
+              onClick={handleSubmit}
+              disabled={isProcessing}
             >
-              {formLoading ? (
-                <>
-                  <Loader2 className="ml-2 h-4 w-4 animate-spin" />
-                  جاري الحذف...
-                </>
-              ) : (
-                'حذف'
-              )}
+              {isProcessing 
+                ? 'جارِ الحفظ...' 
+                : editMode ? 'تحديث' : 'إضافة'
+              }
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-md" dir="rtl">
+          <DialogHeader>
+            <DialogTitle>تأكيد الحذف</DialogTitle>
+            <DialogDescription>
+              هل أنت متأكد من رغبتك في حذف المنتج "{selectedProduct?.name}"؟
+              <br />
+              هذا الإجراء لا يمكن التراجع عنه.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setDeleteDialogOpen(false)}
+              disabled={isProcessing}
+            >
+              إلغاء
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={isProcessing}
+            >
+              {isProcessing ? 'جارِ الحذف...' : 'حذف'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
-  );
-};
-
-const AddProductForm = () => {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [formLoading, setFormLoading] = useState(false);
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  
-  useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        setLoading(true);
-        const data = await fetchCategories();
-        setCategories(data);
-      } catch (error) {
-        console.error("Error fetching categories:", error);
-        toast({
-          title: "Error",
-          description: "Could not load categories.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    loadCategories();
-  }, [toast]);
-  
-  const handleSubmit = async (formData: ProductFormData) => {
-    try {
-      setFormLoading(true);
-      
-      const newProductData = {
-        name: formData.name,
-        description: formData.description,
-        price: parseFloat(formData.price),
-        categoryId: formData.categoryId,
-        image: formData.image,
-        featured: formData.featured,
-        colors: formData.colors.split(",").map(color => color.trim()).filter(color => color),
-        mediaGallery: formData.mediaGallery,
-        specsPdf: formData.specsPdf,
-        coverage: formData.coverage ? Number(formData.coverage) : undefined,
-      };
-      
-      const success = await createProduct(newProductData);
-      
-      if (success) {
-        toast({
-          title: "Product Added",
-          description: "New product has been added successfully.",
-          variant: "default",
-        });
-        
-        navigate("/admin/products");
-      } else {
-        throw new Error("Failed to add product");
-      }
-    } catch (error) {
-      console.error("Error adding product:", error);
-      toast({
-        title: "Error",
-        description: "Could not add the product.",
-        variant: "destructive",
-      });
-    } finally {
-      setFormLoading(false);
-    }
-  };
-  
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-brand-blue" />
-      </div>
-    );
-  }
-  
-  return (
-    <Card>
-      <CardContent className="pt-6">
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold">إضافة منتج جديد</h2>
-          <p className="text-gray-500">
-            املأ التفاصيل أدناه لإنشاء منتج جديد.
-          </p>
-        </div>
-        
-        <ProductForm
-          categories={categories}
-          onSubmit={handleSubmit}
-          onCancel={() => navigate("/admin/products")}
-          isLoading={formLoading}
-        />
-      </CardContent>
-    </Card>
-  );
-};
-
-const AdminProducts = () => {
-  return (
-    <Routes>
-      <Route index element={<ProductList />} />
-      <Route path="add" element={<AddProductForm />} />
-    </Routes>
   );
 };
 
