@@ -18,6 +18,7 @@ import { Plus, Minus, Trash2, ShoppingBag, Printer } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
+import { createSaleFromCart } from "@/services/sales/salesService";
 
 interface CartDrawerProps {
   open: boolean;
@@ -229,23 +230,46 @@ const CartDrawer = ({ open, onOpenChange }: CartDrawerProps) => {
     }, 500);
   };
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     setIsCheckingOut(true);
     
-    // Simulate a checkout process
-    setTimeout(() => {
-      printReceipt();
-      clearCart();
-      onOpenChange(false);
-      setIsCheckingOut(false);
+    try {
+      // Save sale to database
+      const result = await createSaleFromCart(
+        customerName || 'عميل', 
+        customerPhone || null, 
+        customerEmail || null, 
+        items
+      );
       
+      if (result.success) {
+        printReceipt();
+        clearCart();
+        onOpenChange(false);
+        
+        toast({
+          title: "تم الطلب بنجاح",
+          description: "تم إرسال طلبك بنجاح وسيتم التواصل معك قريباً",
+        });
+        
+        navigate("/");
+      } else {
+        toast({
+          title: "خطأ",
+          description: result.error || "حدث خطأ أثناء إتمام الطلب",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Checkout error:', error);
       toast({
-        title: "تم الطلب بنجاح",
-        description: "تم إرسال طلبك بنجاح وسيتم التواصل معك قريباً",
+        title: "خطأ",
+        description: "حدث خطأ غير متوقع أثناء إتمام الطلب",
+        variant: "destructive",
       });
-      
-      navigate("/");
-    }, 1500);
+    } finally {
+      setIsCheckingOut(false);
+    }
   };
 
   return (

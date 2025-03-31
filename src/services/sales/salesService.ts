@@ -170,6 +170,24 @@ export const createSale = async (
       return { success: false, error: itemsError.message };
     }
     
+    // Update product stock quantities
+    for (const item of items) {
+      const { error: stockError } = await supabase
+        .from('stock_transactions')
+        .insert({
+          product_id: item.product_id,
+          quantity: item.quantity,
+          transaction_type: 'out',
+          notes: `Sale: ${newSale.id}`
+        });
+      
+      if (stockError) {
+        console.error('Error updating stock for product:', item.product_id, stockError);
+        // We don't want to fail the whole sale if stock transactions fail
+        // just log the error and continue
+      }
+    }
+    
     return { success: true, saleId: newSale.id };
   } catch (error) {
     console.error('Unexpected error creating sale:', error);
@@ -202,6 +220,169 @@ export const deleteSale = async (saleId: string): Promise<boolean> => {
     console.error('Unexpected error deleting sale:', error);
     throw error;
   }
+};
+
+/**
+ * Creates a new sale from cart items with customer details
+ */
+export const createSaleFromCart = async (
+  customerName: string, 
+  customerPhone: string | null, 
+  customerEmail: string | null, 
+  cartItems: any[]
+): Promise<{ success: boolean; saleId?: string; error?: string }> => {
+  try {
+    // Calculate total amount from cart items
+    const totalAmount = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    
+    // Create sale record
+    const saleData = {
+      customer_name: customerName,
+      customer_phone: customerPhone,
+      customer_email: customerEmail,
+      total_amount: totalAmount
+    };
+    
+    // Convert cart items to sale items
+    const saleItems = cartItems.map(item => ({
+      product_id: item.id,
+      quantity: item.quantity,
+      unit_price: item.price,
+      total_price: item.price * item.quantity
+    }));
+    
+    return await createSale(saleData, saleItems);
+  } catch (error) {
+    console.error('Error creating sale from cart:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    };
+  }
+};
+
+/**
+ * Generates HTML content for a printable receipt
+ */
+export const generateReceiptHtml = (
+  sale: Sale, 
+  dateFormatted: string
+): string => {
+  return `
+    <html dir="rtl">
+    <head>
+      <title>إيصال مشتريات</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          padding: 20px;
+          max-width: 800px;
+          margin: 0 auto;
+        }
+        .header {
+          text-align: center;
+          margin-bottom: 20px;
+          border-bottom: 1px solid #ddd;
+          padding-bottom: 10px;
+        }
+        .info-section {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 20px;
+        }
+        .info-block {
+          width: 45%;
+        }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 20px;
+        }
+        th, td {
+          border: 1px solid #ddd;
+          padding: 8px;
+          text-align: right;
+        }
+        th {
+          background-color: #f2f2f2;
+        }
+        .total {
+          text-align: left;
+          font-weight: bold;
+          font-size: 16px;
+          margin-top: 10px;
+        }
+        .footer {
+          margin-top: 30px;
+          text-align: center;
+          font-size: 12px;
+          color: #666;
+        }
+        @media print {
+          button {
+            display: none;
+          }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>إيصال مشتريات</h1>
+        <p>تاريخ: ${dateFormatted}</p>
+        <p>رقم الفاتورة: ${sale.id}</p>
+      </div>
+      
+      <div class="info-section">
+        <div class="info-block">
+          <h3>معلومات العميل</h3>
+          <p><strong>الاسم:</strong> ${sale.customer_name || 'عميل'}</p>
+          ${sale.customer_phone ? `<p><strong>الهاتف:</strong> ${sale.customer_phone}</p>` : ''}
+          ${sale.customer_email ? `<p><strong>البريد الإلكتروني:</strong> ${sale.customer_email}</p>` : ''}
+        </div>
+        <div class="info-block">
+          <h3>ملخص المشتريات</h3>
+          <p><strong>عدد المنتجات:</strong> ${sale.items.reduce((sum, item) => sum + item.quantity, 0)}</p>
+          <p><strong>إجمالي المبلغ:</strong> ${sale.total_amount.toLocaleString()} د.ع</p>
+        </div>
+      </div>
+      
+      <h3>المنتجات</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>المنتج</th>
+            <th>الكمية</th>
+            <th>سعر الوحدة</th>
+            <th>المجموع</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${sale.items.map(item => `
+            <tr>
+              <td>${item.product_name}</td>
+              <td>${item.quantity}</td>
+              <td>${item.unit_price.toLocaleString()} د.ع</td>
+              <td>${item.total_price.toLocaleString()} د.ع</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      
+      <div class="total">
+        الإجمالي: ${sale.total_amount.toLocaleString()} د.ع
+      </div>
+      
+      <div class="footer">
+        <p>شكراً لتعاملكم معنا</p>
+        <p>هذا الإيصال دليل على عملية الشراء</p>
+      </div>
+      
+      <button onclick="window.print();" style="display: block; margin: 20px auto; padding: 10px 20px;">
+        طباعة الإيصال
+      </button>
+    </body>
+    </html>
+  `;
 };
 
 // Export mappers directly so they can be used in components
