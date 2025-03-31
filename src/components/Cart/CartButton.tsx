@@ -9,12 +9,17 @@ const CartButton = () => {
   const { totalItems } = useCart();
   const [cartOpen, setCartOpen] = useState(false);
   
+  const handleOpenCart = () => {
+    console.log("Opening cart drawer");
+    setCartOpen(true);
+  };
+  
   return (
     <>
       <Button
         variant="ghost"
         className="relative p-2"
-        onClick={() => setCartOpen(true)}
+        onClick={handleOpenCart}
         aria-label="عرض سلة التسوق"
       >
         <ShoppingCart className="h-5 w-5" />

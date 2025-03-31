@@ -80,12 +80,22 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
     
+    // Find the item first to show its name in the toast
+    const itemToRemove = items.find(item => item.id === itemId);
+    
     setItems(prevItems => prevItems.filter(item => item.id !== itemId));
     
-    toast({
-      title: "تمت إزالة المنتج",
-      description: "تم إزالة المنتج من سلة التسوق",
-    });
+    if (itemToRemove) {
+      toast({
+        title: "تمت إزالة المنتج",
+        description: `تم إزالة ${itemToRemove.name} من سلة التسوق`,
+      });
+    } else {
+      toast({
+        title: "تمت إزالة المنتج",
+        description: "تم إزالة المنتج من سلة التسوق",
+      });
+    }
   };
   
   const updateQuantity = (itemId: string, quantity: number) => {
@@ -93,6 +103,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       console.error("Invalid item ID for quantity update:", itemId);
       return;
     }
+    
+    console.log(`Updating quantity for item ${itemId} to ${quantity}`);
     
     if (quantity <= 0) {
       removeFromCart(itemId);
@@ -104,6 +116,12 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         item.id === itemId ? { ...item, quantity } : item
       )
     );
+    
+    // Add a toast confirmation
+    toast({
+      title: "تم تحديث الكمية",
+      description: `تم تحديث كمية المنتج في سلة التسوق`,
+    });
   };
   
   const clearCart = () => {

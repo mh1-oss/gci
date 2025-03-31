@@ -5,6 +5,8 @@ import { ar } from "date-fns/locale";
 
 export const printReceipt = (sale: Sale, companyInfo?: any) => {
   try {
+    console.log("Generating receipt for sale:", sale);
+    
     const receiptWindow = window.open('', '_blank');
     if (!receiptWindow) {
       console.error("Failed to open receipt window. Please allow pop-ups.");
@@ -78,7 +80,7 @@ export const printReceipt = (sale: Sale, companyInfo?: any) => {
         <div class="info-section">
           <div class="info-block">
             <h3>معلومات العميل</h3>
-            <p><strong>الاسم:</strong> ${sale.customer_name}</p>
+            <p><strong>الاسم:</strong> ${sale.customer_name || 'عميل'}</p>
             ${sale.customer_phone ? `<p><strong>الهاتف:</strong> ${sale.customer_phone}</p>` : ''}
             ${sale.customer_email ? `<p><strong>البريد الإلكتروني:</strong> ${sale.customer_email}</p>` : ''}
           </div>
@@ -133,6 +135,7 @@ export const printReceipt = (sale: Sale, companyInfo?: any) => {
     setTimeout(() => {
       try {
         receiptWindow.focus();
+        // Prompt the print dialog automatically
         receiptWindow.print();
       } catch (error) {
         console.error("Error during print operation:", error);

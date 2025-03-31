@@ -1,9 +1,10 @@
+
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import AdminAuthCheck from "@/components/Admin/AdminAuthCheck";
 import AdminNavTabs from "@/components/Admin/AdminNavTabs";
 import AdminTabContent from "@/components/Admin/AdminTabContent";
-import { LogOut, Users, Package, CreditCard, ShoppingCart, Newspaper } from "lucide-react";
+import { LogOut, Package, CreditCard, ShoppingCart, Newspaper } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,12 +28,13 @@ const AdminDashboard = () => {
     recentSales: 0
   });
 
-  const { isLoading } = useQuery({
+  const { isLoading, error } = useQuery({
     queryKey: ['dashboardStats'],
     queryFn: async () => {
       try {
         console.log("Fetching dashboard stats...");
         
+        // Fetch product count
         const { count: productCount, error: productsError } = await supabase
           .from('products')
           .select('*', { count: 'exact', head: true });
@@ -42,6 +44,7 @@ const AdminDashboard = () => {
           throw productsError;
         }
 
+        // Fetch category count
         const { count: categoryCount, error: categoriesError } = await supabase
           .from('categories')
           .select('*', { count: 'exact', head: true });
@@ -51,6 +54,7 @@ const AdminDashboard = () => {
           throw categoriesError;
         }
 
+        // Fetch order count
         const { count: orderCount, error: ordersError } = await supabase
           .from('orders')
           .select('*', { count: 'exact', head: true });
@@ -60,6 +64,7 @@ const AdminDashboard = () => {
           throw ordersError;
         }
 
+        // Calculate recent sales (last 7 days)
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
         
@@ -97,10 +102,13 @@ const AdminDashboard = () => {
           description: "حدث خطأ أثناء تحميل إحصائيات لوحة التحكم",
           variant: "destructive",
         });
+        // Return current stats to avoid breaking the UI
         return stats;
       }
     },
-    refetchInterval: 60000,
+    refetchInterval: 60000, // Refresh every minute
+    retry: 3, // Retry 3 times on failure
+    retryDelay: 3000, // 3 seconds between retries
   });
 
   const handleLogout = async () => {
@@ -111,6 +119,11 @@ const AdminDashboard = () => {
     });
     navigate("/");
   };
+
+  // Add error display in case the stats fail to load
+  if (error) {
+    console.error("Dashboard query error:", error);
+  }
 
   return (
     <AdminAuthCheck>
@@ -132,7 +145,19 @@ const AdminDashboard = () => {
               مرحباً بك في لوحة التحكم، يمكنك إدارة منتجاتك وفئاتك ومبيعاتك ومحتوى موقعك من هنا.
             </p>
             
-            {!isLoading && (
+            {error ? (
+              <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg mb-6">
+                <h3 className="font-bold mb-2">حدث خطأ أثناء تحميل البيانات</h3>
+                <p>يرجى تحديث الصفحة أو المحاولة مرة أخرى لاحقاً.</p>
+                <Button 
+                  onClick={() => window.location.reload()}
+                  variant="outline" 
+                  className="mt-2 border-red-300 text-red-700 hover:bg-red-50"
+                >
+                  تحديث الصفحة
+                </Button>
+              </div>
+            ) : !isLoading && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
                 <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
                   <div className="flex items-center">
