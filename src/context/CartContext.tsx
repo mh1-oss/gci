@@ -24,6 +24,10 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<CartItem[]>(() => {
+    if (typeof window === 'undefined') {
+      return [];
+    }
+    
     try {
       // Load cart from localStorage on initialization
       const savedCart = localStorage.getItem("cart");
@@ -40,6 +44,10 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   
   // Save cart to localStorage whenever it changes
   useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    
     try {
       localStorage.setItem("cart", JSON.stringify(items));
     } catch (error) {
