@@ -22,8 +22,8 @@ export const generateReceiptHtml = (
       <style>
         @media print {
           @page {
-            size: 80mm 297mm;
-            margin: 0;
+            size: A4;
+            margin: 1cm;
           }
           button.print-button {
             display: none;
@@ -33,7 +33,7 @@ export const generateReceiptHtml = (
         body {
           font-family: 'Arial', sans-serif;
           padding: 20px;
-          max-width: 80mm;
+          max-width: 210mm; /* A4 width */
           margin: 0 auto;
           font-size: 12px;
           background-color: white;
@@ -56,49 +56,52 @@ export const generateReceiptHtml = (
         
         .header h1 {
           margin: 0;
-          font-size: 18px;
+          font-size: 24px;
           color: #333;
         }
         
         .header img.logo {
-          max-width: 60px;
+          max-width: 100px;
           margin-bottom: 10px;
         }
         
         .header p {
           margin: 5px 0;
-          font-size: 12px;
+          font-size: 14px;
           color: #666;
         }
         
         .info-section {
           display: flex;
-          flex-direction: column;
-          padding: 10px;
+          flex-direction: row;
+          justify-content: space-between;
+          padding: 20px;
           border-bottom: 1px dashed #ddd;
         }
         
         .info-block {
           margin-bottom: 10px;
+          width: 48%;
         }
         
         .info-block h3 {
-          margin: 0 0 5px 0;
-          font-size: 14px;
+          margin: 0 0 10px 0;
+          font-size: 16px;
           color: #555;
           border-bottom: 1px solid #eee;
-          padding-bottom: 3px;
+          padding-bottom: 5px;
         }
         
         .info-block p {
-          margin: 3px 0;
-          font-size: 12px;
+          margin: 5px 0;
+          font-size: 14px;
         }
         
         table {
           width: 100%;
           border-collapse: collapse;
-          font-size: 10px;
+          font-size: 12px;
+          margin: 20px 0;
         }
         
         thead {
@@ -106,7 +109,7 @@ export const generateReceiptHtml = (
         }
         
         th, td {
-          padding: 8px 4px;
+          padding: 12px 8px;
           text-align: right;
           border-bottom: 1px solid #ddd;
         }
@@ -119,13 +122,14 @@ export const generateReceiptHtml = (
         .total-row td {
           font-weight: bold;
           border-top: 1px solid #999;
-          padding-top: 8px;
+          padding-top: 12px;
+          font-size: 14px;
         }
         
         .footer {
           text-align: center;
-          padding: 15px 10px;
-          font-size: 10px;
+          padding: 20px;
+          font-size: 12px;
           color: #666;
           border-top: 1px dashed #ddd;
           background-color: #f8f9fa;
@@ -133,22 +137,22 @@ export const generateReceiptHtml = (
         
         .barcode {
           text-align: center;
-          padding: 10px 0;
+          padding: 15px 0;
           font-family: 'Courier New', monospace;
-          font-size: 14px;
-          letter-spacing: 2px;
+          font-size: 16px;
+          letter-spacing: 3px;
         }
         
         .print-button {
           display: block;
           margin: 20px auto;
-          padding: 10px 20px;
+          padding: 12px 24px;
           background-color: #0066cc;
           color: white;
           border: none;
           border-radius: 5px;
           cursor: pointer;
-          font-size: 14px;
+          font-size: 16px;
         }
         
         .print-button:hover {
@@ -159,7 +163,7 @@ export const generateReceiptHtml = (
     <body>
       <div class="receipt">
         <div class="header">
-          ${companyInfo.logo ? `<img src="${companyInfo.logo}" alt="${companyInfo.name}" class="logo">` : ''}
+          ${companyInfo.logo_url ? `<img src="${companyInfo.logo_url}" alt="${companyInfo.name}" class="logo">` : ''}
           <h1>${companyInfo.name}</h1>
           <p>${companyInfo.slogan || ''}</p>
           <p>${companyInfo.contact?.address || ''}</p>
@@ -182,8 +186,8 @@ export const generateReceiptHtml = (
           </div>
         </div>
         
-        <div style="padding: 10px;">
-          <h3 style="margin: 5px 0;">المنتجات</h3>
+        <div style="padding: 20px;">
+          <h3 style="margin: 10px 0;">المنتجات</h3>
           <table>
             <thead>
               <tr>

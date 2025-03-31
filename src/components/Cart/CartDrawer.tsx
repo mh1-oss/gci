@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart, CartItem } from "@/context/CartContext";
@@ -13,6 +14,7 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Plus, Minus, Trash2, ShoppingBag } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { createSaleFromCart } from "@/services/sales/salesService";
@@ -164,7 +166,7 @@ const CartDrawer = ({ open, onOpenChange }: CartDrawerProps) => {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-md" dir="rtl">
+      <SheetContent side="right" className="w-full sm:max-w-md flex flex-col" dir="rtl">
         <SheetHeader className="mb-5">
           <SheetTitle>سلة التسوق</SheetTitle>
           <SheetDescription>
@@ -187,13 +189,13 @@ const CartDrawer = ({ open, onOpenChange }: CartDrawerProps) => {
           </div>
         ) : (
           <>
-            <div className="flex-1 overflow-y-auto">
-              <div className="space-y-1 divide-y">
+            <ScrollArea className="flex-1">
+              <div className="space-y-1 divide-y pr-4">
                 {items.map((item) => (
                   <CartItemRow key={item.id} item={item} />
                 ))}
               </div>
-            </div>
+            </ScrollArea>
 
             <div className="mt-6 space-y-4">
               <Separator className="my-4" />
