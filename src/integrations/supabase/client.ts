@@ -20,5 +20,25 @@ export const supabase = createClient<Database>(
         'Content-Type': 'application/json',
       },
     },
+    db: {
+      schema: 'public',
+    },
+    realtime: {
+      params: {
+        eventsPerSecond: 10,
+      },
+    },
   }
 );
+
+// Helper function to check if we have an active session
+export const getSession = async () => {
+  const { data } = await supabase.auth.getSession();
+  return data.session;
+};
+
+// Helper function to get the current user
+export const getCurrentUser = async () => {
+  const { data } = await supabase.auth.getUser();
+  return data.user;
+};

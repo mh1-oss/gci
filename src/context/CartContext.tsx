@@ -24,9 +24,14 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<CartItem[]>(() => {
-    // Load cart from localStorage on initialization
-    const savedCart = localStorage.getItem("cart");
-    return savedCart ? JSON.parse(savedCart) : [];
+    try {
+      // Load cart from localStorage on initialization
+      const savedCart = localStorage.getItem("cart");
+      return savedCart ? JSON.parse(savedCart) : [];
+    } catch (error) {
+      console.error("Error loading cart from localStorage:", error);
+      return [];
+    }
   });
   
   // Calculate totals
@@ -35,10 +40,19 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   
   // Save cart to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify(items));
+    try {
+      localStorage.setItem("cart", JSON.stringify(items));
+    } catch (error) {
+      console.error("Error saving cart to localStorage:", error);
+    }
   }, [items]);
   
   const addToCart = (newItem: CartItem) => {
+    if (!newItem || !newItem.id) {
+      console.error("Invalid item:", newItem);
+      return;
+    }
+    
     setItems(prevItems => {
       // Check if the item already exists in the cart
       const existingItemIndex = prevItems.findIndex(item => item.id === newItem.id);
@@ -50,13 +64,24 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         return updatedItems;
       } else {
         // Add new item if it doesn't exist yet
-        return [...prevItems, newItem];
+        return [...prevItems, { ...newItem }];
       }
+    });
+    
+    toast({
+      title: "تمت الإضافة",
+      description: `تمت إضافة ${newItem.name} إلى سلة التسوق`,
     });
   };
   
   const removeFromCart = (itemId: string) => {
+    if (!itemId) {
+      console.error("Invalid item ID for removal:", itemId);
+      return;
+    }
+    
     setItems(prevItems => prevItems.filter(item => item.id !== itemId));
+    
     toast({
       title: "تمت إزالة المنتج",
       description: "تم إزالة المنتج من سلة التسوق",
@@ -64,7 +89,15 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const updateQuantity = (itemId: string, quantity: number) => {
-    if (quantity < 1) return;
+    if (!itemId) {
+      console.error("Invalid item ID for quantity update:", itemId);
+      return;
+    }
+    
+    if (quantity < 1) {
+      console.warn("Attempted to set quantity below 1. Ignoring update.");
+      return;
+    }
     
     setItems(prevItems => 
       prevItems.map(item => 
@@ -75,6 +108,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   
   const clearCart = () => {
     setItems([]);
+    
     toast({
       title: "تم تفريغ السلة",
       description: "تم تفريغ سلة التسوق الخاصة بك",
