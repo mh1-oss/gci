@@ -16,7 +16,7 @@ const AdminTabContent = () => {
         <Route path="/products" element={<AdminProducts />} />
         <Route path="/categories" element={<AdminCategories />} />
         <Route path="/stock" element={<AdminStock />} />
-        <Route path="/sales" element={<AdminSales />} />
+        <Route path="/sales/*" element={<AdminSales />} />
         <Route path="/content" element={<AdminContent activeTab="about" />} />
         <Route path="/content/reviews" element={<AdminContent activeTab="reviews" />} />
         <Route path="/content/banners" element={<AdminContent activeTab="banners" />} />
