@@ -163,7 +163,7 @@ export const generateReceiptHtml = (
     <body>
       <div class="receipt">
         <div class="header">
-          ${companyInfo.logo_url ? `<img src="${companyInfo.logo_url}" alt="${companyInfo.name}" class="logo">` : ''}
+          ${companyInfo.logo ? `<img src="${companyInfo.logo}" alt="${companyInfo.name}" class="logo">` : ''}
           <h1>${companyInfo.name}</h1>
           <p>${companyInfo.slogan || ''}</p>
           <p>${companyInfo.contact?.address || ''}</p>
