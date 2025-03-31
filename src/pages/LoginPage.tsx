@@ -23,7 +23,6 @@ const LoginPage = () => {
   useEffect(() => {
     if (isAuthenticated && !loading) {
       console.log('User is authenticated, redirecting to admin');
-      // Always redirect to admin, the dashboard will handle access control
       navigate('/admin');
     }
   }, [isAuthenticated, isAdmin, loading, navigate]);
@@ -45,11 +44,6 @@ const LoginPage = () => {
       
       if (success) {
         console.log('Login successful, redirecting to admin');
-        toast({
-          title: "تم تسجيل الدخول بنجاح",
-          description: "مرحبًا بك مجددًا!",
-        });
-        // Always navigate to admin - the dashboard will handle access control
         navigate('/admin');
       } else {
         setErrorMessage('فشل تسجيل الدخول. يرجى التحقق من بيانات الاعتماد الخاصة بك.');

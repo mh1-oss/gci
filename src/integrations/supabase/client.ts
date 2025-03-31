@@ -13,6 +13,7 @@ export const supabase = createClient<Database>(
     auth: {
       persistSession: true,
       autoRefreshToken: true,
+      storage: localStorage
     },
     global: {
       headers: {

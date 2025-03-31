@@ -18,10 +18,15 @@ export const useAuthState = (): AuthState => {
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
 
-  // Check admin status safely (without recursion)
-  const updateAdminStatus = useCallback(async (userId: string) => {
+  // Check admin status safely
+  const updateAdminStatus = useCallback(async () => {
     try {
-      console.log('Checking admin status for user:', userId);
+      if (!user) {
+        setIsAdmin(false);
+        return;
+      }
+      
+      console.log('Checking admin status for user:', user.id);
       const isUserAdmin = await checkIsAdmin();
       console.log('User admin status:', isUserAdmin);
       setIsAdmin(isUserAdmin);
@@ -29,28 +34,18 @@ export const useAuthState = (): AuthState => {
       console.error('Error checking admin status:', error);
       setIsAdmin(false);
     }
-  }, []);
+  }, [user]);
 
-  // Setup auth listener and initialize state
+  // Initialize auth state
   useEffect(() => {
     console.log('Setting up auth listener');
     
     // First, set up the auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, newSession) => {
+      (event, newSession) => {
         console.log('Auth state changed:', event, newSession?.user?.id);
         setSession(newSession);
         setUser(newSession?.user ?? null);
-        
-        // Check admin status if user is logged in
-        if (newSession?.user) {
-          // Use setTimeout to avoid Supabase auth deadlock issues
-          setTimeout(async () => {
-            await updateAdminStatus(newSession.user.id);
-          }, 0);
-        } else {
-          setIsAdmin(false);
-        }
       }
     );
     
@@ -64,12 +59,13 @@ export const useAuthState = (): AuthState => {
         setSession(initialSession);
         setUser(initialSession?.user ?? null);
         
-        if (initialSession?.user) {
-          await updateAdminStatus(initialSession.user.id);
-        }
+        // Use setTimeout to avoid Supabase auth deadlocks
+        setTimeout(() => {
+          updateAdminStatus();
+          setLoading(false);
+        }, 0);
       } catch (error) {
         console.error('Error initializing auth:', error);
-      } finally {
         setLoading(false);
       }
     };
@@ -78,6 +74,16 @@ export const useAuthState = (): AuthState => {
     
     return () => subscription.unsubscribe();
   }, [updateAdminStatus]);
+
+  // Update admin status whenever user changes
+  useEffect(() => {
+    if (user) {
+      // Use setTimeout to avoid Supabase auth deadlocks
+      setTimeout(() => {
+        updateAdminStatus();
+      }, 0);
+    }
+  }, [user, updateAdminStatus]);
 
   return {
     user,

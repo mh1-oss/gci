@@ -38,13 +38,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return false;
     }
     
-    if (!result.isAdmin) {
-      toast({
-        title: "تم تسجيل الدخول",
-        description: "لكن ليس لديك صلاحيات إدارية",
-        variant: "destructive",
-      });
-    }
+    toast({
+      title: "تم تسجيل الدخول",
+      description: "مرحبًا بك مجددًا!",
+    });
     
     return true;
   };

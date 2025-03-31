@@ -60,12 +60,10 @@ export const loginUser = async (email: string, password: string): Promise<{
     }
     
     console.log('Login successful, checking admin status');
-    // We use setTimeout to prevent Supabase auth deadlock
-    let isUserAdmin = false;
-    setTimeout(async () => {
-      isUserAdmin = await checkIsAdmin();
-      console.log('Is user admin?', isUserAdmin);
-    }, 0);
+    
+    // Check admin status safely to avoid deadlocks
+    const isUserAdmin = await checkIsAdmin();
+    console.log('Is user admin?', isUserAdmin);
     
     return { 
       success: true, 
