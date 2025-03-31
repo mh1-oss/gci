@@ -39,40 +39,52 @@ export const useAuthState = (): AuthState => {
   // Initialize auth state
   useEffect(() => {
     console.log('Setting up auth listener');
+    let subscription;
     
-    // First, set up the auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, newSession) => {
-        console.log('Auth state changed:', event, newSession?.user?.id);
-        setSession(newSession);
-        setUser(newSession?.user ?? null);
-      }
-    );
-    
-    // Then check for existing session
-    const initializeAuth = async () => {
-      try {
-        console.log('Initializing auth...');
-        const { data: { session: initialSession } } = await supabase.auth.getSession();
-        console.log('Initial session:', initialSession?.user?.id);
-        
-        setSession(initialSession);
-        setUser(initialSession?.user ?? null);
-        
-        // Use setTimeout to avoid Supabase auth deadlocks
-        setTimeout(() => {
-          updateAdminStatus();
+    try {
+      // First, set up the auth state listener
+      const authSubscription = supabase.auth.onAuthStateChange(
+        (event, newSession) => {
+          console.log('Auth state changed:', event, newSession?.user?.id);
+          setSession(newSession);
+          setUser(newSession?.user ?? null);
+        }
+      );
+      
+      subscription = authSubscription.data.subscription;
+      
+      // Then check for existing session
+      const initializeAuth = async () => {
+        try {
+          console.log('Initializing auth...');
+          const { data: { session: initialSession } } = await supabase.auth.getSession();
+          console.log('Initial session:', initialSession?.user?.id);
+          
+          setSession(initialSession);
+          setUser(initialSession?.user ?? null);
+          
+          // Use setTimeout to avoid Supabase auth deadlocks
+          setTimeout(() => {
+            updateAdminStatus();
+            setLoading(false);
+          }, 0);
+        } catch (error) {
+          console.error('Error initializing auth:', error);
           setLoading(false);
-        }, 0);
-      } catch (error) {
-        console.error('Error initializing auth:', error);
-        setLoading(false);
+        }
+      };
+      
+      initializeAuth();
+    } catch (error) {
+      console.error('Error setting up auth:', error);
+      setLoading(false);
+    }
+    
+    return () => {
+      if (subscription) {
+        subscription.unsubscribe();
       }
     };
-    
-    initializeAuth();
-    
-    return () => subscription.unsubscribe();
   }, [updateAdminStatus]);
 
   // Update admin status whenever user changes
