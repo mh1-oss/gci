@@ -5,8 +5,14 @@ import { useCurrency } from "@/context/CurrencyContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Minus, Trash2, Edit, Check, X } from "lucide-react";
+import { Plus, Minus, Trash2, Edit, Check, X, Info } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface CartItemCardProps {
   item: CartItem;
@@ -59,6 +65,13 @@ const CartItemCard = ({ item }: CartItemCardProps) => {
     setEditQuantity(item.quantity);
   };
 
+  // Format item details for display
+  const itemDetails = [
+    { label: "المعرف", value: item.id.substring(0, 8) + "..." },
+    { label: "السعر الإفرادي", value: formatPrice(item.price) },
+    { label: "المجموع", value: formatPrice(item.price * item.quantity) }
+  ];
+
   return (
     <Card className="mb-3 overflow-hidden border border-border">
       <CardContent className="p-3">
@@ -72,7 +85,29 @@ const CartItemCard = ({ item }: CartItemCardProps) => {
           </div>
           
           <div className="flex flex-1 flex-col">
-            <h3 className="text-base font-medium text-gray-900">{item.name}</h3>
+            <div className="flex justify-between items-start">
+              <h3 className="text-base font-medium text-gray-900">{item.name}</h3>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
+                      <Info className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent className="w-60 p-2">
+                    <div className="space-y-1 text-sm">
+                      {itemDetails.map((detail, index) => (
+                        <div key={index} className="flex justify-between">
+                          <span className="font-medium">{detail.label}:</span>
+                          <span>{detail.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            
             <p className="mt-1 text-sm font-semibold text-primary">{formatPrice(item.price)}</p>
             
             <div className="mt-2 flex items-center justify-between">

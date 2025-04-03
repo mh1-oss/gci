@@ -1,5 +1,6 @@
 
 import { Input } from "@/components/ui/input";
+import { InfoIcon } from "lucide-react";
 
 interface CartCustomerInfoProps {
   customerName: string;
@@ -20,7 +21,14 @@ const CartCustomerInfo = ({
 }: CartCustomerInfoProps) => {
   return (
     <div className="space-y-4 bg-muted/20 p-4 rounded-lg">
-      <h3 className="font-medium text-sm mb-2">معلومات العميل</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="font-medium text-sm mb-2">معلومات العميل</h3>
+        <div className="inline-flex items-center text-xs text-muted-foreground">
+          <InfoIcon className="h-3 w-3 mr-1" />
+          <span>سيتم استخدام هذه المعلومات للتواصل والفاتورة</span>
+        </div>
+      </div>
+      
       <div className="space-y-2">
         <label className="text-sm font-medium">اسم العميل (اختياري)</label>
         <Input 
@@ -38,6 +46,8 @@ const CartCustomerInfo = ({
           value={customerPhone}
           onChange={(e) => setCustomerPhone(e.target.value)}
           placeholder="أدخل رقم هاتفك"
+          type="tel"
+          dir="ltr"
         />
       </div>
       
@@ -49,6 +59,7 @@ const CartCustomerInfo = ({
           value={customerEmail}
           onChange={(e) => setCustomerEmail(e.target.value)}
           placeholder="أدخل بريدك الإلكتروني"
+          dir="ltr"
         />
       </div>
     </div>

@@ -4,6 +4,7 @@ import { useCart } from "@/context/CartContext";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SheetClose } from "@/components/ui/sheet";
+import { AlertTriangle } from "lucide-react";
 
 interface CartSummaryProps {
   isCheckingOut: boolean;
@@ -16,11 +17,25 @@ const CartSummary = ({
   onCheckout,
   onToggleCurrency
 }: CartSummaryProps) => {
-  const { totalPrice, clearCart } = useCart();
+  const { totalPrice, clearCart, totalItems } = useCart();
   const { formatPrice, currency } = useCurrency();
 
   return (
     <div className="space-y-3 bg-muted/30 p-4 rounded-lg">
+      <h3 className="font-medium text-sm mb-2">ملخص الطلب</h3>
+      
+      <div className="space-y-2">
+        <div className="flex justify-between text-sm">
+          <span>عدد المنتجات:</span>
+          <span>{totalItems} منتجات</span>
+        </div>
+        
+        <div className="flex justify-between text-sm">
+          <span>العملة المستخدمة:</span>
+          <span dir="ltr">{currency === 'USD' ? 'دولار أمريكي ($)' : 'دينار عراقي (IQD)'}</span>
+        </div>
+      </div>
+      
       <Separator className="my-2" />
       
       <div className="flex justify-between py-2">
@@ -46,6 +61,13 @@ const CartSummary = ({
       >
         {isCheckingOut ? "جاري إتمام الطلب..." : "إتمام الطلب"}
       </Button>
+      
+      {totalItems > 0 && (
+        <div className="text-xs text-muted-foreground flex items-center gap-1 justify-center">
+          <AlertTriangle className="h-3 w-3" />
+          <span>سيتم إرسال الطلب مباشرة عند النقر على زر إتمام الطلب</span>
+        </div>
+      )}
       
       <Button 
         variant="outline" 
