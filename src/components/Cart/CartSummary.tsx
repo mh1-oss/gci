@@ -3,7 +3,6 @@ import { useCurrency } from "@/context/CurrencyContext";
 import { useCart } from "@/context/CartContext";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { SheetClose } from "@/components/ui/sheet";
 import { AlertTriangle } from "lucide-react";
 
 interface CartSummaryProps {
@@ -82,11 +81,13 @@ const CartSummary = ({
         تفريغ السلة
       </Button>
       
-      <SheetClose asChild>
-        <Button variant="ghost" className="w-full">
-          مواصلة التسوق
-        </Button>
-      </SheetClose>
+      <Button 
+        variant="ghost" 
+        className="w-full"
+        onClick={() => window.history.back()}
+      >
+        مواصلة التسوق
+      </Button>
     </div>
   );
 };
