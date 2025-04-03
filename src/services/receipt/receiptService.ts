@@ -3,6 +3,7 @@ import { Sale } from "@/utils/models";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { toast } from "@/hooks/use-toast";
+import { getCurrency } from "@/context/CurrencyContext";
 
 export const printReceipt = (sale: Sale, companyInfo?: any) => {
   try {
@@ -19,9 +20,21 @@ export const printReceipt = (sale: Sale, companyInfo?: any) => {
       return;
     }
     
-    // Use the sale.total_amount directly which comes from the database
-    // It's calculated at checkout and should be used without currency conversion
-    const formattedTotal = sale.total_amount.toLocaleString();
+    // Get the current currency from localStorage
+    const currentCurrency = getCurrency();
+    
+    // Format total based on currency
+    let formattedTotal;
+    let currencySymbol;
+    
+    if (currentCurrency === 'USD') {
+      formattedTotal = sale.total_amount.toFixed(2);
+      currencySymbol = '$';
+    } else {
+      // For IQD
+      formattedTotal = Math.round(sale.total_amount).toLocaleString();
+      currencySymbol = 'د.ع';
+    }
     
     receiptWindow.document.write(`
       <html dir="rtl">
@@ -92,7 +105,7 @@ export const printReceipt = (sale: Sale, companyInfo?: any) => {
           <div class="info-block">
             <h3>ملخص المبيعة</h3>
             <p><strong>عدد المنتجات:</strong> ${sale.items.reduce((sum, item) => sum + item.quantity, 0)}</p>
-            <p><strong>إجمالي المبلغ:</strong> ${formattedTotal} د.ع</p>
+            <p><strong>إجمالي المبلغ:</strong> ${formattedTotal} ${currentCurrency === 'USD' ? '$' : 'د.ع'}</p>
           </div>
         </div>
         
@@ -107,19 +120,30 @@ export const printReceipt = (sale: Sale, companyInfo?: any) => {
             </tr>
           </thead>
           <tbody>
-            ${sale.items.map(item => `
+            ${sale.items.map(item => {
+              // Format item prices based on currency
+              let itemUnitPrice, itemTotalPrice;
+              if (currentCurrency === 'USD') {
+                itemUnitPrice = `$${item.unit_price.toFixed(2)}`;
+                itemTotalPrice = `$${item.total_price.toFixed(2)}`;
+              } else {
+                itemUnitPrice = `${Math.round(item.unit_price).toLocaleString()} د.ع`;
+                itemTotalPrice = `${Math.round(item.total_price).toLocaleString()} د.ع`;
+              }
+              
+              return `
               <tr>
                 <td>${item.product_name}</td>
                 <td>${item.quantity}</td>
-                <td>${item.unit_price.toLocaleString()} د.ع</td>
-                <td>${item.total_price.toLocaleString()} د.ع</td>
+                <td>${itemUnitPrice}</td>
+                <td>${itemTotalPrice}</td>
               </tr>
-            `).join('')}
+            `}).join('')}
           </tbody>
         </table>
         
         <div class="total">
-          الإجمالي: ${formattedTotal} د.ع
+          الإجمالي: ${formattedTotal} ${currentCurrency === 'USD' ? '$' : 'د.ع'}
         </div>
         
         <div class="footer">
@@ -140,3 +164,4 @@ export const printReceipt = (sale: Sale, companyInfo?: any) => {
     });
   }
 };
+

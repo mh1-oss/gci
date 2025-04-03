@@ -14,6 +14,13 @@ interface CurrencyContextType {
 
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
 
+// Helper function to get the current currency from localStorage
+// This can be used outside of React components
+export const getCurrency = (): CurrencyType => {
+  const savedCurrency = localStorage.getItem("currency");
+  return (savedCurrency as CurrencyType) || "USD";
+};
+
 export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currency, setCurrency] = useState<CurrencyType>("USD");
   const [exchangeRate, setExchangeRate] = useState<number>(1450); // Default exchange rate: 1 USD = 1450 IQD
