@@ -129,8 +129,8 @@ const CartDrawer = ({ open, onOpenChange }: CartDrawerProps) => {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-md flex flex-col border-l border-border" dir="rtl">
-        <SheetHeader className="mb-5 text-right">
+      <SheetContent side="right" className="w-full sm:max-w-md flex flex-col border-l border-border p-4" dir="rtl">
+        <SheetHeader className="mb-4 text-right">
           <SheetTitle className="text-xl">سلة التسوق</SheetTitle>
           <SheetDescription>
             {totalItems === 0 
@@ -144,15 +144,17 @@ const CartDrawer = ({ open, onOpenChange }: CartDrawerProps) => {
           <EmptyCart />
         ) : (
           <>
-            <ScrollArea className="flex-1 pr-1">
-              <div className="space-y-3">
-                {items.map((item) => (
-                  <CartItemCard key={item.id} item={item} />
-                ))}
-              </div>
-            </ScrollArea>
+            <div className="flex-1 mb-4 max-h-[50vh]">
+              <ScrollArea className="h-full pr-1">
+                <div className="space-y-3 p-1">
+                  {items.map((item) => (
+                    <CartItemCard key={item.id} item={item} />
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
 
-            <div className="mt-6 space-y-4">
+            <div className="mt-auto space-y-4">
               <Separator className="my-4" />
               
               <CartCustomerInfo

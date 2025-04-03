@@ -5,14 +5,8 @@ import { useCurrency } from "@/context/CurrencyContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Minus, Trash2, Edit, Check, X, Info } from "lucide-react";
+import { Plus, Minus, Trash2, Edit, Check, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 interface CartItemCardProps {
   item: CartItem;
@@ -65,18 +59,11 @@ const CartItemCard = ({ item }: CartItemCardProps) => {
     setEditQuantity(item.quantity);
   };
 
-  // Format item details for display
-  const itemDetails = [
-    { label: "المعرف", value: item.id.substring(0, 8) + "..." },
-    { label: "السعر الإفرادي", value: formatPrice(item.price) },
-    { label: "المجموع", value: formatPrice(item.price * item.quantity) }
-  ];
-
   return (
     <Card className="mb-3 overflow-hidden border border-border">
       <CardContent className="p-3">
         <div className="flex items-start gap-4">
-          <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-gray-200">
+          <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-md border border-gray-200">
             <img
               src={item.image}
               alt={item.name}
@@ -87,28 +74,13 @@ const CartItemCard = ({ item }: CartItemCardProps) => {
           <div className="flex flex-1 flex-col">
             <div className="flex justify-between items-start">
               <h3 className="text-base font-medium text-gray-900">{item.name}</h3>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
-                      <Info className="h-4 w-4 text-muted-foreground" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent className="w-60 p-2">
-                    <div className="space-y-1 text-sm">
-                      {itemDetails.map((detail, index) => (
-                        <div key={index} className="flex justify-between">
-                          <span className="font-medium">{detail.label}:</span>
-                          <span>{detail.value}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <p className="font-medium text-primary">{formatPrice(item.price * item.quantity)}</p>
             </div>
             
-            <p className="mt-1 text-sm font-semibold text-primary">{formatPrice(item.price)}</p>
+            <div className="mt-1 flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">سعر الوحدة: {formatPrice(item.price)}</p>
+              <p className="text-sm text-muted-foreground">المعرف: {item.id.substring(0, 8)}...</p>
+            </div>
             
             <div className="mt-2 flex items-center justify-between">
               {isEditing ? (
@@ -120,10 +92,10 @@ const CartItemCard = ({ item }: CartItemCardProps) => {
                     value={editQuantity}
                     onChange={(e) => setEditQuantity(parseInt(e.target.value) || 0)}
                   />
-                  <Button variant="outline" size="icon" onClick={handleSaveEdit} className="h-9 w-9 bg-green-50">
+                  <Button variant="outline" size="icon" onClick={handleSaveEdit} className="h-8 w-8 bg-green-50">
                     <Check className="h-4 w-4 text-green-600" />
                   </Button>
-                  <Button variant="outline" size="icon" onClick={handleCancelEdit} className="h-9 w-9 bg-red-50">
+                  <Button variant="outline" size="icon" onClick={handleCancelEdit} className="h-8 w-8 bg-red-50">
                     <X className="h-4 w-4 text-red-600" />
                   </Button>
                 </div>
@@ -149,19 +121,15 @@ const CartItemCard = ({ item }: CartItemCardProps) => {
                     </button>
                   </div>
                   
-                  <Button variant="ghost" size="sm" onClick={handleEditToggle} className="h-9 w-9 p-0">
+                  <Button variant="ghost" size="sm" onClick={handleEditToggle} className="h-8 w-8 p-0">
                     <Edit className="h-4 w-4" />
                   </Button>
                   
-                  <Button variant="ghost" size="sm" onClick={handleRemove} className="h-9 w-9 p-0 text-red-500 hover:text-red-700 hover:bg-red-50">
+                  <Button variant="ghost" size="sm" onClick={handleRemove} className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50">
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               )}
-              
-              <p className="font-medium text-primary">
-                {formatPrice(item.price * item.quantity)}
-              </p>
             </div>
           </div>
         </div>

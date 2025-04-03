@@ -73,11 +73,6 @@ export const printReceipt = (sale: Sale, companyInfo?: any) => {
             font-size: 12px;
             color: #666;
           }
-          @media print {
-            button {
-              display: none;
-            }
-          }
         </style>
       </head>
       <body>
@@ -131,33 +126,11 @@ export const printReceipt = (sale: Sale, companyInfo?: any) => {
           ${companyInfo ? `<p>${companyInfo.name || 'شكراً لتعاملكم معنا'}</p>` : '<p>شكراً لتعاملكم معنا</p>'}
           <p>هذا الإيصال دليل على عملية الشراء</p>
         </div>
-        
-        <button onclick="window.print();" style="display: block; margin: 20px auto; padding: 10px 20px;">
-          طباعة الإيصال
-        </button>
       </body>
       </html>
     `);
     
     receiptWindow.document.close();
-    
-    // Give the browser time to process and render all the content before focusing and printing
-    setTimeout(() => {
-      try {
-        if (receiptWindow) {
-          receiptWindow.focus();
-          // Prompt the print dialog automatically
-          receiptWindow.print();
-        }
-      } catch (error) {
-        console.error("Error during print operation:", error);
-        toast({
-          title: "خطأ في الطباعة",
-          description: "حدث خطأ أثناء عملية الطباعة.",
-          variant: "destructive",
-        });
-      }
-    }, 1000);
   } catch (error) {
     console.error("Error generating receipt:", error);
     toast({

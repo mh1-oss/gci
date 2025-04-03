@@ -17,7 +17,7 @@ const CartSummary = ({
   onCheckout,
   onToggleCurrency
 }: CartSummaryProps) => {
-  const { totalPrice, clearCart, totalItems } = useCart();
+  const { totalPrice, clearCart, totalItems, items } = useCart();
   const { formatPrice, currency } = useCurrency();
 
   return (
@@ -28,6 +28,11 @@ const CartSummary = ({
         <div className="flex justify-between text-sm">
           <span>عدد المنتجات:</span>
           <span>{totalItems} منتجات</span>
+        </div>
+        
+        <div className="flex justify-between text-sm">
+          <span>إجمالي المنتجات:</span>
+          <span>{items.reduce((sum, item) => sum + item.quantity, 0)} قطعة</span>
         </div>
         
         <div className="flex justify-between text-sm">

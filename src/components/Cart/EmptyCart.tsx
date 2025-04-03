@@ -5,7 +5,7 @@ import { SheetClose } from "@/components/ui/sheet";
 
 const EmptyCart = () => {
   return (
-    <div className="flex flex-col items-center justify-center h-[60vh]">
+    <div className="flex flex-col items-center justify-center h-[50vh]">
       <ShoppingBag className="h-16 w-16 text-gray-300 mb-4" />
       <h3 className="text-lg font-medium text-gray-700 mb-2">سلة التسوق فارغة</h3>
       <p className="text-gray-500 text-center mb-6 max-w-xs">
