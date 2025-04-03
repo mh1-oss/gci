@@ -138,35 +138,48 @@ export const createSale = async (
   items: Array<Omit<SaleItem, 'id' | 'product_name'>>
 ): Promise<{ success: boolean; saleId?: string; saleData?: Sale; error?: string }> => {
   try {
-    const dbSale = mapSaleToDbSale(sale);
+    console.log("Creating new sale with data:", { sale, items });
     
-    // Insert the sale
-    const { data: newSale, error: saleError } = await supabase
+    // Insert the sale record directly
+    const { data: insertedSale, error: saleError } = await supabase
       .from('sales')
-      .insert([dbSale])
+      .insert({
+        customer_name: sale.customer_name,
+        customer_phone: sale.customer_phone,
+        customer_email: sale.customer_email,
+        total_amount: sale.total_amount
+      })
       .select()
       .single();
     
     if (saleError) {
-      console.error('Error creating sale:', saleError);
+      console.error('Error inserting sale:', saleError);
       return { success: false, error: saleError.message };
     }
     
-    if (!newSale) {
+    if (!insertedSale) {
+      console.error('No sale data returned after insert');
       return { success: false, error: 'Failed to create sale - no sale data returned' };
     }
     
-    // Insert the sale items
-    const saleItems = items.map(item => 
-      mapSaleItemToDbSaleItem(item, newSale.id)
-    );
+    console.log("Sale created successfully:", insertedSale);
     
+    // Prepare sale items with the new sale ID
+    const saleItems = items.map(item => ({
+      sale_id: insertedSale.id,
+      product_id: item.product_id,
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      total_price: item.total_price
+    }));
+    
+    // Insert all sale items
     const { error: itemsError } = await supabase
       .from('sale_items')
       .insert(saleItems);
     
     if (itemsError) {
-      console.error('Error creating sale items:', itemsError);
+      console.error('Error inserting sale items:', itemsError);
       return { success: false, error: itemsError.message };
     }
     
@@ -178,7 +191,7 @@ export const createSale = async (
           product_id: item.product_id,
           quantity: item.quantity,
           transaction_type: 'out',
-          notes: `Sale: ${newSale.id}`
+          notes: `Sale: ${insertedSale.id}`
         });
       
       if (stockError) {
@@ -209,11 +222,11 @@ export const createSale = async (
     }));
     
     // Create the complete sale object to return
-    const completeSale = mapDbSaleToSale(newSale, saleItemsWithProductNames);
+    const completeSale = mapDbSaleToSale(insertedSale, saleItemsWithProductNames);
     
     return { 
       success: true, 
-      saleId: newSale.id,
+      saleId: insertedSale.id,
       saleData: completeSale
     };
   } catch (error) {
@@ -259,26 +272,89 @@ export const createSaleFromCart = async (
   cartItems: any[]
 ): Promise<{ success: boolean; saleId?: string; saleData?: Sale; error?: string }> => {
   try {
+    console.log("Creating sale from cart with items:", cartItems);
+    
     // Calculate total amount from cart items
     const totalAmount = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     
-    // Create sale record
-    const saleData = {
-      customer_name: customerName,
-      customer_phone: customerPhone,
-      customer_email: customerEmail,
-      total_amount: totalAmount
-    };
+    // Insert sale record directly
+    const { data: insertedSale, error: saleError } = await supabase
+      .from('sales')
+      .insert({
+        customer_name: customerName,
+        customer_phone: customerPhone,
+        customer_email: customerEmail,
+        total_amount: totalAmount
+      })
+      .select()
+      .single();
     
-    // Convert cart items to sale items
+    if (saleError) {
+      console.error('Error inserting sale from cart:', saleError);
+      return { success: false, error: saleError.message };
+    }
+    
+    if (!insertedSale) {
+      console.error('No sale data returned after insert from cart');
+      return { success: false, error: 'Failed to create sale from cart - no sale data returned' };
+    }
+    
+    console.log("Sale created successfully from cart:", insertedSale);
+    
+    // Prepare sale items with the new sale ID
     const saleItems = cartItems.map(item => ({
+      sale_id: insertedSale.id,
       product_id: item.id,
       quantity: item.quantity,
       unit_price: item.price,
       total_price: item.price * item.quantity
     }));
     
-    return await createSale(saleData, saleItems);
+    // Insert all sale items
+    const { error: itemsError } = await supabase
+      .from('sale_items')
+      .insert(saleItems);
+    
+    if (itemsError) {
+      console.error('Error inserting sale items from cart:', itemsError);
+      return { success: false, error: itemsError.message };
+    }
+    
+    // Update product stock quantities
+    for (const item of cartItems) {
+      const { error: stockError } = await supabase
+        .from('stock_transactions')
+        .insert({
+          product_id: item.id,
+          quantity: item.quantity,
+          transaction_type: 'out',
+          notes: `Sale from cart: ${insertedSale.id}`
+        });
+      
+      if (stockError) {
+        console.error('Error updating stock for product from cart:', item.id, stockError);
+        // We don't want to fail the whole sale if stock transactions fail
+        // just log the error and continue
+      }
+    }
+    
+    // Return the created sale with items
+    const itemsWithNames = cartItems.map(item => ({
+      id: '', // Actual IDs will be assigned by the database
+      product_id: item.id,
+      product_name: item.name,
+      quantity: item.quantity,
+      unit_price: item.price,
+      total_price: item.price * item.quantity
+    }));
+    
+    const completeSale = mapDbSaleToSale(insertedSale, itemsWithNames);
+    
+    return { 
+      success: true, 
+      saleId: insertedSale.id,
+      saleData: completeSale
+    };
   } catch (error) {
     console.error('Error creating sale from cart:', error);
     return { 
