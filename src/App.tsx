@@ -15,6 +15,7 @@ import LoginPage from "./pages/LoginPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import VisualizerPage from "./pages/VisualizerPage";
 import CalculatorPage from "./pages/CalculatorPage";
+import CartPage from "./pages/CartPage";
 import NotFound from "./pages/NotFound";
 
 const App = () => (
@@ -33,6 +34,7 @@ const App = () => (
               <Route path="contact" element={<ContactPage />} />
               <Route path="visualizer" element={<VisualizerPage />} />
               <Route path="calculator" element={<CalculatorPage />} />
+              <Route path="cart" element={<CartPage />} />
               <Route path="login" element={<LoginPage />} />
               <Route path="admin/*" element={<AdminDashboard />} />
               <Route path="*" element={<NotFound />} />
