@@ -427,6 +427,7 @@ export type Database = {
           customer_name: string
           customer_phone: string | null
           id: string
+          status: string | null
           total_amount: number
         }
         Insert: {
@@ -436,6 +437,7 @@ export type Database = {
           customer_name: string
           customer_phone?: string | null
           id?: string
+          status?: string | null
           total_amount: number
         }
         Update: {
@@ -445,6 +447,7 @@ export type Database = {
           customer_name?: string
           customer_phone?: string | null
           id?: string
+          status?: string | null
           total_amount?: number
         }
         Relationships: []

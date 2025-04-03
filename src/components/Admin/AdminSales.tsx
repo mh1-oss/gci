@@ -1,7 +1,7 @@
 import React from 'react';
 import { Sale } from '@/utils/models';
 import { useState, useEffect } from "react";
-import { useNavigate, Routes, Route, Link } from "react-router-dom";
+import { useNavigate, Routes, Route, Link, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -94,7 +94,6 @@ const SalesList = () => {
         title: "Sale Deleted",
         description: "The sale has been successfully deleted.",
       });
-      // Invalidate the query to refetch sales data
       queryClient.invalidateQueries(['sales']);
     } else {
       toast({
@@ -135,6 +134,7 @@ const SalesList = () => {
               <TableHead>Email</TableHead>
               <TableHead>Total Amount</TableHead>
               <TableHead>Currency</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead>Date</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -152,6 +152,7 @@ const SalesList = () => {
                 <TableCell>{sale.customer_email || 'N/A'}</TableCell>
                 <TableCell>{sale.total_amount}</TableCell>
                 <TableCell>{sale.currency}</TableCell>
+                <TableCell>{sale.status}</TableCell>
                 <TableCell>{format(new Date(sale.created_at), 'yyyy/MM/dd', { locale: ar })}</TableCell>
                 <TableCell className="text-right">
                   <Button
@@ -313,6 +314,10 @@ const SaleDetails = () => {
           <div>
             <Label>Total Amount</Label>
             <p>{sale.total_amount} {sale.currency}</p>
+          </div>
+          <div>
+            <Label>Status</Label>
+            <p>{sale.status}</p>
           </div>
           <div>
             <Label>Date</Label>

@@ -1,3 +1,4 @@
+
 export interface Product {
   id: string;
   name: string;
@@ -27,6 +28,6 @@ export interface Sale {
   total_amount: number;
   status: string;
   created_at: string;
-  currency?: 'USD' | 'IQD'; // Add currency field
+  currency: 'USD' | 'IQD';
   items: SaleItem[];
 }
