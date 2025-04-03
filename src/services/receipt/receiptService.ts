@@ -22,18 +22,24 @@ export const printReceipt = (sale: Sale, companyInfo?: any) => {
     
     // Get the current currency from localStorage
     const currentCurrency = getCurrency();
+    // Get the exchange rate from localStorage or use default
+    const exchangeRate = parseFloat(localStorage.getItem("exchangeRate") || "1450");
     
     // Format total based on currency
     let formattedTotal;
-    let currencySymbol;
     
     if (currentCurrency === 'USD') {
-      formattedTotal = sale.total_amount.toFixed(2);
-      currencySymbol = '$';
+      // If currency is USD but sale was recorded in IQD, convert back
+      const totalInUsd = sale.currency === 'IQD' ? 
+        Math.round((sale.total_amount / exchangeRate) * 100) / 100 : 
+        sale.total_amount;
+      formattedTotal = totalInUsd.toFixed(2);
     } else {
-      // For IQD
-      formattedTotal = Math.round(sale.total_amount).toLocaleString();
-      currencySymbol = 'د.ع';
+      // If currency is IQD but sale was recorded in USD, convert
+      const totalInIqd = sale.currency === 'USD' ? 
+        Math.round(sale.total_amount * exchangeRate) : 
+        sale.total_amount;
+      formattedTotal = Math.round(totalInIqd).toLocaleString();
     }
     
     receiptWindow.document.write(`
@@ -93,6 +99,7 @@ export const printReceipt = (sale: Sale, companyInfo?: any) => {
           ${companyInfo ? `<h1>${companyInfo.name || 'إيصال مبيعات'}</h1>` : '<h1>إيصال مبيعات</h1>'}
           <p>رقم المبيعة: ${sale.id.substring(0, 8)}</p>
           <p>تاريخ: ${format(new Date(sale.created_at), 'yyyy/MM/dd hh:mm a', { locale: ar })}</p>
+          <p>العملة: ${currentCurrency === 'USD' ? 'دولار أمريكي ($)' : 'دينار عراقي (د.ع)'}</p>
         </div>
         
         <div class="info-section">
@@ -123,12 +130,31 @@ export const printReceipt = (sale: Sale, companyInfo?: any) => {
             ${sale.items.map(item => {
               // Format item prices based on currency
               let itemUnitPrice, itemTotalPrice;
+              
               if (currentCurrency === 'USD') {
-                itemUnitPrice = `$${item.unit_price.toFixed(2)}`;
-                itemTotalPrice = `$${item.total_price.toFixed(2)}`;
+                // Convert if needed
+                const unitPriceUSD = sale.currency === 'IQD' ? 
+                  Math.round((item.unit_price / exchangeRate) * 100) / 100 : 
+                  item.unit_price;
+                
+                const totalPriceUSD = sale.currency === 'IQD' ? 
+                  Math.round((item.total_price / exchangeRate) * 100) / 100 : 
+                  item.total_price;
+                
+                itemUnitPrice = `$${unitPriceUSD.toFixed(2)}`;
+                itemTotalPrice = `$${totalPriceUSD.toFixed(2)}`;
               } else {
-                itemUnitPrice = `${Math.round(item.unit_price).toLocaleString()} د.ع`;
-                itemTotalPrice = `${Math.round(item.total_price).toLocaleString()} د.ع`;
+                // Convert if needed
+                const unitPriceIQD = sale.currency === 'USD' ? 
+                  Math.round(item.unit_price * exchangeRate) : 
+                  item.unit_price;
+                
+                const totalPriceIQD = sale.currency === 'USD' ? 
+                  Math.round(item.total_price * exchangeRate) : 
+                  item.total_price;
+                
+                itemUnitPrice = `${Math.round(unitPriceIQD).toLocaleString()} د.ع`;
+                itemTotalPrice = `${Math.round(totalPriceIQD).toLocaleString()} د.ع`;
               }
               
               return `
@@ -164,4 +190,3 @@ export const printReceipt = (sale: Sale, companyInfo?: any) => {
     });
   }
 };
-
