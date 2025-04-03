@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { createSaleFromCart } from "@/services/sales/salesService";
 import { printReceipt } from "@/services/receipt/receiptService";
@@ -127,56 +128,14 @@ const CartDrawer = ({ open, onOpenChange }: CartDrawerProps) => {
     });
   };
 
-  return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-md flex flex-col border-l border-border p-4" dir="rtl">
-        <SheetHeader className="mb-4 text-right">
-          <SheetTitle className="text-xl">سلة التسوق</SheetTitle>
-          <SheetDescription>
-            {totalItems === 0 
-              ? "سلة التسوق فارغة"
-              : `لديك ${totalItems} ${totalItems === 1 ? 'منتج' : 'منتجات'} في سلة التسوق`
-            }
-          </SheetDescription>
-        </SheetHeader>
+  // If CartDrawer is no longer needed, redirect to the cart page instead
+  if (open) {
+    navigate("/cart");
+    return null;
+  }
 
-        {items.length === 0 ? (
-          <EmptyCart />
-        ) : (
-          <>
-            <div className="flex-1 mb-4 max-h-[50vh]">
-              <ScrollArea className="h-full pr-1">
-                <div className="space-y-3 p-1">
-                  {items.map((item) => (
-                    <CartItemCard key={item.id} item={item} />
-                  ))}
-                </div>
-              </ScrollArea>
-            </div>
-
-            <div className="mt-auto space-y-4">
-              <Separator className="my-4" />
-              
-              <CartCustomerInfo
-                customerName={customerName}
-                customerPhone={customerPhone}
-                customerEmail={customerEmail}
-                setCustomerName={setCustomerName}
-                setCustomerPhone={setCustomerPhone}
-                setCustomerEmail={setCustomerEmail}
-              />
-              
-              <CartSummary
-                isCheckingOut={isCheckingOut}
-                onCheckout={handleCheckout}
-                onToggleCurrency={toggleCurrency}
-              />
-            </div>
-          </>
-        )}
-      </SheetContent>
-    </Sheet>
-  );
-};
+  // Return an empty fragment since we're redirecting
+  return null;
+}
 
 export default CartDrawer;
