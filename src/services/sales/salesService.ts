@@ -61,7 +61,6 @@ export const createSaleFromCart = async (
       id: item.id,
       sale_id: item.sale_id,
       product_id: item.product_id,
-      product_name: item.product_name,
       quantity: item.quantity,
       unit_price: item.unit_price,
       total_price: item.total_price,
