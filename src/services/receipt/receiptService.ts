@@ -19,6 +19,10 @@ export const printReceipt = (sale: Sale, companyInfo?: any) => {
       return;
     }
     
+    // Use the sale.total_amount directly which comes from the database
+    // It's calculated at checkout and should be used without currency conversion
+    const formattedTotal = sale.total_amount.toLocaleString();
+    
     receiptWindow.document.write(`
       <html dir="rtl">
       <head>
@@ -93,7 +97,7 @@ export const printReceipt = (sale: Sale, companyInfo?: any) => {
           <div class="info-block">
             <h3>ملخص المبيعة</h3>
             <p><strong>عدد المنتجات:</strong> ${sale.items.reduce((sum, item) => sum + item.quantity, 0)}</p>
-            <p><strong>إجمالي المبلغ:</strong> ${sale.total_amount.toLocaleString()} د.ع</p>
+            <p><strong>إجمالي المبلغ:</strong> ${formattedTotal} د.ع</p>
           </div>
         </div>
         
@@ -120,7 +124,7 @@ export const printReceipt = (sale: Sale, companyInfo?: any) => {
         </table>
         
         <div class="total">
-          الإجمالي: ${sale.total_amount.toLocaleString()} د.ع
+          الإجمالي: ${formattedTotal} د.ع
         </div>
         
         <div class="footer">

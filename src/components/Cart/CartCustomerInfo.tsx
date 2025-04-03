@@ -19,7 +19,8 @@ const CartCustomerInfo = ({
   setCustomerEmail
 }: CartCustomerInfoProps) => {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 bg-muted/20 p-4 rounded-lg">
+      <h3 className="font-medium text-sm mb-2">معلومات العميل</h3>
       <div className="space-y-2">
         <label className="text-sm font-medium">اسم العميل (اختياري)</label>
         <Input 

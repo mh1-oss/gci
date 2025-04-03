@@ -117,7 +117,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       )
     );
     
-    // Add a toast confirmation
     toast({
       title: "تم تحديث الكمية",
       description: `تم تحديث كمية المنتج في سلة التسوق`,

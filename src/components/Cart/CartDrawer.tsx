@@ -9,7 +9,6 @@ import {
   SheetHeader,
   SheetTitle,
   SheetDescription,
-  SheetClose
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -66,11 +65,14 @@ const CartDrawer = ({ open, onOpenChange }: CartDrawerProps) => {
         return;
       }
       
+      // Save current cart items to preserve their price in current currency
+      const cartItems = [...items];
+      
       const result = await createSaleFromCart(
         customerName || 'عميل', 
         customerPhone || null, 
         customerEmail || null, 
-        items
+        cartItems
       );
       
       if (result.success && result.saleData) {
@@ -127,9 +129,9 @@ const CartDrawer = ({ open, onOpenChange }: CartDrawerProps) => {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-md flex flex-col" dir="rtl">
-        <SheetHeader className="mb-5">
-          <SheetTitle>سلة التسوق</SheetTitle>
+      <SheetContent side="right" className="w-full sm:max-w-md flex flex-col border-l border-border" dir="rtl">
+        <SheetHeader className="mb-5 text-right">
+          <SheetTitle className="text-xl">سلة التسوق</SheetTitle>
           <SheetDescription>
             {totalItems === 0 
               ? "سلة التسوق فارغة"
@@ -143,7 +145,7 @@ const CartDrawer = ({ open, onOpenChange }: CartDrawerProps) => {
         ) : (
           <>
             <ScrollArea className="flex-1 pr-1">
-              <div className="space-y-1">
+              <div className="space-y-3">
                 {items.map((item) => (
                   <CartItemCard key={item.id} item={item} />
                 ))}
