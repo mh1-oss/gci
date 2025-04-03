@@ -1,5 +1,5 @@
 
-import { db } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from "uuid";
 import { Sale, SaleItem } from "@/utils/models";
 import { CartItem } from "@/context/CartContext";
@@ -39,7 +39,7 @@ export const createSaleFromCart = async (
     };
     
     // Insert into sales table
-    const { error: salesError } = await db
+    const { error: salesError } = await supabase
       .from("sales")
       .insert({
         id: newSale.id,
@@ -67,7 +67,7 @@ export const createSaleFromCart = async (
       total_price: item.total_price,
     }));
     
-    const { error: itemsError } = await db
+    const { error: itemsError } = await supabase
       .from("sale_items")
       .insert(saleItemsInsert);
     
