@@ -1,7 +1,21 @@
 
-import { DbSale, DbSaleItem, Sale, SaleItem } from './types';
+import { v4 as uuidv4 } from "uuid";
+import { Sale, SaleItem } from '@/utils/models';
+import { CartItem } from "@/context/CartContext";
 
-export function mapDbSaleToSale(dbSale: DbSale, saleItems: SaleItem[] = []): Sale {
+export function mapCartItemsToSaleItems(cartItems: CartItem[], saleId: string): SaleItem[] {
+  return cartItems.map(item => ({
+    id: uuidv4(),
+    sale_id: saleId,
+    product_id: item.id,
+    product_name: item.name,
+    quantity: item.quantity,
+    unit_price: item.price,
+    total_price: item.price * item.quantity
+  }));
+}
+
+export function mapDbSaleToSale(dbSale: any, saleItems: SaleItem[] = []): Sale {
   if (!dbSale) {
     console.error('Attempted to map null or undefined dbSale to Sale');
     throw new Error('Invalid sale data provided');
@@ -16,11 +30,13 @@ export function mapDbSaleToSale(dbSale: DbSale, saleItems: SaleItem[] = []): Sal
       ? parseFloat(dbSale.total_amount) 
       : dbSale.total_amount,
     created_at: dbSale.created_at,
+    status: dbSale.status || "completed",
+    currency: dbSale.currency,
     items: saleItems
   };
 }
 
-export function mapSaleToDbSale(sale: Omit<Sale, 'id' | 'items' | 'created_at'>): Omit<DbSale, 'id' | 'created_at'> {
+export function mapSaleToDbSale(sale: Omit<Sale, 'id' | 'items' | 'created_at'>): Omit<any, 'id' | 'created_at'> {
   if (!sale) {
     console.error('Attempted to map null or undefined Sale to DbSale');
     throw new Error('Invalid sale data provided');
@@ -30,11 +46,13 @@ export function mapSaleToDbSale(sale: Omit<Sale, 'id' | 'items' | 'created_at'>)
     customer_name: sale.customer_name,
     customer_phone: sale.customer_phone,
     customer_email: sale.customer_email,
-    total_amount: sale.total_amount
+    total_amount: sale.total_amount,
+    status: sale.status,
+    currency: sale.currency
   };
 }
 
-export function mapDbSaleItemWithProductToSaleItem(dbSaleItem: DbSaleItem, productName: string): SaleItem {
+export function mapDbSaleItemWithProductToSaleItem(dbSaleItem: any, productName: string): SaleItem {
   if (!dbSaleItem) {
     console.error('Attempted to map null or undefined DbSaleItem to SaleItem');
     throw new Error('Invalid sale item data provided');
@@ -42,6 +60,7 @@ export function mapDbSaleItemWithProductToSaleItem(dbSaleItem: DbSaleItem, produ
   
   return {
     id: dbSaleItem.id,
+    sale_id: dbSaleItem.sale_id,
     product_id: dbSaleItem.product_id,
     product_name: productName || 'منتج غير معروف',
     quantity: dbSaleItem.quantity,
@@ -54,7 +73,7 @@ export function mapDbSaleItemWithProductToSaleItem(dbSaleItem: DbSaleItem, produ
   };
 }
 
-export function mapSaleItemToDbSaleItem(saleItem: Omit<SaleItem, 'id' | 'product_name'>, saleId: string): Omit<DbSaleItem, 'id' | 'created_at'> {
+export function mapSaleItemToDbSaleItem(saleItem: Omit<SaleItem, 'id' | 'product_name'>, saleId: string): Omit<any, 'id' | 'created_at'> {
   if (!saleItem || !saleId) {
     console.error('Attempted to map SaleItem to DbSaleItem with invalid data', { saleItem, saleId });
     throw new Error('Invalid sale item data or sale ID provided');

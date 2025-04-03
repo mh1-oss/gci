@@ -1,3 +1,4 @@
+
 import { db } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from "uuid";
 import { Sale, SaleItem } from "@/utils/models";
