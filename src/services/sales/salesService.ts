@@ -85,3 +85,37 @@ export const createSaleFromCart = async (
     };
   }
 };
+
+export const deleteSale = async (saleId: string): Promise<{ success: boolean; error?: string }> => {
+  try {
+    // First delete the related sale items
+    const { error: itemsError } = await supabase
+      .from("sale_items")
+      .delete()
+      .eq("sale_id", saleId);
+    
+    if (itemsError) {
+      console.error("Error deleting sale items:", itemsError);
+      return { success: false, error: itemsError.message };
+    }
+    
+    // Then delete the sale itself
+    const { error: saleError } = await supabase
+      .from("sales")
+      .delete()
+      .eq("id", saleId);
+    
+    if (saleError) {
+      console.error("Error deleting sale:", saleError);
+      return { success: false, error: saleError.message };
+    }
+    
+    return { success: true };
+  } catch (error) {
+    console.error("Error during sale deletion:", error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : "Unknown error occurred during deletion" 
+    };
+  }
+};
