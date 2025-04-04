@@ -1,5 +1,6 @@
 
 import { Category } from '@/data/initialData';
+import { Dispatch, SetStateAction } from 'react';
 
 export interface CategoryFormState {
   name: string;
@@ -10,6 +11,11 @@ export interface CategoryState {
   categories: Category[];
   loading: boolean;
   error: string | null;
+}
+
+export interface CategoryStateWithSetters extends CategoryState {
+  setCategories: Dispatch<SetStateAction<Category[]>>;
+  setError: Dispatch<SetStateAction<string | null>>;
 }
 
 export interface CategoryTargetState {

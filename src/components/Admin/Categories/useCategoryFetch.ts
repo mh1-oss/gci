@@ -3,10 +3,10 @@ import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { fetchCategories } from '@/services/categories/categoryService';
 import { Category } from '@/data/initialData';
-import { CategoryState } from './types';
+import { CategoryStateWithSetters } from './types';
 import { useAuth } from '@/context/AuthContext';
 
-export const useCategoryFetch = (): CategoryState & { loadCategories: () => Promise<void> } => {
+export const useCategoryFetch = (): CategoryStateWithSetters & { loadCategories: () => Promise<void> } => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
