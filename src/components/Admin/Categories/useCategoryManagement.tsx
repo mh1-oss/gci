@@ -44,7 +44,7 @@ export const useCategoryManagement = () => {
       console.log("Fetched categories:", fetchedCategories);
       setCategories(fetchedCategories || []);
       if (fetchedCategories.length === 0) {
-        setError("لم يتم العثور على أي فئات. قد تكون هناك مشكلة في الإتصال بقاعدة البيانات.");
+        console.log("No categories found, but not treating as an error");
       }
     } catch (err: any) {
       console.error("Error loading categories:", err);

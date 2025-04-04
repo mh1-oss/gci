@@ -53,28 +53,26 @@ export const createCategory = async (category: Omit<Category, 'id'>): Promise<Ca
   try {
     console.log('Creating category with data:', category);
     
-    // Convert to database model format
-    const dbCategory = mapCategoryToDbCategory(category);
-    console.log('Converted to DB format:', dbCategory);
-    
-    // Directly insert into the table with auth headers still attached
-    // This will use the user's admin role to bypass RLS
+    // Use the admin_create_category RPC function
     const { data, error } = await supabase
-      .from('categories')
-      .insert({
-        name: dbCategory.name,
-        description: dbCategory.description
-      })
-      .select()
-      .single();
+      .rpc('admin_create_category', {
+        p_name: category.name,
+        p_description: category.description || null
+      });
     
     if (error) {
       console.error('Error creating category:', error);
       throw error;
     }
     
-    console.log('Category created successfully:', data);
-    return data ? mapDbCategoryToCategory(data as DbCategory) : null;
+    console.log('Category created successfully, ID:', data);
+    
+    // Since the RPC function only returns the ID, we need to fetch the complete category
+    if (data) {
+      return await fetchCategoryById(data);
+    }
+    
+    return null;
   } catch (error) {
     console.error('Unexpected error creating category:', error);
     throw error;
@@ -83,16 +81,13 @@ export const createCategory = async (category: Omit<Category, 'id'>): Promise<Ca
 
 export const updateCategory = async (id: string, updates: Partial<Category>): Promise<Category | null> => {
   try {
-    // Direct update approach instead of RPC
+    // Use the admin_update_category RPC function
     const { data, error } = await supabase
-      .from('categories')
-      .update({
-        name: updates.name,
-        description: updates.description || null
-      })
-      .eq('id', id)
-      .select()
-      .single();
+      .rpc('admin_update_category', {
+        p_id: id,
+        p_name: updates.name || null,
+        p_description: updates.description || null
+      });
     
     if (error) {
       console.error('Error updating category:', error);
@@ -100,7 +95,13 @@ export const updateCategory = async (id: string, updates: Partial<Category>): Pr
     }
     
     console.log('Category updated successfully:', data);
-    return data ? mapDbCategoryToCategory(data as DbCategory) : null;
+    
+    // If the update was successful, fetch the updated category
+    if (data) {
+      return await fetchCategoryById(id);
+    }
+    
+    return null;
   } catch (error) {
     console.error('Unexpected error updating category:', error);
     throw error;
@@ -109,19 +110,19 @@ export const updateCategory = async (id: string, updates: Partial<Category>): Pr
 
 export const deleteCategory = async (id: string): Promise<boolean> => {
   try {
-    // Direct delete approach
-    const { error } = await supabase
-      .from('categories')
-      .delete()
-      .eq('id', id);
+    // Use the admin_delete_category RPC function
+    const { data, error } = await supabase
+      .rpc('admin_delete_category', {
+        p_id: id
+      });
     
     if (error) {
       console.error('Error deleting category:', error);
       throw error;
     }
     
-    console.log('Category deleted successfully');
-    return true;
+    console.log('Category deleted successfully:', data);
+    return !!data;
   } catch (error) {
     console.error('Unexpected error deleting category:', error);
     throw error;
