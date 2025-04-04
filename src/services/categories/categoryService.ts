@@ -57,23 +57,24 @@ export const createCategory = async (category: Omit<Category, 'id'>): Promise<Ca
     const dbCategory = mapCategoryToDbCategory(category);
     console.log('Converted to DB format:', dbCategory);
     
-    // Use type assertion to bypass TypeScript's type checking for custom RPC functions
-    const { data, error } = await supabase.rpc(
-      'admin_create_category' as any, 
-      {
-        p_name: dbCategory.name,
-        p_description: dbCategory.description || null
-      }
-    );
+    // Directly insert into the table with auth headers still attached
+    // This will use the user's admin role to bypass RLS
+    const { data, error } = await supabase
+      .from('categories')
+      .insert({
+        name: dbCategory.name,
+        description: dbCategory.description
+      })
+      .select()
+      .single();
     
     if (error) {
       console.error('Error creating category:', error);
       throw error;
     }
     
-    console.log('Category created successfully, new ID:', data);
-    // The returned data should be the UUID of the new category
-    return await fetchCategoryById(data as string);
+    console.log('Category created successfully:', data);
+    return data ? mapDbCategoryToCategory(data as DbCategory) : null;
   } catch (error) {
     console.error('Unexpected error creating category:', error);
     throw error;
@@ -82,28 +83,24 @@ export const createCategory = async (category: Omit<Category, 'id'>): Promise<Ca
 
 export const updateCategory = async (id: string, updates: Partial<Category>): Promise<Category | null> => {
   try {
-    // Use type assertion to bypass TypeScript's type checking for custom RPC functions
-    const { data, error } = await supabase.rpc(
-      'admin_update_category' as any,
-      {
-        p_id: id,
-        p_name: updates.name,
-        p_description: updates.description || null
-      }
-    );
+    // Direct update approach instead of RPC
+    const { data, error } = await supabase
+      .from('categories')
+      .update({
+        name: updates.name,
+        description: updates.description || null
+      })
+      .eq('id', id)
+      .select()
+      .single();
     
     if (error) {
       console.error('Error updating category:', error);
       throw error;
     }
     
-    if (!data) {
-      console.warn('Category update did not affect any rows');
-      return null;
-    }
-    
-    // Get the updated category
-    return await fetchCategoryById(id);
+    console.log('Category updated successfully:', data);
+    return data ? mapDbCategoryToCategory(data as DbCategory) : null;
   } catch (error) {
     console.error('Unexpected error updating category:', error);
     throw error;
@@ -112,20 +109,19 @@ export const updateCategory = async (id: string, updates: Partial<Category>): Pr
 
 export const deleteCategory = async (id: string): Promise<boolean> => {
   try {
-    // Use type assertion to bypass TypeScript's type checking for custom RPC functions
-    const { data, error } = await supabase.rpc(
-      'admin_delete_category' as any,
-      {
-        p_id: id
-      }
-    );
+    // Direct delete approach
+    const { error } = await supabase
+      .from('categories')
+      .delete()
+      .eq('id', id);
     
     if (error) {
       console.error('Error deleting category:', error);
       throw error;
     }
     
-    return Boolean(data);
+    console.log('Category deleted successfully');
+    return true;
   } catch (error) {
     console.error('Unexpected error deleting category:', error);
     throw error;
