@@ -35,8 +35,14 @@ export const supabase = createClient<Database>(
 export const pingDatabase = async () => {
   try {
     const start = Date.now();
-    // Change this query to avoid using aggregate functions directly
-    const { data, error } = await supabase.from('products').select('id').limit(1);
+    
+    // Use a simple query that doesn't use aggregate functions and is less likely to hit RLS issues
+    const { data, error } = await supabase
+      .from('products')
+      .select('id')
+      .limit(1)
+      .maybeSingle();
+    
     const end = Date.now();
     
     if (error) {
@@ -53,12 +59,30 @@ export const pingDatabase = async () => {
 
 // Helper function to check if we have an active session
 export const getSession = async () => {
-  const { data } = await supabase.auth.getSession();
-  return data.session;
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+      console.error("Error getting session:", error);
+      return null;
+    }
+    return data.session;
+  } catch (error) {
+    console.error("Unexpected error getting session:", error);
+    return null;
+  }
 };
 
 // Helper function to get the current user
 export const getCurrentUser = async () => {
-  const { data } = await supabase.auth.getUser();
-  return data.user;
+  try {
+    const { data, error } = await supabase.auth.getUser();
+    if (error) {
+      console.error("Error getting user:", error);
+      return null;
+    }
+    return data.user;
+  } catch (error) {
+    console.error("Unexpected error getting user:", error);
+    return null;
+  }
 };
