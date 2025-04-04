@@ -6,7 +6,7 @@ import CategoryHeader from './Categories/CategoryHeader';
 import CategoryContent from './Categories/CategoryContent';
 import CategoryForm from './Categories/CategoryForm';
 import DeleteCategoryDialog from './Categories/DeleteCategoryDialog';
-import ErrorAlert from './Categories/ErrorAlert';
+import { ErrorDisplay } from './Overview';
 import useCategoryManagement from './Categories/useCategoryManagement';
 
 const AdminCategories = () => {
@@ -37,7 +37,7 @@ const AdminCategories = () => {
 
   return (
     <div>
-      <ErrorAlert error={error} />
+      {error && <ErrorDisplay error={error} onRefresh={handleRefresh} />}
 
       <Card>
         <CategoryHeader onAddNew={handleAddNew} onRefresh={handleRefresh} />
