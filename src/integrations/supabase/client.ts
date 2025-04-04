@@ -31,6 +31,25 @@ export const supabase = createClient<Database>(
   }
 );
 
+// Helper function to check connection to Supabase
+export const pingDatabase = async () => {
+  try {
+    const start = Date.now();
+    const { data, error } = await supabase.from('products').select('count()', { count: 'exact' }).limit(1);
+    const end = Date.now();
+    
+    if (error) {
+      console.error("Database ping failed:", error);
+      return { ok: false, latency: 0, error: error.message };
+    }
+    
+    return { ok: true, latency: end - start, data };
+  } catch (err) {
+    console.error("Unexpected error during database ping:", err);
+    return { ok: false, latency: 0, error: err instanceof Error ? err.message : 'Unknown error' };
+  }
+};
+
 // Helper function to check if we have an active session
 export const getSession = async () => {
   const { data } = await supabase.auth.getSession();

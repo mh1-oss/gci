@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { Product as InitialDataProduct } from '@/data/initialData';
@@ -18,6 +17,8 @@ export const fetchProducts = async (): Promise<InitialDataProduct[]> => {
     const { data: session } = await supabase.auth.getSession();
     const isAuthenticated = !!session?.session?.user;
     
+    console.log('Authentication status:', isAuthenticated ? 'Authenticated' : 'Not authenticated');
+    
     // Attempt to fetch products
     const { data, error } = await supabase
       .from('products')
@@ -28,7 +29,7 @@ export const fetchProducts = async (): Promise<InitialDataProduct[]> => {
       
       // If there's an error related to RLS policies and the user is authenticated
       // This is likely due to a Supabase RLS policy issue - try to work around it
-      if (error.code === '42P17' && isAuthenticated) {
+      if (error.code === '42501' && isAuthenticated) {
         console.log('Using fallback method to fetch products due to RLS error');
         // Use a more direct query approach without RLS interference
         const { data: adminData, error: adminError } = await supabase.rpc('get_all_products');
@@ -38,6 +39,7 @@ export const fetchProducts = async (): Promise<InitialDataProduct[]> => {
           return [];
         }
         
+        console.log('Products fetched via RPC:', adminData);
         return (adminData as DbProduct[]).map((item) => {
           const product = mapDbProductToProduct(item);
           return {
@@ -72,10 +74,10 @@ export const fetchProducts = async (): Promise<InitialDataProduct[]> => {
         created_at: item.created_at,
         updated_at: item.updated_at,
         categories: item.categories,
-        featured: item.featured,
-        colors: item.colors,
-        specifications: item.specifications,
-        media_gallery: item.media_gallery
+        featured: item.featured || false,
+        colors: item.colors || [],
+        specifications: item.specifications || {},
+        media_gallery: item.media_gallery || []
       };
       
       // Now safely map to our Product type
@@ -215,6 +217,13 @@ export const createProduct = async (product: Omit<Product, 'id'>): Promise<Produ
   try {
     console.log('Creating product with data:', product);
     
+    // Check if we have an active connection to Supabase
+    const { data: connectionCheck, error: connectionError } = await supabase.from('products').select('id').limit(1);
+    if (connectionError) {
+      console.error('Connection error with Supabase:', connectionError);
+      throw new Error(`Database connection error: ${connectionError.message}`);
+    }
+    
     // Convert to database model format
     const dbProduct = mapInitialDataProductToDbProduct(product);
     
@@ -229,7 +238,7 @@ export const createProduct = async (product: Omit<Product, 'id'>): Promise<Produ
     
     if (error) {
       console.error('Error creating product:', error);
-      return null;
+      throw new Error(`Failed to create product: ${error.message}`);
     }
     
     console.log('Product created successfully:', data);
@@ -237,7 +246,7 @@ export const createProduct = async (product: Omit<Product, 'id'>): Promise<Produ
     return mapDbProductToProduct(data as DbProduct);
   } catch (error) {
     console.error('Unexpected error creating product:', error);
-    return null;
+    throw error; // Re-throw to allow component-level handling
   }
 };
 

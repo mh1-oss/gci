@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -29,7 +28,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Edit, Trash2, RefreshCw, Image, Loader2 } from 'lucide-react';
+import { Plus, Edit, Trash2, RefreshCw, Image, Loader2, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { 
   fetchProducts, 
   createProduct, 
@@ -39,6 +39,7 @@ import {
 import { fetchCategories } from '@/services/categories/categoryService';
 import { uploadMedia } from '@/services/media/mediaService';
 import { Product, Category } from '@/data/initialData';
+import { supabase } from '@/integrations/supabase/client';
 
 const AdminProducts = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -58,15 +59,46 @@ const AdminProducts = () => {
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking');
   
   const { toast } = useToast();
   
   useEffect(() => {
-    fetchAllData();
+    const checkConnection = async () => {
+      try {
+        setConnectionStatus('checking');
+        const { data, error } = await supabase.from('products').select('count()', { count: 'exact' }).limit(1);
+        
+        if (error) {
+          console.error('Supabase connection error:', error);
+          setConnectionStatus('disconnected');
+          setError(`Database connection error: ${error.message}`);
+        } else {
+          console.log('Supabase connection successful, product count:', data);
+          setConnectionStatus('connected');
+          setError(null);
+        }
+      } catch (err) {
+        console.error('Failed to check connection:', err);
+        setConnectionStatus('disconnected');
+        setError('Could not connect to the database. Please try again later.');
+      }
+    };
+    
+    checkConnection();
   }, []);
+  
+  useEffect(() => {
+    if (connectionStatus === 'connected') {
+      fetchAllData();
+    }
+  }, [connectionStatus]);
   
   const fetchAllData = async () => {
     setLoading(true);
+    setError(null);
+    
     try {
       console.log('Fetching products and categories...');
       const [productsData, categoriesData] = await Promise.all([
@@ -79,11 +111,12 @@ const AdminProducts = () => {
       
       setProducts(productsData);
       setCategories(categoriesData);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching data:', error);
+      setError(error?.message || "Error fetching data from the database");
       toast({
         title: "خطأ في تحميل البيانات",
-        description: "حدث خطأ أثناء تحميل المنتجات والفئات",
+        description: error?.message || "حدث خطأ أثناء تحميل المنتجات والفئات",
         variant: "destructive"
       });
     } finally {
@@ -183,6 +216,7 @@ const AdminProducts = () => {
     if (!validateForm()) return;
     
     setIsProcessing(true);
+    setError(null);
     
     try {
       let imageUrl = formData.image;
@@ -257,8 +291,9 @@ const AdminProducts = () => {
         resetForm();
         fetchAllData(); // Refresh data after successful operation
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving product:', error);
+      setError(error?.message || "حدث خطأ أثناء حفظ المنتج");
       toast({
         title: "خطأ",
         description: typeof error === 'object' && error !== null && 'message' in error 
@@ -335,12 +370,31 @@ const AdminProducts = () => {
           </div>
         </CardHeader>
         <CardContent>
-          {loading ? (
+          {connectionStatus === 'disconnected' && (
+            <Alert variant="destructive" className="mb-6">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>خطأ في الاتصال</AlertTitle>
+              <AlertDescription>
+                لا يمكن الاتصال بقاعدة البيانات. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.
+                {error && <p className="mt-2 text-sm">{error}</p>}
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {error && connectionStatus !== 'disconnected' && (
+            <Alert variant="destructive" className="mb-6">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>خطأ</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          
+          {connectionStatus === 'checking' || loading ? (
             <div className="flex justify-center items-center h-40">
               <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
               <p>جاري تحميل البيانات...</p>
             </div>
-          ) : products.length === 0 ? (
+          ) : connectionStatus === 'connected' && products.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-gray-500">لا توجد منتجات متاحة حالياً</p>
               <Button onClick={handleOpenCreateDialog} variant="outline" className="mt-4">
@@ -348,7 +402,7 @@ const AdminProducts = () => {
                 إضافة منتج جديد
               </Button>
             </div>
-          ) : (
+          ) : connectionStatus === 'connected' && (
             <div className="overflow-auto">
               <Table>
                 <TableHeader>
