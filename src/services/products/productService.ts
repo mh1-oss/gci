@@ -1,15 +1,15 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import type { Product } from '@/data/initialData';
+import type { Product as InitialDataProduct } from '@/data/initialData';
 import {
   mapDbProductToProduct,
-  mapInitialDataProductToDbProduct
-} from '@/utils/models';
-import { DbProduct } from '@/utils/models/types';
+  mapInitialDataProductToDbProduct,
+  mapProductToDbProduct
+} from '@/utils/models/productMappers';
+import { DbProduct, Product } from '@/utils/models/types';
 
 // Products
-export const fetchProducts = async (): Promise<Product[]> => {
+export const fetchProducts = async (): Promise<InitialDataProduct[]> => {
   try {
     console.log('Fetching products...');
     
@@ -49,10 +49,10 @@ export const fetchProducts = async (): Promise<Product[]> => {
             name: product.name,
             description: product.description,
             price: product.price,
-            categoryId: product.categoryId || '',
-            image: product.image || '/placeholder.svg',
-            featured: product.featured || false,
-          } as Product;
+            categoryId: product.categoryId,
+            image: product.image,
+            featured: product.featured,
+          } as InitialDataProduct;
         });
       }
       
@@ -72,10 +72,10 @@ export const fetchProducts = async (): Promise<Product[]> => {
         name: product.name,
         description: product.description,
         price: product.price,
-        categoryId: product.categoryId || '',
-        image: product.image || '/placeholder.svg',
-        featured: product.featured || false,
-      } as Product;
+        categoryId: product.categoryId,
+        image: product.image,
+        featured: product.featured,
+      } as InitialDataProduct;
     });
   } catch (error) {
     console.error('Unexpected error fetching products:', error);
@@ -88,7 +88,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
   }
 };
 
-export const fetchProductById = async (id: string): Promise<Product | null> => {
+export const fetchProductById = async (id: string): Promise<InitialDataProduct | null> => {
   try {
     const { data, error } = await supabase
       .from('products')
@@ -101,7 +101,18 @@ export const fetchProductById = async (id: string): Promise<Product | null> => {
       return null;
     }
     
-    return data ? mapDbProductToProduct(data) : null;
+    if (!data) return null;
+    
+    const product = mapDbProductToProduct(data);
+    return {
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      categoryId: product.categoryId,
+      image: product.image,
+      featured: product.featured,
+    } as InitialDataProduct;
   } catch (error) {
     console.error('Unexpected error fetching product by id:', error);
     return null;
@@ -127,7 +138,7 @@ export const fetchProductsByCategory = async (categoryId: string): Promise<Produ
   }
 };
 
-export const fetchFeaturedProducts = async (): Promise<Product[]> => {
+export const fetchFeaturedProducts = async (): Promise<InitialDataProduct[]> => {
   try {
     // Attempt to fetch featured products
     const { data, error } = await supabase
@@ -162,10 +173,10 @@ export const fetchFeaturedProducts = async (): Promise<Product[]> => {
               name: product.name,
               description: product.description,
               price: product.price,
-              categoryId: product.categoryId || '',
-              image: product.image || '/placeholder.svg',
+              categoryId: product.categoryId,
+              image: product.image,
               featured: true,
-            } as Product;
+            } as InitialDataProduct;
           });
       }
       
@@ -179,10 +190,10 @@ export const fetchFeaturedProducts = async (): Promise<Product[]> => {
         name: product.name,
         description: product.description,
         price: product.price,
-        categoryId: product.categoryId || '',
-        image: product.image || '/placeholder.svg',
+        categoryId: product.categoryId,
+        image: product.image,
         featured: true,
-      } as Product;
+      } as InitialDataProduct;
     });
   } catch (error) {
     console.error('Unexpected error fetching featured products:', error);

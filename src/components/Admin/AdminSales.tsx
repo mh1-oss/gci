@@ -415,7 +415,7 @@ const NewSale = () => {
           name: product.name, 
           price: product.price,
           quantity: 1,
-          image: product.images?.[0] || product.image || '/placeholder.svg'
+          image: product.image || '/placeholder.svg'
         }];
       }
     });
@@ -527,7 +527,7 @@ const NewSale = () => {
                 <Card key={product.id} className="cursor-pointer" onClick={() => addToCart(product)}>
                   <CardContent>
                     <div className="flex flex-col items-center">
-                      <img src={product.images?.[0] || product.image || '/placeholder.svg'} alt={product.name} className="h-20 w-20 object-cover mb-2" />
+                      <img src={product.image || '/placeholder.svg'} alt={product.name} className="h-20 w-20 object-cover mb-2" />
                       <p className="text-sm font-semibold">{product.name}</p>
                       <p className="text-xs text-muted-foreground">{product.price}</p>
                     </div>

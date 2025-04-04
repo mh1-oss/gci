@@ -7,9 +7,9 @@ export interface Product {
   category: string;
   stock: number;
   created_at?: string;
-  categoryId?: string;
-  image?: string;
-  featured?: boolean;
+  categoryId: string;
+  image: string;
+  featured: boolean;
 }
 
 export interface SaleItem {
