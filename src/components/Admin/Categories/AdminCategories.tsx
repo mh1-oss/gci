@@ -5,7 +5,6 @@ import CategoryHeader from './CategoryHeader';
 import CategoryContent from './CategoryContent';
 import CategoryForm from './CategoryForm';
 import DeleteCategoryDialog from './DeleteCategoryDialog';
-import { ErrorDisplay } from '../Overview';
 import ErrorAlert from './ErrorAlert';
 import useCategoryManagement from './useCategoryManagement';
 
