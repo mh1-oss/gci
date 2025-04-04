@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -79,7 +80,7 @@ const AdminCategories = () => {
     setError(null);
     try {
       console.log("Creating new category:", { name, description });
-      const newCategory = { 
+      const newCategory: Omit<Category, 'id'> = { 
         name: name.trim(), 
         description: description.trim(), 
         image: '/placeholder.svg' 
