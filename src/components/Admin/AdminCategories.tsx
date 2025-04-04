@@ -88,7 +88,8 @@ const AdminCategories = () => {
       const createdCategory = await createCategory(newCategory);
 
       if (createdCategory) {
-        setCategories([...categories, createdCategory]);
+        console.log("Category created successfully:", createdCategory);
+        setCategories(prevCategories => [...prevCategories, createdCategory]);
         toast({
           title: "تم بنجاح",
           description: "تم إنشاء الفئة بنجاح."
@@ -96,6 +97,7 @@ const AdminCategories = () => {
         setDialogOpen(false);
         resetForm();
       } else {
+        console.error("Failed to create category, returned null");
         setError("فشل إنشاء الفئة. يرجى المحاولة مرة أخرى.");
         toast({
           title: "خطأ",
