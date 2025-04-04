@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Sale } from '@/utils/models';
 import { useState, useEffect } from "react";
@@ -27,6 +28,16 @@ import { printReceipt } from "@/services/receipt/receiptService";
 import { createSaleFromCart, deleteSale } from '@/services/sales/salesService';
 import { mapDbSaleToSale } from '@/utils/models/salesMappers';
 import { Product } from "@/data/initialData";
+import { useCurrency } from "@/context/CurrencyContext";
+
+// Helper function to format price with the correct currency
+const formatSalePrice = (price: number, currency: 'USD' | 'IQD') => {
+  if (currency === 'USD') {
+    return `$${price.toFixed(2)}`;
+  } else {
+    return `${Math.round(price).toLocaleString()} د.ع`;
+  }
+};
 
 const SalesList = () => {
   const [sales, setSales] = useState<Sale[]>([]);
@@ -140,40 +151,66 @@ const SalesList = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredSales.map((sale) => (
-              <TableRow key={sale.id}>
-                <TableCell>
-                  <Link to={`${sale.id}`} className="hover:underline">
-                    {sale.id.substring(0, 8)}
-                  </Link>
-                </TableCell>
-                <TableCell>{sale.customer_name}</TableCell>
-                <TableCell>{sale.customer_phone || 'N/A'}</TableCell>
-                <TableCell>{sale.customer_email || 'N/A'}</TableCell>
-                <TableCell>{sale.total_amount}</TableCell>
-                <TableCell>{sale.currency}</TableCell>
-                <TableCell>{sale.status}</TableCell>
-                <TableCell>{format(new Date(sale.created_at), 'yyyy/MM/dd', { locale: ar })}</TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => navigate(`${sale.id}`)}
-                  >
-                    <FileText className="mr-2 h-4 w-4" />
-                    Details
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleDeleteSale(sale.id)}
-                  >
-                    <Trash className="mr-2 h-4 w-4" />
-                    Delete
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
+            {sales
+              .filter(sale =>
+                sale.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                sale.customer_phone?.includes(searchQuery) ||
+                sale.customer_email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                sale.id.toLowerCase().includes(searchQuery.toLowerCase())
+              )
+              .map((sale) => (
+                <TableRow key={sale.id}>
+                  <TableCell>
+                    <Link to={`${sale.id}`} className="hover:underline">
+                      {sale.id.substring(0, 8)}
+                    </Link>
+                  </TableCell>
+                  <TableCell>{sale.customer_name}</TableCell>
+                  <TableCell>{sale.customer_phone || 'N/A'}</TableCell>
+                  <TableCell>{sale.customer_email || 'N/A'}</TableCell>
+                  <TableCell>{formatSalePrice(sale.total_amount, sale.currency)}</TableCell>
+                  <TableCell>{sale.currency}</TableCell>
+                  <TableCell>{sale.status}</TableCell>
+                  <TableCell>{format(new Date(sale.created_at), 'yyyy/MM/dd', { locale: ar })}</TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => navigate(`${sale.id}`)}
+                    >
+                      <FileText className="mr-2 h-4 w-4" />
+                      Details
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => {
+                        const confirmDelete = window.confirm("Are you sure you want to delete this sale?");
+                        if (confirmDelete) {
+                          deleteSale(sale.id).then(({ success, error }) => {
+                            if (success) {
+                              toast({
+                                title: "Sale Deleted",
+                                description: "The sale has been successfully deleted.",
+                              });
+                              queryClient.invalidateQueries(['sales']);
+                            } else {
+                              toast({
+                                title: "Error",
+                                description: `Failed to delete sale: ${error || 'Unknown error'}`,
+                                variant: "destructive",
+                              });
+                            }
+                          });
+                        }
+                      }}
+                    >
+                      <Trash className="mr-2 h-4 w-4" />
+                      Delete
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
           </TableBody>
         </Table>
       </CardContent>
@@ -313,7 +350,7 @@ const SaleDetails = () => {
           </div>
           <div>
             <Label>Total Amount</Label>
-            <p>{sale.total_amount} {sale.currency}</p>
+            <p>{formatSalePrice(sale.total_amount, sale.currency)} ({sale.currency})</p>
           </div>
           <div>
             <Label>Status</Label>
@@ -328,7 +365,7 @@ const SaleDetails = () => {
             <ul>
               {sale.items.map((item) => (
                 <li key={item.id} className="mb-2">
-                  {item.product_name} - Quantity: {item.quantity} - Unit Price: {item.unit_price}
+                  {item.product_name} - Quantity: {item.quantity} - Unit Price: {formatSalePrice(item.unit_price, sale.currency)}
                 </li>
               ))}
             </ul>
@@ -347,6 +384,7 @@ const NewSale = () => {
   const [customerEmail, setCustomerEmail] = useState('');
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { currency } = useCurrency();
 
   useEffect(() => {
     const fetchAllProducts = async () => {
@@ -410,7 +448,7 @@ const NewSale = () => {
     }
 
     const saleData = {
-      customer_name: customerName,
+      customer_name: customerName || 'Walk-in Customer',
       customer_phone: customerPhone,
       customer_email: customerEmail,
       cartItems: cart.map(item => ({
@@ -419,13 +457,15 @@ const NewSale = () => {
         price: item.price,
         quantity: item.quantity,
       })),
+      currency: currency, // Pass the current currency
     };
 
     const { success, error } = await createSaleFromCart(
       saleData.customer_name,
       saleData.customer_phone,
       saleData.customer_email,
-      saleData.cartItems
+      saleData.cartItems,
+      saleData.currency
     );
 
     if (success) {
