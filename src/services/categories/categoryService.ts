@@ -12,35 +12,12 @@ export const fetchCategories = async (): Promise<Category[]> => {
   try {
     console.log('Fetching categories...');
     
-    // First, check if the user is authenticated and is an admin
-    const { data: session } = await supabase.auth.getSession();
-    const isAuthenticated = !!session?.session?.user;
-    
-    // Attempt to fetch categories
-    const { data, error } = await supabase
-      .from('categories')
-      .select('*')
-      .order('name');
+    // Use the get_all_categories RPC function which is SECURITY DEFINER
+    // and bypasses RLS policies completely
+    const { data, error } = await supabase.rpc('get_all_categories');
     
     if (error) {
       console.error('Error fetching categories:', error);
-      
-      // If there's an error related to RLS policies and the user is authenticated
-      // This is likely due to a Supabase RLS policy issue - try to work around it
-      if (error.code === '42P17' && isAuthenticated) {
-        console.log('Using fallback method to fetch categories due to RLS error');
-        // Use a more direct query approach without RLS interference
-        const { data: adminData, error: adminError } = await supabase.rpc('get_all_categories');
-        
-        if (adminError) {
-          console.error('Fallback method failed:', adminError);
-          throw adminError;
-        }
-        
-        // adminData is now the array of categories returned by the function
-        return (adminData as DbCategory[]).map(mapDbCategoryToCategory);
-      }
-      
       throw error;
     }
     
