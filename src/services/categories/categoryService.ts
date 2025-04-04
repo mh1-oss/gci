@@ -34,21 +34,21 @@ export const fetchCategories = async (): Promise<Category[]> => {
         
         if (adminError) {
           console.error('Fallback method failed:', adminError);
-          return [];
+          throw adminError;
         }
         
         // adminData is now the array of categories returned by the function
         return (adminData as DbCategory[]).map(mapDbCategoryToCategory);
       }
       
-      return [];
+      throw error;
     }
     
     console.log('Categories fetched successfully:', data);
     return (data || []).map(mapDbCategoryToCategory);
   } catch (error) {
     console.error('Unexpected error fetching categories:', error);
-    return [];
+    throw error;
   }
 };
 
@@ -62,13 +62,13 @@ export const fetchCategoryById = async (id: string): Promise<Category | null> =>
     
     if (error) {
       console.error('Error fetching category by id:', error);
-      return null;
+      throw error;
     }
     
     return data ? mapDbCategoryToCategory(data as DbCategory) : null;
   } catch (error) {
     console.error('Unexpected error fetching category by id:', error);
-    return null;
+    throw error;
   }
 };
 
@@ -83,20 +83,20 @@ export const createCategory = async (category: Omit<Category, 'id'>): Promise<Ca
     // Insert the category into the database
     const { data, error } = await supabase
       .from('categories')
-      .insert(dbCategory)
+      .insert([dbCategory])
       .select()
       .single();
     
     if (error) {
       console.error('Error creating category:', error);
-      return null;
+      throw error;
     }
     
     console.log('Category created successfully:', data);
     return mapDbCategoryToCategory(data as DbCategory);
   } catch (error) {
     console.error('Unexpected error creating category:', error);
-    return null;
+    throw error;
   }
 };
 
@@ -117,13 +117,13 @@ export const updateCategory = async (id: string, updates: Partial<Category>): Pr
     
     if (error) {
       console.error('Error updating category:', error);
-      return null;
+      throw error;
     }
     
     return mapDbCategoryToCategory(data as DbCategory);
   } catch (error) {
     console.error('Unexpected error updating category:', error);
-    return null;
+    throw error;
   }
 };
 
@@ -136,12 +136,12 @@ export const deleteCategory = async (id: string): Promise<boolean> => {
     
     if (error) {
       console.error('Error deleting category:', error);
-      return false;
+      throw error;
     }
     
     return true;
   } catch (error) {
     console.error('Unexpected error deleting category:', error);
-    return false;
+    throw error;
   }
 };

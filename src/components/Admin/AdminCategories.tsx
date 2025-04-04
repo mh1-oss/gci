@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -80,11 +79,12 @@ const AdminCategories = () => {
     setError(null);
     try {
       console.log("Creating new category:", { name, description });
-      const newCategory: Omit<Category, 'id'> = { 
+      const newCategory = { 
         name: name.trim(), 
         description: description.trim(), 
         image: '/placeholder.svg' 
       };
+      
       const createdCategory = await createCategory(newCategory);
 
       if (createdCategory) {
@@ -97,13 +97,7 @@ const AdminCategories = () => {
         setDialogOpen(false);
         resetForm();
       } else {
-        console.error("Failed to create category, returned null");
-        setError("فشل إنشاء الفئة. يرجى المحاولة مرة أخرى.");
-        toast({
-          title: "خطأ",
-          description: "فشل إنشاء الفئة. يرجى المحاولة مرة أخرى.",
-          variant: "destructive"
-        });
+        throw new Error("فشل إنشاء الفئة. لم يتم إرجاع أي بيانات.");
       }
     } catch (err: any) {
       console.error("Error creating category:", err);
@@ -158,6 +152,8 @@ const AdminCategories = () => {
         });
         setDialogOpen(false);
         resetForm();
+      } else {
+        throw new Error("فشل تحديث الفئة. لم يتم إرجاع أي بيانات.");
       }
     } catch (err: any) {
       console.error("Error updating category:", err);
