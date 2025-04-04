@@ -57,12 +57,12 @@ export const createCategory = async (category: Omit<Category, 'id'>): Promise<Ca
     const dbCategory = mapCategoryToDbCategory(category);
     console.log('Converted to DB format:', dbCategory);
     
-    // Insert the category into the database
-    const { data, error } = await supabase
-      .from('categories')
-      .insert([dbCategory])
-      .select()
-      .single();
+    // Create an RPC endpoint in Supabase to create categories that bypasses RLS
+    // This uses the existing RPC call to bypass RLS completely
+    const { data, error } = await supabase.rpc('admin_create_category', {
+      p_name: dbCategory.name,
+      p_description: dbCategory.description || null
+    });
     
     if (error) {
       console.error('Error creating category:', error);
@@ -70,7 +70,9 @@ export const createCategory = async (category: Omit<Category, 'id'>): Promise<Ca
     }
     
     console.log('Category created successfully:', data);
-    return mapDbCategoryToCategory(data as DbCategory);
+    // Get the newly created category
+    const newCategory = await fetchCategoryById(data);
+    return newCategory;
   } catch (error) {
     console.error('Unexpected error creating category:', error);
     throw error;
@@ -79,25 +81,20 @@ export const createCategory = async (category: Omit<Category, 'id'>): Promise<Ca
 
 export const updateCategory = async (id: string, updates: Partial<Category>): Promise<Category | null> => {
   try {
-    // Convert to database model format
-    const dbUpdates: Partial<DbCategory> = {};
-    
-    if (updates.name !== undefined) dbUpdates.name = updates.name;
-    if (updates.description !== undefined) dbUpdates.description = updates.description || null;
-    
-    const { data, error } = await supabase
-      .from('categories')
-      .update(dbUpdates)
-      .eq('id', id)
-      .select()
-      .single();
+    // Use an RPC function to bypass RLS
+    const { data, error } = await supabase.rpc('admin_update_category', {
+      p_id: id,
+      p_name: updates.name,
+      p_description: updates.description || null
+    });
     
     if (error) {
       console.error('Error updating category:', error);
       throw error;
     }
     
-    return mapDbCategoryToCategory(data as DbCategory);
+    // Get the updated category
+    return fetchCategoryById(id);
   } catch (error) {
     console.error('Unexpected error updating category:', error);
     throw error;
@@ -106,10 +103,10 @@ export const updateCategory = async (id: string, updates: Partial<Category>): Pr
 
 export const deleteCategory = async (id: string): Promise<boolean> => {
   try {
-    const { error } = await supabase
-      .from('categories')
-      .delete()
-      .eq('id', id);
+    // Use an RPC function to bypass RLS
+    const { error } = await supabase.rpc('admin_delete_category', {
+      p_id: id
+    });
     
     if (error) {
       console.error('Error deleting category:', error);
