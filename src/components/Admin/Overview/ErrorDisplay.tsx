@@ -14,7 +14,7 @@ const ErrorDisplay = ({ error, onRefresh }: ErrorDisplayProps) => {
   
   // Check for different types of errors
   const isInfiniteRecursionError = 
-    error.includes("infinite recursion") && 
+    error.includes("infinite recursion") || 
     error.includes("policy") && 
     error.includes("user_roles");
 
@@ -46,7 +46,7 @@ const ErrorDisplay = ({ error, onRefresh }: ErrorDisplayProps) => {
               <AlertCircle className="h-5 w-5" />
             )}
             <h3 className="font-bold">
-              {isConnectionError ? "خطأ في الاتصال" : isAggregateError ? "خطأ في استعلام قاعدة البيانات" : "Error Loading Data"}
+              {isConnectionError ? "خطأ في الاتصال" : isAggregateError ? "خطأ في استعلام قاعدة البيانات" : isInfiniteRecursionError ? "خطأ في سياسات قاعدة البيانات" : "Error Loading Data"}
             </h3>
           </div>
           
@@ -60,8 +60,9 @@ const ErrorDisplay = ({ error, onRefresh }: ErrorDisplayProps) => {
             </div>
           ) : isInfiniteRecursionError ? (
             <div>
+              <p className="mb-2">هناك مشكلة في إعدادات الأمان لقاعدة البيانات. يرجى تحديث الصفحة للمحاولة مرة أخرى.</p>
               <p className="mb-2">There is a permissions issue with the database policy configuration.</p>
-              <p className="mb-2">This is likely caused by a recursive policy on the user_roles table that needs to be fixed.</p>
+              <p className="mb-2">Try refreshing the page. If the problem persists, contact your administrator.</p>
               <p className="text-sm bg-amber-50 p-2 border border-amber-200 rounded">
                 <strong>Technical details:</strong> {error}
               </p>
@@ -102,11 +103,17 @@ const ErrorDisplay = ({ error, onRefresh }: ErrorDisplayProps) => {
       
       {isInfiniteRecursionError && (
         <div className="mt-4 pt-4 border-t border-red-200">
-          <p className="font-medium mb-2">Recommended solution:</p>
+          <p className="font-medium mb-2">الحلول المقترحة:</p>
+          <ol className="list-decimal mr-5 space-y-1 text-sm" dir="rtl">
+            <li>قم بتحديث الصفحة وإعادة المحاولة</li>
+            <li>قم بتسجيل الخروج ثم تسجيل الدخول مرة أخرى</li>
+            <li>تواصل مع مدير النظام إذا استمرت المشكلة</li>
+          </ol>
+          <p className="font-medium mb-2 mt-4">Recommended solution:</p>
           <ol className="list-decimal ml-5 space-y-1 text-sm">
-            <li>A database administrator needs to update the RLS policies on the user_roles table.</li>
-            <li>The policy should be rewritten using a security definer function instead of a direct query.</li>
-            <li>This will prevent the recursive loop that's causing this error.</li>
+            <li>Refresh the page and try again</li>
+            <li>Try logging out and logging back in</li>
+            <li>Contact your system administrator if the issue persists</li>
           </ol>
         </div>
       )}

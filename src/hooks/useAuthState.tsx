@@ -67,7 +67,7 @@ export const useAuthState = (): AuthState => {
           setTimeout(() => {
             updateAdminStatus();
             setLoading(false);
-          }, 0);
+          }, 100); // Increased timeout to ensure auth is fully initialized
         } catch (error) {
           console.error('Error initializing auth:', error);
           setLoading(false);
@@ -93,7 +93,7 @@ export const useAuthState = (): AuthState => {
       // Use setTimeout to avoid Supabase auth deadlocks
       setTimeout(() => {
         updateAdminStatus();
-      }, 0);
+      }, 100); // Increased timeout for better reliability
     }
   }, [user, updateAdminStatus]);
 
