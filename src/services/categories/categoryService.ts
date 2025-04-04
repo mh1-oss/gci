@@ -53,8 +53,8 @@ export const createCategory = async (category: Omit<Category, 'id'>): Promise<Ca
   try {
     console.log('Creating category with data:', category);
     
-    // Use the admin_create_category RPC function
-    const { data, error } = await supabase
+    // Create the category using a direct insert with SECURITY DEFINER function
+    const { data: categoryId, error } = await supabase
       .rpc('admin_create_category', {
         p_name: category.name,
         p_description: category.description || null
@@ -65,11 +65,11 @@ export const createCategory = async (category: Omit<Category, 'id'>): Promise<Ca
       throw error;
     }
     
-    console.log('Category created successfully, ID:', data);
+    console.log('Category created successfully, returned ID:', categoryId);
     
-    // Since the RPC function only returns the ID, we need to fetch the complete category
-    if (data) {
-      return await fetchCategoryById(data);
+    // If we have a valid ID, fetch the complete category
+    if (categoryId) {
+      return await fetchCategoryById(categoryId);
     }
     
     return null;
@@ -81,12 +81,14 @@ export const createCategory = async (category: Omit<Category, 'id'>): Promise<Ca
 
 export const updateCategory = async (id: string, updates: Partial<Category>): Promise<Category | null> => {
   try {
-    // Use the admin_update_category RPC function
-    const { data, error } = await supabase
+    console.log('Updating category:', id, 'with data:', updates);
+    
+    // Update the category using our admin_update_category function
+    const { data: success, error } = await supabase
       .rpc('admin_update_category', {
         p_id: id,
-        p_name: updates.name || null,
-        p_description: updates.description || null
+        p_name: updates.name,
+        p_description: updates.description
       });
     
     if (error) {
@@ -94,10 +96,10 @@ export const updateCategory = async (id: string, updates: Partial<Category>): Pr
       throw error;
     }
     
-    console.log('Category updated successfully:', data);
+    console.log('Category update result:', success);
     
-    // If the update was successful, fetch the updated category
-    if (data) {
+    // If update was successful, fetch the updated category
+    if (success) {
       return await fetchCategoryById(id);
     }
     

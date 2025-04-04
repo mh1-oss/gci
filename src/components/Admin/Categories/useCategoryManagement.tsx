@@ -75,7 +75,7 @@ export const useCategoryManagement = () => {
       console.log("Creating new category:", { name, description });
       const newCategory: Omit<Category, 'id'> = { 
         name: name.trim(), 
-        description: description.trim(), 
+        description: description.trim() || null, 
         image: '/placeholder.svg' 
       };
       
@@ -131,8 +131,8 @@ export const useCategoryManagement = () => {
     try {
       console.log("Updating category:", editTarget.id, { name, description });
       const updatedCategoryData: Partial<Category> = {
-        name: name,
-        description: description
+        name: name.trim(),
+        description: description.trim() || null
       };
       const updatedCategory = await updateCategory(editTarget.id, updatedCategoryData);
 
