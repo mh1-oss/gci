@@ -513,6 +513,27 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_create_category: {
+        Args: {
+          p_name: string
+          p_description?: string
+        }
+        Returns: string
+      }
+      admin_delete_category: {
+        Args: {
+          p_id: string
+        }
+        Returns: boolean
+      }
+      admin_update_category: {
+        Args: {
+          p_id: string
+          p_name: string
+          p_description?: string
+        }
+        Returns: boolean
+      }
       get_all_categories: {
         Args: Record<PropertyKey, never>
         Returns: {
