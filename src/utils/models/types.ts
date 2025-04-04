@@ -11,6 +11,12 @@ export interface Product {
   categoryId: string;
   image: string;
   featured: boolean;
+  colors: string[]; // Add the colors property
+  specifications?: Record<string, string>;
+  mediaGallery?: {
+    url: string;
+    type: 'image' | 'video';
+  }[];
 }
 
 export interface SaleItem {

@@ -16,7 +16,7 @@ export const mapDbProductToProduct = (dbProduct: DbProduct): Product => {
     category: dbProduct.categories?.name || '',
     featured: false,
     images: dbProduct.image_url ? [dbProduct.image_url] : ['/placeholder.svg'],
-    colors: [],
+    colors: [], // Now properly typed
     specifications: {},
     mediaGallery: [],
   };
