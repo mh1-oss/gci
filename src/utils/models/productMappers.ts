@@ -14,11 +14,11 @@ export const mapDbProductToProduct = (dbProduct: DbProduct): Product => {
     image: dbProduct.image_url || '/placeholder.svg',
     stock: dbProduct.stock_quantity || 0,
     category: dbProduct.categories?.name || '',
-    featured: false,
+    featured: Boolean(dbProduct.featured) || false,
     images: dbProduct.image_url ? [dbProduct.image_url] : ['/placeholder.svg'],
-    colors: [], // Now properly typed
-    specifications: {},
-    mediaGallery: [],
+    colors: dbProduct.colors || [],
+    specifications: dbProduct.specifications || {},
+    mediaGallery: dbProduct.media_gallery || [],
   };
 };
 
@@ -36,6 +36,10 @@ export const mapProductToDbProduct = (product: Product): DbProduct => {
     image_url: product.image !== '/placeholder.svg' ? product.image : null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
+    featured: product.featured || false,
+    colors: product.colors || [],
+    specifications: product.specifications || {},
+    media_gallery: product.mediaGallery || [],
   };
 };
 
@@ -52,5 +56,9 @@ export const mapInitialDataProductToDbProduct = (product: Omit<Product, 'id'>): 
     image_url: product.image !== '/placeholder.svg' ? product.image : null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
+    featured: product.featured || false,
+    colors: product.colors || [],
+    specifications: product.specifications || {},
+    media_gallery: product.mediaGallery || [],
   };
 };

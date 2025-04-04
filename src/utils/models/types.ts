@@ -1,4 +1,3 @@
-
 export interface Product {
   id: string;
   name: string;
@@ -53,6 +52,13 @@ export interface DbProduct {
   created_at: string;
   updated_at: string;
   categories?: DbCategory;
+  featured?: boolean;
+  colors?: string[];
+  specifications?: Record<string, string>;
+  media_gallery?: {
+    url: string;
+    type: 'image' | 'video';
+  }[];
 }
 
 export interface DbCategory {
