@@ -4,9 +4,9 @@ import { toast } from "@/hooks/use-toast";
 import type { Product } from '@/data/initialData';
 import {
   mapDbProductToProduct,
-  mapProductToDbProduct,
-  DbProduct
+  mapInitialDataProductToDbProduct
 } from '@/utils/models';
+import { DbProduct } from '@/utils/models/types';
 
 // Products
 export const fetchProducts = async (): Promise<Product[]> => {
@@ -42,7 +42,18 @@ export const fetchProducts = async (): Promise<Product[]> => {
           return [];
         }
         
-        return (adminData as DbProduct[]).map(mapDbProductToProduct);
+        return (adminData as DbProduct[]).map((item) => {
+          const product = mapDbProductToProduct(item);
+          return {
+            id: product.id,
+            name: product.name,
+            description: product.description,
+            price: product.price,
+            categoryId: product.categoryId || '',
+            image: product.image || '/placeholder.svg',
+            featured: product.featured || false,
+          } as Product;
+        });
       }
       
       toast({
@@ -54,7 +65,18 @@ export const fetchProducts = async (): Promise<Product[]> => {
     }
     
     console.log('Products fetched successfully:', data);
-    return (data || []).map(mapDbProductToProduct);
+    return (data || []).map((item: DbProduct) => {
+      const product = mapDbProductToProduct(item);
+      return {
+        id: product.id,
+        name: product.name,
+        description: product.description,
+        price: product.price,
+        categoryId: product.categoryId || '',
+        image: product.image || '/placeholder.svg',
+        featured: product.featured || false,
+      } as Product;
+    });
   } catch (error) {
     console.error('Unexpected error fetching products:', error);
     toast({
@@ -133,19 +155,35 @@ export const fetchFeaturedProducts = async (): Promise<Product[]> => {
         // Take the first 4 products and mark them as featured
         return (adminData as DbProduct[])
           .slice(0, 4)
-          .map(product => ({
-            ...mapDbProductToProduct(product),
-            featured: true
-          }));
+          .map(dbProduct => {
+            const product = mapDbProductToProduct(dbProduct);
+            return {
+              id: product.id,
+              name: product.name,
+              description: product.description,
+              price: product.price,
+              categoryId: product.categoryId || '',
+              image: product.image || '/placeholder.svg',
+              featured: true,
+            } as Product;
+          });
       }
       
       return [];
     }
     
-    return (data || []).map(product => ({
-      ...mapDbProductToProduct(product),
-      featured: true
-    }));
+    return (data || []).map((item: DbProduct) => {
+      const product = mapDbProductToProduct(item);
+      return {
+        id: product.id,
+        name: product.name,
+        description: product.description,
+        price: product.price,
+        categoryId: product.categoryId || '',
+        image: product.image || '/placeholder.svg',
+        featured: true,
+      } as Product;
+    });
   } catch (error) {
     console.error('Unexpected error fetching featured products:', error);
     return [];
@@ -154,7 +192,7 @@ export const fetchFeaturedProducts = async (): Promise<Product[]> => {
 
 export const createProduct = async (product: Omit<Product, 'id'>): Promise<Product | null> => {
   try {
-    const dbProduct = mapProductToDbProduct(product);
+    const dbProduct = mapInitialDataProductToDbProduct(product);
     
     // Add auth headers to bypass RLS 
     const { data, error } = await supabase
@@ -178,7 +216,16 @@ export const createProduct = async (product: Omit<Product, 'id'>): Promise<Produ
       description: "تم إضافة المنتج بنجاح",
     });
     
-    return mapDbProductToProduct(data);
+    const mappedProduct = mapDbProductToProduct(data);
+    return {
+      id: mappedProduct.id,
+      name: mappedProduct.name,
+      description: mappedProduct.description,
+      price: mappedProduct.price,
+      categoryId: mappedProduct.categoryId || '',
+      image: mappedProduct.image || '/placeholder.svg',
+      featured: mappedProduct.featured || false,
+    } as Product;
   } catch (error) {
     console.error('Unexpected error creating product:', error);
     toast({

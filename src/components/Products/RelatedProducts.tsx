@@ -1,4 +1,3 @@
-
 import { Card, CardContent } from "@/components/ui/card";
 import { Product } from "@/utils/models/types";
 import { useCurrency } from "@/context/CurrencyContext";
@@ -8,7 +7,7 @@ interface RelatedProductsProps {
   products: Product[];
 }
 
-const RelatedProducts = ({ products }: RelatedProductsProps) => {
+const RelatedProducts = ({ products }: { products: Product[] }) => {
   const { formatPrice } = useCurrency();
   const navigate = useNavigate();
 

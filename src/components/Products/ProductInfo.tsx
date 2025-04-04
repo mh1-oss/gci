@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, Package, ArrowLeft } from "lucide-react";
 import { useState } from "react";
@@ -36,7 +35,6 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
     });
   };
 
-  // Toggle currency
   const toggleCurrency = () => {
     setCurrency(currency === 'USD' ? 'IQD' : 'USD');
     useToast().toast({

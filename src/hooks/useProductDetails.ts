@@ -42,7 +42,8 @@ export const useProductDetails = (id: string | undefined) => {
         console.error('Error fetching product:', error);
         throw error;
       }
-    }
+    },
+    enabled: !!id
   });
 
   // Also fetch related products from the same category

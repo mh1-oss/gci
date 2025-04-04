@@ -1,4 +1,3 @@
-
 export interface Product {
   id: string;
   name: string;
@@ -8,6 +7,9 @@ export interface Product {
   category: string;
   stock: number;
   created_at?: string;
+  categoryId?: string;
+  image?: string;
+  featured?: boolean;
 }
 
 export interface SaleItem {
@@ -32,7 +34,6 @@ export interface Sale {
   items: SaleItem[];
 }
 
-// Database model interfaces
 export interface DbProduct {
   id: string;
   name: string;
@@ -88,4 +89,12 @@ export interface DbStockTransaction {
   transaction_type: 'in' | 'out';
   notes: string | null;
   created_at: string;
+}
+
+export interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  image: string;
 }

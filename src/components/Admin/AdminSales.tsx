@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Sale } from '@/utils/models';
 import { useState, useEffect } from "react";
@@ -27,10 +26,9 @@ import { fetchCompanyInfo } from "@/services/company/companyService";
 import { printReceipt } from "@/services/receipt/receiptService";
 import { createSaleFromCart, deleteSale } from '@/services/sales/salesService';
 import { mapDbSaleToSale } from '@/utils/models/salesMappers';
-import { Product } from "@/utils/models/types";
+import { Product, CartItem } from "@/utils/models/types";
 import { useCurrency } from "@/context/CurrencyContext";
 
-// Helper function to format price with the correct currency
 const formatSalePrice = (price: number, currency: 'USD' | 'IQD') => {
   if (currency === 'USD') {
     return `$${price.toFixed(2)}`;
@@ -77,7 +75,6 @@ const SalesList = () => {
               return mapDbSaleToSale(sale); // Return sale without items in case of error
             }
             
-            // Get product names for each sale item
             const itemsWithProductNames = await Promise.all(itemsData.map(async (item) => {
               const { data: productData } = await supabase
                 .from('products')
@@ -270,7 +267,6 @@ const SaleDetails = () => {
           throw new Error(itemsError.message);
         }
 
-        // Get product names for each sale item
         const itemsWithProductNames = await Promise.all(itemsData.map(async (item) => {
           const { data: productData } = await supabase
             .from('products')
@@ -380,7 +376,7 @@ const SaleDetails = () => {
 
 const NewSale = () => {
   const [products, setProducts] = useState<Product[]>([]);
-  const [cart, setCart] = useState<any[]>([]);
+  const [cart, setCart] = useState<CartItem[]>([]);
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
@@ -392,7 +388,7 @@ const NewSale = () => {
     const fetchAllProducts = async () => {
       try {
         const productsData = await fetchProducts();
-        setProducts(productsData);
+        setProducts(productsData as unknown as Product[]);
       } catch (error) {
         console.error("Error fetching products:", error);
         toast({
@@ -414,7 +410,13 @@ const NewSale = () => {
           item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
         );
       } else {
-        return [...prevCart, { ...product, quantity: 1 }];
+        return [...prevCart, { 
+          id: product.id, 
+          name: product.name, 
+          price: product.price,
+          quantity: 1,
+          image: product.images?.[0] || product.image || '/placeholder.svg'
+        }];
       }
     });
   };
@@ -453,12 +455,7 @@ const NewSale = () => {
       customer_name: customerName || 'Walk-in Customer',
       customer_phone: customerPhone,
       customer_email: customerEmail,
-      cartItems: cart.map(item => ({
-        id: item.id,
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity,
-      })),
+      cartItems: cart,
       currency: currency,
     };
 
