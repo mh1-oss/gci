@@ -12,11 +12,11 @@ export interface AuthState {
   loading: boolean;
 }
 
-// Check if a user has admin role using the is_admin_user() security definer function
+// Check if a user has admin role using the is_admin() security definer function
 export const checkIsAdmin = async (): Promise<boolean> => {
   try {
     // Use the security definer function to prevent recursion issues
-    const { data, error } = await supabase.rpc('is_admin_user');
+    const { data, error } = await supabase.rpc('is_admin');
     
     if (error) {
       console.error('Error checking admin role:', error);
