@@ -22,6 +22,7 @@ import CategoryTable from './Categories/CategoryTable';
 import CategoryForm from './Categories/CategoryForm';
 import DeleteCategoryDialog from './Categories/DeleteCategoryDialog';
 import ErrorAlert from './Categories/ErrorAlert';
+import { useAuth } from '@/context/AuthContext';
 
 const AdminCategories = () => {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -37,10 +38,16 @@ const AdminCategories = () => {
   const [description, setDescription] = useState('');
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { isAdmin } = useAuth();
 
   useEffect(() => {
-    loadCategories();
-  }, []);
+    if (isAdmin) {
+      loadCategories();
+    } else {
+      setError("يجب أن تكون مسؤولاً للوصول إلى إدارة الفئات.");
+      setLoading(false);
+    }
+  }, [isAdmin]);
 
   const loadCategories = async () => {
     setLoading(true);
@@ -55,7 +62,7 @@ const AdminCategories = () => {
       }
     } catch (err: any) {
       console.error("Error loading categories:", err);
-      setError("حدث خطأ أثناء تحميل الفئات. يرجى المحاولة مرة أخرى.");
+      setError(`حدث خطأ أثناء تحميل الفئات: ${err.message || err}`);
       toast({
         title: "خطأ",
         description: "حدث خطأ أثناء جلب الفئات.",
