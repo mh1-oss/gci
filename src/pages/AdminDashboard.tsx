@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import AdminAuthCheck from "@/components/Admin/AdminAuthCheck";
 import AdminNavTabs from "@/components/Admin/AdminNavTabs";
 import AdminTabContent from "@/components/Admin/AdminTabContent";
-import { LogOut, Package, CreditCard, ShoppingCart, Newspaper } from "lucide-react";
+import { LogOut, Package, CreditCard, ShoppingCart, Newspaper, RefreshCw } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,69 +28,78 @@ const AdminDashboard = () => {
     recentSales: 0
   });
 
-  const { isLoading, error } = useQuery({
+  const { isLoading, error, refetch } = useQuery({
     queryKey: ['dashboardStats'],
     queryFn: async () => {
       try {
         console.log("Fetching dashboard stats...");
         
-        // Fetch product count
-        const { count: productCount, error: productsError } = await supabase
-          .from('products')
-          .select('*', { count: 'exact', head: true });
+        // Fetch product count using the RPC function to bypass RLS
+        const { data: productsData, error: productsError } = await supabase
+          .rpc('get_all_products')
+          .select('id');
 
         if (productsError) {
-          console.error("Error fetching product count:", productsError);
+          console.error("Error fetching products:", productsError);
           throw productsError;
         }
+        
+        const productCount = productsData ? productsData.length : 0;
 
-        // Fetch category count
-        const { count: categoryCount, error: categoriesError } = await supabase
-          .from('categories')
-          .select('*', { count: 'exact', head: true });
+        // Fetch category count using the RPC function to bypass RLS
+        const { data: categoriesData, error: categoriesError } = await supabase
+          .rpc('get_all_categories')
+          .select('id');
 
         if (categoriesError) {
-          console.error("Error fetching category count:", categoriesError);
+          console.error("Error fetching categories:", categoriesError);
           throw categoriesError;
         }
-
-        // Fetch order count
-        const { count: orderCount, error: ordersError } = await supabase
-          .from('orders')
-          .select('*', { count: 'exact', head: true });
-
-        if (ordersError) {
-          console.error("Error fetching order count:", ordersError);
-          // Don't throw here, just log the error and continue with 0 orders
-          console.log("Using default value 0 for order count");
-        }
-
-        // Calculate recent sales (last 7 days)
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
         
-        const sevenDaysAgoISOString = sevenDaysAgo.toISOString();
+        const categoryCount = categoriesData ? categoriesData.length : 0;
+
+        // For orders and sales, use fallback values if permissions are an issue
+        let orderCount = 0;
+        let recentSalesTotal = 0;
         
-        const { data: recentSalesData, error: salesError } = await supabase
-          .from('sales')
-          .select('total_amount')
-          .gte('created_at', sevenDaysAgoISOString);
+        try {
+          // Try to fetch order count
+          const { count, error: ordersError } = await supabase
+            .from('orders')
+            .select('*', { count: 'exact', head: true });
 
-        if (salesError) {
-          console.error("Error fetching recent sales:", salesError);
-          // Don't throw here, just log the error and continue with 0 sales
-          console.log("Using default value 0 for recent sales");
+          if (!ordersError) {
+            orderCount = count || 0;
+          }
+        } catch (err) {
+          console.warn("Could not fetch order count, using default value", err);
         }
+        
+        try {
+          // Try to calculate recent sales (last 7 days)
+          const sevenDaysAgo = new Date();
+          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+          const sevenDaysAgoISOString = sevenDaysAgo.toISOString();
+          
+          const { data: recentSalesData, error: salesError } = await supabase
+            .from('sales')
+            .select('total_amount')
+            .gte('created_at', sevenDaysAgoISOString);
 
-        const recentSalesTotal = recentSalesData?.reduce(
-          (sum, sale) => sum + (typeof sale.total_amount === 'string' ? parseFloat(sale.total_amount) : Number(sale.total_amount)), 
-          0
-        ) || 0;
+          if (!salesError && recentSalesData) {
+            recentSalesTotal = recentSalesData.reduce(
+              (sum, sale) => sum + (typeof sale.total_amount === 'string' ? parseFloat(sale.total_amount) : Number(sale.total_amount)), 
+              0
+            );
+          }
+        } catch (err) {
+          console.warn("Could not fetch sales data, using default value", err);
+        }
         
         const newStats = {
-          productCount: productCount || 0,
-          categoryCount: categoryCount || 0,
-          orderCount: orderCount || 0,
+          productCount,
+          categoryCount,
+          orderCount,
           recentSales: recentSalesTotal
         };
         
@@ -99,19 +108,20 @@ const AdminDashboard = () => {
         return newStats;
       } catch (error) {
         console.error("Error fetching dashboard stats:", error);
-        toast({
-          title: "خطأ في تحميل البيانات",
-          description: "حدث خطأ أثناء تحميل إحصائيات لوحة التحكم",
-          variant: "destructive",
-        });
-        // Return current stats to avoid breaking the UI
-        return stats;
+        throw error;
       }
     },
-    refetchInterval: 60000, // Refresh every minute
-    retry: 3, // Retry 3 times on failure
-    retryDelay: 3000, // 3 seconds between retries
+    retry: 1,
+    retryDelay: 1000,
   });
+
+  const handleRefresh = () => {
+    refetch();
+    toast({
+      title: "تحديث البيانات",
+      description: "يتم تحديث لوحة المعلومات الآن",
+    });
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -149,15 +159,20 @@ const AdminDashboard = () => {
             
             {error ? (
               <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg mb-6">
-                <h3 className="font-bold mb-2">حدث خطأ أثناء تحميل البيانات</h3>
-                <p>يرجى تحديث الصفحة أو المحاولة مرة أخرى لاحقاً.</p>
-                <Button 
-                  onClick={() => window.location.reload()}
-                  variant="outline" 
-                  className="mt-2 border-red-300 text-red-700 hover:bg-red-50"
-                >
-                  تحديث الصفحة
-                </Button>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="font-bold mb-2">خطأ في تحميل البيانات</h3>
+                    <p>حدث خطأ أثناء تحميل إحصائيات لوحة التحكم</p>
+                  </div>
+                  <Button 
+                    onClick={handleRefresh}
+                    variant="outline" 
+                    className="border-red-300 text-red-700 hover:bg-red-50"
+                  >
+                    <RefreshCw className="h-4 w-4 ml-2" />
+                    تحديث
+                  </Button>
+                </div>
               </div>
             ) : !isLoading && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">

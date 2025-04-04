@@ -1,40 +1,87 @@
+
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { fetchProducts } from "@/services/products/productService";
-import { fetchCategories } from "@/services/categories/categoryService";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Package, FolderTree, Settings, DollarSign, RefreshCw } from "lucide-react";
 import { useCurrency } from "@/context/CurrencyContext";
+import { toast } from "@/hooks/use-toast";
 
 const AdminOverview = () => {
   const [productCount, setProductCount] = useState(0);
   const [categoryCount, setCategoryCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { currency, exchangeRate } = useCurrency();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const products = await fetchProducts();
-        const categories = await fetchCategories();
-        
-        setProductCount(products.length);
-        setCategoryCount(categories.length);
-      } catch (error) {
-        console.error("Error fetching overview data:", error);
-      } finally {
-        setLoading(false);
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Use RPC functions to bypass RLS
+      const { data: products, error: productsError } = await supabase.rpc('get_all_products');
+      if (productsError) {
+        console.error("Error fetching products:", productsError);
+        throw productsError;
       }
-    };
-    
+      
+      const { data: categories, error: categoriesError } = await supabase.rpc('get_all_categories');
+      if (categoriesError) {
+        console.error("Error fetching categories:", categoriesError);
+        throw categoriesError;
+      }
+      
+      setProductCount(products ? products.length : 0);
+      setCategoryCount(categories ? categories.length : 0);
+    } catch (error: any) {
+      console.error("Error fetching overview data:", error);
+      setError(error.message || "Error loading dashboard data");
+      toast({
+        title: "خطأ في تحميل البيانات",
+        description: "حدث خطأ أثناء تحميل بيانات لوحة التحكم",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  useEffect(() => {
     fetchData();
   }, []);
+
+  const handleRefresh = () => {
+    fetchData();
+    toast({
+      title: "تحديث البيانات",
+      description: "تم تحديث البيانات بنجاح",
+    });
+  };
 
   return (
     <div>
       <h2 className="text-2xl font-bold mb-6">Dashboard Overview</h2>
+      
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg mb-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="font-bold mb-2">Error Loading Data</h3>
+              <p>{error}</p>
+            </div>
+            <Button 
+              onClick={handleRefresh}
+              variant="outline" 
+              className="border-red-300 text-red-700 hover:bg-red-50"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+          </div>
+        </div>
+      )}
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <Card>
@@ -113,7 +160,7 @@ const AdminOverview = () => {
                 Update Settings
               </Button>
             </Link>
-            <Button variant="outline" className="w-full justify-start" onClick={() => window.location.reload()}>
+            <Button variant="outline" className="w-full justify-start" onClick={handleRefresh}>
               <RefreshCw className="mr-2 h-4 w-4" />
               Refresh Dashboard
             </Button>
