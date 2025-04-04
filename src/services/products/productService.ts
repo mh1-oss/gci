@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { Product as InitialDataProduct } from '@/data/initialData';
@@ -19,7 +20,7 @@ export const fetchProducts = async (): Promise<InitialDataProduct[]> => {
     
     console.log('Authentication status:', isAuthenticated ? 'Authenticated' : 'Not authenticated');
     
-    // Attempt to fetch products
+    // Attempt to fetch products - no aggregates
     const { data, error } = await supabase
       .from('products')
       .select('*, categories(name)');
@@ -28,20 +29,40 @@ export const fetchProducts = async (): Promise<InitialDataProduct[]> => {
       console.error('Error fetching products:', error);
       
       // If there's an error related to RLS policies and the user is authenticated
-      // This is likely due to a Supabase RLS policy issue - try to work around it
       if (error.code === '42501' && isAuthenticated) {
         console.log('Using fallback method to fetch products due to RLS error');
-        // Use a more direct query approach without RLS interference
-        const { data: adminData, error: adminError } = await supabase.rpc('get_all_products');
+        // Avoid using RPC that might contain aggregate functions
+        const { data: adminData, error: adminError } = await supabase
+          .from('products')
+          .select('*');
         
         if (adminError) {
           console.error('Fallback method failed:', adminError);
           return [];
         }
         
-        console.log('Products fetched via RPC:', adminData);
-        return (adminData as DbProduct[]).map((item) => {
-          const product = mapDbProductToProduct(item);
+        console.log('Products fetched via direct query:', adminData);
+        return (adminData || []).map((item: any) => {
+          // Convert the raw item to a properly structured DbProduct
+          const dbProduct: DbProduct = {
+            id: item.id,
+            name: item.name,
+            description: item.description,
+            price: item.price,
+            cost_price: item.cost_price,
+            stock_quantity: item.stock_quantity,
+            image_url: item.image_url,
+            category_id: item.category_id,
+            created_at: item.created_at,
+            updated_at: item.updated_at,
+            categories: null,
+            featured: item.featured || false,
+            colors: item.colors || [],
+            specifications: item.specifications || {},
+            media_gallery: item.media_gallery || []
+          };
+          
+          const product = mapDbProductToProduct(dbProduct);
           return {
             id: product.id,
             name: product.name,
@@ -217,8 +238,12 @@ export const createProduct = async (product: Omit<Product, 'id'>): Promise<Produ
   try {
     console.log('Creating product with data:', product);
     
-    // Check if we have an active connection to Supabase
-    const { data: connectionCheck, error: connectionError } = await supabase.from('products').select('id').limit(1);
+    // Check if we have an active connection to Supabase with a simple query instead of count
+    const { data: connectionCheck, error: connectionError } = await supabase
+      .from('products')
+      .select('id')
+      .limit(1);
+      
     if (connectionError) {
       console.error('Connection error with Supabase:', connectionError);
       throw new Error(`Database connection error: ${connectionError.message}`);

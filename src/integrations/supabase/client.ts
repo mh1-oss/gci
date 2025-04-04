@@ -35,7 +35,8 @@ export const supabase = createClient<Database>(
 export const pingDatabase = async () => {
   try {
     const start = Date.now();
-    const { data, error } = await supabase.from('products').select('count()', { count: 'exact' }).limit(1);
+    // Change this query to avoid using aggregate functions directly
+    const { data, error } = await supabase.from('products').select('id').limit(1);
     const end = Date.now();
     
     if (error) {
