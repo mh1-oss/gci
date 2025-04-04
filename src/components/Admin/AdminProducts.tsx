@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -29,7 +28,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Edit, Trash2, RefreshCw, Image } from 'lucide-react';
+import { Plus, Edit, Trash2, RefreshCw, Image, Loader2 } from 'lucide-react';
 import { 
   fetchProducts, 
   createProduct, 
@@ -68,10 +67,14 @@ const AdminProducts = () => {
   const fetchAllData = async () => {
     setLoading(true);
     try {
+      console.log('Fetching products and categories...');
       const [productsData, categoriesData] = await Promise.all([
         fetchProducts(),
         fetchCategories()
       ]);
+      
+      console.log('Products fetched:', productsData);
+      console.log('Categories fetched:', categoriesData);
       
       setProducts(productsData);
       setCategories(categoriesData);
@@ -172,15 +175,6 @@ const AdminProducts = () => {
       return false;
     }
     
-    if (!formData.categoryId) {
-      toast({
-        title: "حقل مطلوب",
-        description: "الرجاء اختيار فئة للمنتج",
-        variant: "destructive"
-      });
-      return false;
-    }
-    
     return true;
   };
   
@@ -193,9 +187,11 @@ const AdminProducts = () => {
       let imageUrl = formData.image;
       
       if (imageFile) {
+        console.log('Uploading image file:', imageFile.name);
         const uploadResult = await uploadMedia(imageFile);
         
         if (uploadResult) {
+          console.log('Image uploaded successfully:', uploadResult);
           imageUrl = uploadResult;
         } else {
           throw new Error("فشل تحميل الصورة");
@@ -203,56 +199,70 @@ const AdminProducts = () => {
       }
       
       const productData = {
-        ...formData,
+        name: formData.name,
+        description: formData.description,
+        categoryId: formData.categoryId,
+        price: formData.price,
         image: imageUrl,
-        images: [imageUrl], // Add missing 'images' property
-        category: categories.find(cat => cat.id === formData.categoryId)?.name || '', // Add missing 'category' property
-        stock: 0, // Add missing 'stock' property
+        images: [imageUrl],
+        category: '',
+        stock: 0,
         featured: false,
         colors: [],
         specifications: {},
         mediaGallery: []
       };
       
+      console.log('Saving product with data:', productData);
+      
       let result;
       
       if (editMode && selectedProduct) {
+        console.log('Updating existing product:', selectedProduct.id);
         result = await updateProduct(selectedProduct.id, productData);
         
         if (result) {
+          console.log('Product updated successfully:', result);
           toast({
             title: "تم التحديث بنجاح",
             description: "تم تحديث المنتج بنجاح"
           });
           
           setProducts(prevProducts => 
-            prevProducts.map(p => p.id === selectedProduct.id ? { ...p, ...productData } : p)
+            prevProducts.map(p => p.id === selectedProduct.id ? { ...p, ...productData, id: selectedProduct.id } : p)
           );
+        } else {
+          throw new Error("فشلت عملية تحديث المنتج");
         }
       } else {
+        console.log('Creating new product');
         result = await createProduct(productData);
         
         if (result) {
+          console.log('Product created successfully:', result);
           toast({
             title: "تم الإنشاء بنجاح",
             description: "تم إنشاء المنتج بنجاح"
           });
           
-          setProducts(prevProducts => [...prevProducts, result]);
+          setProducts(prevProducts => [...prevProducts, result as Product]);
+        } else {
+          throw new Error("فشلت عملية إنشاء المنتج");
         }
       }
       
       if (result) {
         setDialogOpen(false);
         resetForm();
-      } else {
-        throw new Error("فشلت عملية حفظ المنتج");
+        fetchAllData();
       }
     } catch (error) {
       console.error('Error saving product:', error);
       toast({
         title: "خطأ",
-        description: "حدث خطأ أثناء حفظ المنتج",
+        description: typeof error === 'object' && error !== null && 'message' in error 
+          ? (error as Error).message 
+          : "حدث خطأ أثناء حفظ المنتج",
         variant: "destructive"
       });
     } finally {
@@ -266,9 +276,11 @@ const AdminProducts = () => {
     setIsProcessing(true);
     
     try {
+      console.log('Deleting product:', selectedProduct.id);
       const success = await deleteProduct(selectedProduct.id);
       
       if (success) {
+        console.log('Product deleted successfully');
         toast({
           title: "تم الحذف بنجاح",
           description: "تم حذف المنتج بنجاح"
@@ -281,13 +293,15 @@ const AdminProducts = () => {
         setDeleteDialogOpen(false);
         setSelectedProduct(null);
       } else {
-        throw new Error("فشلت عملي�� حذف المنتج");
+        throw new Error("فشلت عملية حذف المنتج");
       }
     } catch (error) {
       console.error('Error deleting product:', error);
       toast({
         title: "خطأ",
-        description: "حدث خطأ أثناء حذف المنتج",
+        description: typeof error === 'object' && error !== null && 'message' in error 
+          ? (error as Error).message 
+          : "حدث خطأ أثناء حذف المنتج",
         variant: "destructive"
       });
     } finally {
@@ -310,7 +324,7 @@ const AdminProducts = () => {
           </div>
           <div className="flex gap-2">
             <Button onClick={fetchAllData} variant="outline">
-              <RefreshCw className="h-4 w-4 ml-2" />
+              <RefreshCw className={`h-4 w-4 ml-2 ${loading ? 'animate-spin' : ''}`} />
               تحديث
             </Button>
             <Button onClick={handleOpenCreateDialog}>
@@ -322,6 +336,7 @@ const AdminProducts = () => {
         <CardContent>
           {loading ? (
             <div className="flex justify-center items-center h-40">
+              <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
               <p>جاري تحميل البيانات...</p>
             </div>
           ) : products.length === 0 ? (
@@ -384,7 +399,9 @@ const AdminProducts = () => {
         </CardContent>
       </Card>
       
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={dialogOpen} onOpenChange={(open) => {
+        if (!isProcessing) setDialogOpen(open);
+      }}>
         <DialogContent className="sm:max-w-md" dir="rtl">
           <DialogHeader>
             <DialogTitle>{editMode ? 'تعديل منتج' : 'إضافة منتج جديد'}</DialogTitle>
@@ -448,7 +465,7 @@ const AdminProducts = () => {
                 name="description"
                 value={formData.description}
                 onChange={handleFormChange}
-                placeholder="أدخل ��صف المنتج"
+                placeholder="أدخل وصف المنتج"
                 rows={3}
               />
             </div>
@@ -490,16 +507,22 @@ const AdminProducts = () => {
               onClick={handleSubmit}
               disabled={isProcessing}
             >
-              {isProcessing 
-                ? 'جارِ الحفظ...' 
-                : editMode ? 'تحديث' : 'إضافة'
-              }
+              {isProcessing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  جارِ الحفظ...
+                </>
+              ) : (
+                editMode ? 'تحديث' : 'إضافة'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
       
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      <Dialog open={deleteDialogOpen} onOpenChange={(open) => {
+        if (!isProcessing) setDeleteDialogOpen(open);
+      }}>
         <DialogContent className="sm:max-w-md" dir="rtl">
           <DialogHeader>
             <DialogTitle>تأكيد الحذف</DialogTitle>
@@ -523,7 +546,12 @@ const AdminProducts = () => {
               onClick={handleDelete}
               disabled={isProcessing}
             >
-              {isProcessing ? 'جارِ الحذف...' : 'حذف'}
+              {isProcessing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  جارِ الحذف...
+                </>
+              ) : 'حذف'}
             </Button>
           </DialogFooter>
         </DialogContent>

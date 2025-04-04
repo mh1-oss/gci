@@ -1,9 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import type { Product as InitialDataProduct } from '@/data/initialData';
 import {
   mapDbProductToProduct,
-  mapInitialDataProductToDbProduct,
   mapProductToDbProduct
 } from '@/utils/models/productMappers';
 import { DbProduct, Product } from '@/utils/models/types';
@@ -34,11 +33,6 @@ export const fetchProducts = async (): Promise<InitialDataProduct[]> => {
         
         if (adminError) {
           console.error('Fallback method failed:', adminError);
-          toast({
-            title: "خطأ في جلب البيانات",
-            description: adminError.message,
-            variant: "destructive",
-          });
           return [];
         }
         
@@ -56,11 +50,6 @@ export const fetchProducts = async (): Promise<InitialDataProduct[]> => {
         });
       }
       
-      toast({
-        title: "خطأ في جلب البيانات",
-        description: error.message,
-        variant: "destructive",
-      });
       return [];
     }
     
@@ -79,11 +68,6 @@ export const fetchProducts = async (): Promise<InitialDataProduct[]> => {
     });
   } catch (error) {
     console.error('Unexpected error fetching products:', error);
-    toast({
-      title: "خطأ غير متوقع",
-      description: "حدث خطأ أثناء جلب المنتجات",
-      variant: "destructive",
-    });
     return [];
   }
 };
@@ -203,7 +187,20 @@ export const fetchFeaturedProducts = async (): Promise<InitialDataProduct[]> => 
 
 export const createProduct = async (product: Omit<Product, 'id'>): Promise<Product | null> => {
   try {
-    const dbProduct = mapInitialDataProductToDbProduct(product);
+    console.log('Creating product with data:', product);
+    
+    // Convert to database model format
+    const dbProduct = {
+      name: product.name,
+      description: product.description || '',
+      category_id: product.categoryId || null,
+      price: product.price,
+      cost_price: product.price * 0.7, // Default cost price if not provided
+      stock_quantity: 0, // Default stock if not provided
+      image_url: product.image !== '/placeholder.svg' ? product.image : null
+    };
+    
+    console.log('Converted to DB format:', dbProduct);
     
     // Add auth headers to bypass RLS 
     const { data, error } = await supabase
@@ -214,42 +211,23 @@ export const createProduct = async (product: Omit<Product, 'id'>): Promise<Produ
     
     if (error) {
       console.error('Error creating product:', error);
-      toast({
-        title: "خطأ في إنشاء المنتج",
-        description: error.message,
-        variant: "destructive",
-      });
       return null;
     }
     
-    toast({
-      title: "تم بنجاح",
-      description: "تم إضافة المنتج بنجاح",
-    });
+    console.log('Product created successfully:', data);
     
-    const mappedProduct = mapDbProductToProduct(data);
-    return {
-      id: mappedProduct.id,
-      name: mappedProduct.name,
-      description: mappedProduct.description,
-      price: mappedProduct.price,
-      categoryId: mappedProduct.categoryId || '',
-      image: mappedProduct.image || '/placeholder.svg',
-      featured: mappedProduct.featured || false,
-    } as Product;
+    return mapDbProductToProduct(data);
   } catch (error) {
     console.error('Unexpected error creating product:', error);
-    toast({
-      title: "خطأ غير متوقع",
-      description: "حدث خطأ أثناء إنشاء المنتج",
-      variant: "destructive",
-    });
     return null;
   }
 };
 
 export const updateProduct = async (id: string, updates: Partial<Product>): Promise<Product | null> => {
   try {
+    console.log('Updating product with ID:', id);
+    console.log('Update data:', updates);
+    
     // Convert to database model format
     const dbUpdates: Partial<DbProduct> = {};
     
@@ -261,6 +239,8 @@ export const updateProduct = async (id: string, updates: Partial<Product>): Prom
       dbUpdates.image_url = updates.image;
     }
     
+    console.log('Converted to DB format:', dbUpdates);
+    
     const { data, error } = await supabase
       .from('products')
       .update(dbUpdates)
@@ -270,33 +250,22 @@ export const updateProduct = async (id: string, updates: Partial<Product>): Prom
     
     if (error) {
       console.error('Error updating product:', error);
-      toast({
-        title: "خطأ في تحديث المنتج",
-        description: error.message,
-        variant: "destructive",
-      });
       return null;
     }
     
-    toast({
-      title: "تم بنجاح",
-      description: "تم تحديث المنتج بنجاح",
-    });
+    console.log('Product updated successfully:', data);
     
     return mapDbProductToProduct(data);
   } catch (error) {
     console.error('Unexpected error updating product:', error);
-    toast({
-      title: "خطأ غير متوقع",
-      description: "حدث خطأ أثناء تحديث المنتج",
-      variant: "destructive",
-    });
     return null;
   }
 };
 
 export const deleteProduct = async (id: string): Promise<boolean> => {
   try {
+    console.log('Deleting product with ID:', id);
+    
     const { error } = await supabase
       .from('products')
       .delete()
@@ -304,27 +273,13 @@ export const deleteProduct = async (id: string): Promise<boolean> => {
     
     if (error) {
       console.error('Error deleting product:', error);
-      toast({
-        title: "خطأ في حذف المنتج",
-        description: error.message,
-        variant: "destructive",
-      });
       return false;
     }
     
-    toast({
-      title: "تم بنجاح",
-      description: "تم حذف المنتج بنجاح",
-    });
-    
+    console.log('Product deleted successfully');
     return true;
   } catch (error) {
     console.error('Unexpected error deleting product:', error);
-    toast({
-      title: "خطأ غير متوقع",
-      description: "حدث خطأ أثناء حذف المنتج",
-      variant: "destructive",
-    });
     return false;
   }
 };

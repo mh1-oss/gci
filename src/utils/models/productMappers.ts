@@ -1,59 +1,56 @@
 
-import type { Product as InitialDataProduct } from '@/data/initialData';
 import { DbProduct, Product } from './types';
+import type { Product as InitialDataProduct } from '@/data/initialData';
 
-export function mapDbProductToProduct(dbProduct: DbProduct): Product {
+export const mapDbProductToProduct = (dbProduct: DbProduct): Product => {
+  console.log('Mapping DB product to app model:', dbProduct);
+  
   return {
     id: dbProduct.id,
     name: dbProduct.name,
     description: dbProduct.description || '',
-    category: dbProduct.categories?.name || '',
-    price: dbProduct.price,
-    images: [dbProduct.image_url || '/placeholder.svg'],
-    stock: dbProduct.stock_quantity || 0,
-    created_at: dbProduct.created_at,
+    price: Number(dbProduct.price) || 0,
     categoryId: dbProduct.category_id || '',
     image: dbProduct.image_url || '/placeholder.svg',
-    featured: false
+    stock: dbProduct.stock_quantity || 0,
+    category: dbProduct.categories?.name || '',
+    featured: false,
+    images: dbProduct.image_url ? [dbProduct.image_url] : ['/placeholder.svg'],
+    colors: [],
+    specifications: {},
+    mediaGallery: [],
   };
-}
+};
 
-export function mapInitialDataProductToDbProduct(product: Omit<InitialDataProduct, 'id'>): { 
-  name: string;
-  description: string;
-  category_id: string;
-  price: number;
-  cost_price: number;
-  stock_quantity: number;
-  image_url: string | null;
-} {
+export const mapProductToDbProduct = (product: Product): DbProduct => {
+  console.log('Mapping app model to DB product:', product);
+  
   return {
+    id: product.id,
     name: product.name,
-    description: product.description,
-    category_id: product.categoryId,
+    description: product.description || '',
     price: product.price,
-    cost_price: product.price * 0.7,
-    stock_quantity: 0,
-    image_url: product.image !== '/placeholder.svg' ? product.image : null
-  };
-}
-
-export function mapProductToDbProduct(product: Omit<Product, 'id'>): { 
-  name: string;
-  description: string;
-  category_id: string | null;
-  price: number;
-  cost_price: number;
-  stock_quantity: number;
-  image_url: string | null;
-} {
-  return {
-    name: product.name,
-    description: product.description,
-    category_id: product.categoryId || null,
-    price: product.price,
-    cost_price: product.price * 0.7,
+    cost_price: product.price * 0.7, // Default cost to 70% of price if not specified
     stock_quantity: product.stock || 0,
-    image_url: product.images?.[0] !== '/placeholder.svg' ? product.images?.[0] : null
+    category_id: product.categoryId || null,
+    image_url: product.image !== '/placeholder.svg' ? product.image : null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   };
-}
+};
+
+export const mapInitialDataProductToDbProduct = (product: Omit<Product, 'id'>): Omit<DbProduct, 'id'> => {
+  console.log('Mapping initial data product to DB product:', product);
+  
+  return {
+    name: product.name,
+    description: product.description || '',
+    price: product.price,
+    cost_price: product.price * 0.7, // Default cost to 70% of price if not specified
+    stock_quantity: product.stock || 0,
+    category_id: product.categoryId || null,
+    image_url: product.image !== '/placeholder.svg' ? product.image : null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+};
