@@ -1,10 +1,18 @@
 
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { AlertTriangle, Search } from "lucide-react";
+import { AlertTriangle, Search, RefreshCw } from "lucide-react";
+import { useState } from "react";
 
 const ProductErrorState = () => {
   const navigate = useNavigate();
+  const [isRetrying, setIsRetrying] = useState(false);
+  
+  const handleRetry = () => {
+    setIsRetrying(true);
+    // Force reload the current page
+    window.location.reload();
+  };
   
   return (
     <div className="container-custom py-12 text-center">
@@ -24,6 +32,16 @@ const ProductErrorState = () => {
           >
             <Search className="ml-2 h-4 w-4" />
             عرض جميع المنتجات
+          </Button>
+          
+          <Button 
+            onClick={handleRetry}
+            className="w-full sm:w-auto"
+            variant="secondary"
+            disabled={isRetrying}
+          >
+            <RefreshCw className={`ml-2 h-4 w-4 ${isRetrying ? 'animate-spin' : ''}`} />
+            {isRetrying ? 'جاري المحاولة...' : 'إعادة المحاولة'}
           </Button>
           
           <Button 

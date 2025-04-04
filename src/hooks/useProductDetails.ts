@@ -20,19 +20,20 @@ export const useProductDetails = (id: string | undefined) => {
 
         console.log(`Fetching product with ID: ${id}`);
         
-        // First check if the product exists (more efficient query)
-        const { count, error: countError } = await supabase
+        // First fetch the product directly without categories to verify it exists
+        const { data: productExists, error: existsError } = await supabase
           .from('products')
-          .select('*', { count: 'exact', head: true })
-          .eq('id', id);
-          
-        if (countError) {
-          console.error("Error checking product existence:", countError);
-          throw countError;
+          .select('id')
+          .eq('id', id)
+          .maybeSingle();
+        
+        if (existsError) {
+          console.error("Error checking if product exists:", existsError);
+          throw existsError;
         }
         
-        if (count === 0) {
-          console.log(`Product with ID ${id} does not exist`);
+        if (!productExists) {
+          console.log(`Product with ID ${id} not found in database`);
           throw new Error("Product not found");
         }
         
@@ -44,14 +45,16 @@ export const useProductDetails = (id: string | undefined) => {
           .maybeSingle();
         
         if (error) {
-          console.error("Supabase error:", error);
+          console.error("Supabase error fetching product details:", error);
           throw error;
         }
         
         if (!data) {
-          console.log("Product not found");
+          console.log("Product data is null after fetch");
           throw new Error("Product not found");
         }
+
+        console.log("Product data fetched successfully:", data);
 
         // Make sure we convert to the correct type
         const result: DbProduct = {
@@ -72,20 +75,21 @@ export const useProductDetails = (id: string | undefined) => {
         return result;
       } catch (error: any) {
         console.error('Error fetching product:', error.message);
-        toast({
-          title: "خطأ في تحميل المنتج",
-          description: "حدث خطأ أثناء محاولة تحميل بيانات المنتج",
-          variant: "destructive",
-        });
+        // Don't show toast here, let component handle it
         throw error;
       }
     },
     retry: (failureCount, error: any) => {
-      // Only retry once and not for "not found" errors
-      if (error?.message === "Product not found") return false;
+      // Don't retry for "not found" errors, but retry once for other types
+      if (error?.message === "Product not found") {
+        console.log("Not retrying for 'Product not found' error");
+        return false;
+      }
+      
+      console.log(`Retry attempt ${failureCount} for error: ${error?.message}`);
       return failureCount < 1;
     },
-    enabled: !!id
+    enabled: !!id && id.trim() !== ''
   });
 
   // Also fetch related products from the same category

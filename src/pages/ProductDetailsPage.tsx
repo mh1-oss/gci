@@ -15,33 +15,38 @@ const ProductDetailsPage = () => {
   const { toast } = useToast();
   const { product, relatedProducts, isLoading, error } = useProductDetails(id);
 
-  // Validate the ID parameter and provide feedback
+  // Handle errors and invalid IDs
   useEffect(() => {
-    // Log basic navigation information
-    console.log(`ProductDetailsPage loaded with ID: ${id}`);
-    
-    // Validate the ID parameter
-    if (!id || typeof id !== 'string' || id.trim() === '') {
-      console.error('Invalid product ID parameter');
+    // Validate ID
+    if (!id || id.trim() === '') {
+      console.error('Invalid or empty product ID');
       toast({
         title: "خطأ في معرف المنتج",
-        description: "معرف المنتج غير صالح",
+        description: "معرف المنتج غير صالح أو فارغ",
         variant: "destructive",
       });
-      // Navigate away after showing the toast
-      setTimeout(() => navigate('/products'), 1000);
+      setTimeout(() => navigate('/products'), 500);
       return;
     }
-    
-    // Log any errors that occur
+
+    // Log and handle errors
     if (error) {
       console.error('Product details error:', error);
       
-      // Show a toast for "product not found" errors
-      if (error instanceof Error && error.message === "Product not found") {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.log(`Error message: ${errorMessage}`);
+      
+      // Show appropriate toast based on error type
+      if (errorMessage === "Product not found") {
         toast({
           title: "المنتج غير موجود",
-          description: "لم يتم العثور على المنتج الذي تبحث عنه",
+          description: "لم يتم العثور على المنتج المطلوب",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "خطأ في تحميل المنتج",
+          description: "حدث خطأ أثناء محاولة تحميل بيانات المنتج، يرجى المحاولة مرة أخرى",
           variant: "destructive",
         });
       }
