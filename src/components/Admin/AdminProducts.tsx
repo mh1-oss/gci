@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -39,7 +40,7 @@ import {
 import { fetchCategories } from '@/services/categories/categoryService';
 import { uploadMedia } from '@/services/media/mediaService';
 import { Product, Category } from '@/data/initialData';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, pingDatabase } from '@/integrations/supabase/client';
 
 const AdminProducts = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -68,14 +69,16 @@ const AdminProducts = () => {
     const checkConnection = async () => {
       try {
         setConnectionStatus('checking');
-        const { data, error } = await supabase.from('products').select('count()', { count: 'exact' }).limit(1);
         
-        if (error) {
+        // Use our simple pingDatabase function instead of a count query
+        const { ok, error } = await pingDatabase();
+        
+        if (!ok) {
           console.error('Supabase connection error:', error);
           setConnectionStatus('disconnected');
-          setError(`Database connection error: ${error.message}`);
+          setError(`Database connection error: ${error}`);
         } else {
-          console.log('Supabase connection successful, product count:', data);
+          console.log('Supabase connection successful');
           setConnectionStatus('connected');
           setError(null);
         }

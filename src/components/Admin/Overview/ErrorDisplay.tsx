@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, AlertCircle, WifiOff } from "lucide-react";
+import { RefreshCw, AlertCircle, WifiOff, Database } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface ErrorDisplayProps {
@@ -19,7 +19,10 @@ const ErrorDisplay = ({ error, onRefresh }: ErrorDisplayProps) => {
     error.includes("user_roles");
 
   // Check for aggregate function error
-  const isAggregateError = error.includes("aggregate functions is not allowed");
+  const isAggregateError = 
+    error.toLowerCase().includes("aggregate") || 
+    error.includes("42P17") || 
+    error.includes("functions is not allowed");
   
   // Check for connection errors
   const isConnectionError = 
@@ -35,9 +38,15 @@ const ErrorDisplay = ({ error, onRefresh }: ErrorDisplayProps) => {
       <div className="flex justify-between items-start">
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <AlertCircle className="h-5 w-5" />
+            {isConnectionError ? (
+              <WifiOff className="h-5 w-5" />
+            ) : isAggregateError ? (
+              <Database className="h-5 w-5" />
+            ) : (
+              <AlertCircle className="h-5 w-5" />
+            )}
             <h3 className="font-bold">
-              {isConnectionError ? "خطأ في الاتصال" : "Error Loading Data"}
+              {isConnectionError ? "خطأ في الاتصال" : isAggregateError ? "خطأ في استعلام قاعدة البيانات" : "Error Loading Data"}
             </h3>
           </div>
           
@@ -59,8 +68,9 @@ const ErrorDisplay = ({ error, onRefresh }: ErrorDisplayProps) => {
             </div>
           ) : isAggregateError ? (
             <div>
+              <p className="mb-2">هناك مشكلة في استخدام دوال إحصائية في استعلام قاعدة البيانات.</p>
               <p className="mb-2">There is an issue with the database query using aggregate functions.</p>
-              <p className="mb-2">This might be caused by a configuration restriction or permission issue.</p>
+              <p className="mb-2">This might be caused by a configuration restriction or permission issue with Row Level Security (RLS).</p>
               <p className="text-sm bg-amber-50 p-2 border border-amber-200 rounded">
                 <strong>Technical details:</strong> {error}
               </p>
@@ -103,11 +113,17 @@ const ErrorDisplay = ({ error, onRefresh }: ErrorDisplayProps) => {
       
       {isAggregateError && (
         <div className="mt-4 pt-4 border-t border-red-200">
-          <p className="font-medium mb-2">Recommended solutions:</p>
+          <p className="font-medium mb-2">الحلول المقترحة:</p>
+          <ol className="list-decimal ml-5 space-y-1 text-sm" dir="rtl">
+            <li>استخدم استعلامات بسيطة بدلاً من الدوال الإحصائية</li>
+            <li>تحقق من صلاحيات الوصول لقاعدة البيانات</li>
+            <li>قم بتسجيل الدخول مرة أخرى إذا كان ذلك ممكناً</li>
+          </ol>
+          <p className="font-medium mb-2 mt-4">Recommended solutions:</p>
           <ol className="list-decimal ml-5 space-y-1 text-sm">
-            <li>Check your database connection and network connectivity.</li>
-            <li>Verify that your Supabase RLS policies are correctly configured.</li>
-            <li>Make sure you're properly authenticated if the resource requires authentication.</li>
+            <li>Use simple queries instead of aggregate functions</li>
+            <li>Check that your Supabase RLS policies are correctly configured</li>
+            <li>Try logging in again if possible</li>
           </ol>
         </div>
       )}

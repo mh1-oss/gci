@@ -17,21 +17,27 @@ const AdminOverview = () => {
       setLoading(true);
       setError(null);
       
-      // Use RPC functions to bypass RLS
-      const { data: products, error: productsError } = await supabase.rpc('get_all_products');
-      if (productsError) {
-        console.error("Error fetching products:", productsError);
-        throw productsError;
+      // Use direct queries instead of RPC functions to avoid aggregate-related errors
+      const productsPromise = supabase.from('products').select('id');
+      const categoriesPromise = supabase.from('categories').select('id');
+      
+      const [productsResult, categoriesResult] = await Promise.all([
+        productsPromise,
+        categoriesPromise
+      ]);
+      
+      if (productsResult.error) {
+        console.error("Error fetching products:", productsResult.error);
+        throw productsResult.error;
       }
       
-      const { data: categories, error: categoriesError } = await supabase.rpc('get_all_categories');
-      if (categoriesError) {
-        console.error("Error fetching categories:", categoriesError);
-        throw categoriesError;
+      if (categoriesResult.error) {
+        console.error("Error fetching categories:", categoriesResult.error);
+        throw categoriesResult.error;
       }
       
-      setProductCount(products ? products.length : 0);
-      setCategoryCount(categories ? categories.length : 0);
+      setProductCount(productsResult.data ? productsResult.data.length : 0);
+      setCategoryCount(categoriesResult.data ? categoriesResult.data.length : 0);
     } catch (error: any) {
       console.error("Error fetching overview data:", error);
       setError(error.message || "Error loading dashboard data");

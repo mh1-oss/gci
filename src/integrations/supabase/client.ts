@@ -31,17 +31,17 @@ export const supabase = createClient<Database>(
   }
 );
 
-// Helper function to check connection to Supabase
+// Helper function to check connection to Supabase without using ANY aggregates
 export const pingDatabase = async () => {
   try {
     const start = Date.now();
     
-    // Use a simple query that doesn't use aggregate functions and is less likely to hit RLS issues
+    // Use a direct query to check the connection without any possible aggregate function
+    // Just get the first row from the categories table (simpler table)
     const { data, error } = await supabase
-      .from('products')
+      .from('categories')
       .select('id')
-      .limit(1)
-      .maybeSingle();
+      .limit(1);
     
     const end = Date.now();
     

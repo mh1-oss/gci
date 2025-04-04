@@ -20,27 +20,11 @@ export const useProductDetails = (id: string | undefined) => {
 
         console.log(`Fetching product with ID: ${id}`);
         
-        // First fetch the product directly without categories to verify it exists
-        const { data: productExists, error: existsError } = await supabase
-          .from('products')
-          .select('id')
-          .eq('id', id)
-          .maybeSingle();
-        
-        if (existsError) {
-          console.error("Error checking if product exists:", existsError);
-          throw existsError;
-        }
-        
-        if (!productExists) {
-          console.log(`Product with ID ${id} not found in database`);
-          throw new Error("Product not found");
-        }
-        
-        // Now fetch the full product with category
+        // Fetch the product without using JOIN or aggregate functions
+        // This is to avoid RLS issues with aggregate functions
         const { data, error } = await supabase
           .from('products')
-          .select('*, categories(name)')
+          .select('*')
           .eq('id', id)
           .maybeSingle();
         
@@ -55,6 +39,22 @@ export const useProductDetails = (id: string | undefined) => {
         }
 
         console.log("Product data fetched successfully:", data);
+        
+        // If we need the category name, we'll fetch it separately
+        let categoryName = null;
+        if (data.category_id) {
+          const { data: categoryData, error: categoryError } = await supabase
+            .from('categories')
+            .select('name')
+            .eq('id', data.category_id)
+            .maybeSingle();
+            
+          if (categoryError) {
+            console.error("Error fetching category:", categoryError);
+          } else if (categoryData) {
+            categoryName = categoryData.name;
+          }
+        }
 
         // Make sure we convert to the correct type
         const result: DbProduct = {
@@ -68,14 +68,12 @@ export const useProductDetails = (id: string | undefined) => {
           category_id: data.category_id,
           created_at: data.created_at,
           updated_at: data.updated_at,
-          categories: data.categories && typeof data.categories === 'object' ? 
-            data.categories : null
+          categories: categoryName ? { name: categoryName } : null
         };
         
         return result;
       } catch (error: any) {
         console.error('Error fetching product:', error.message);
-        // Don't show toast here, let component handle it
         throw error;
       }
     },
