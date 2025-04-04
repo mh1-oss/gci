@@ -89,6 +89,8 @@ export const useAuthState = (): AuthState => {
         updateAdminStatus();
       }, 100);
       return () => clearTimeout(timer);
+    } else {
+      setIsAdmin(false);
     }
   }, [user, updateAdminStatus]);
 
