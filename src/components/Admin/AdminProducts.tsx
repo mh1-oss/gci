@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -254,7 +255,7 @@ const AdminProducts = () => {
       if (result) {
         setDialogOpen(false);
         resetForm();
-        fetchAllData();
+        fetchAllData(); // Refresh data after successful operation
       }
     } catch (error) {
       console.error('Error saving product:', error);

@@ -1,3 +1,4 @@
+
 export interface Product {
   id: string;
   name: string;
@@ -10,7 +11,7 @@ export interface Product {
   categoryId: string;
   image: string;
   featured: boolean;
-  colors: string[]; // Add the colors property
+  colors: string[]; 
   specifications?: Record<string, string>;
   mediaGallery?: {
     url: string;

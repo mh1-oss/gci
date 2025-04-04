@@ -1,9 +1,11 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { Product as InitialDataProduct } from '@/data/initialData';
 import {
   mapDbProductToProduct,
-  mapProductToDbProduct
+  mapProductToDbProduct,
+  mapInitialDataProductToDbProduct
 } from '@/utils/models/productMappers';
 import { DbProduct, Product } from '@/utils/models/types';
 
@@ -19,7 +21,7 @@ export const fetchProducts = async (): Promise<InitialDataProduct[]> => {
     // Attempt to fetch products
     const { data, error } = await supabase
       .from('products')
-      .select('*');
+      .select('*, categories(name)');
     
     if (error) {
       console.error('Error fetching products:', error);
@@ -190,19 +192,11 @@ export const createProduct = async (product: Omit<Product, 'id'>): Promise<Produ
     console.log('Creating product with data:', product);
     
     // Convert to database model format
-    const dbProduct = {
-      name: product.name,
-      description: product.description || '',
-      category_id: product.categoryId || null,
-      price: product.price,
-      cost_price: product.price * 0.7, // Default cost price if not provided
-      stock_quantity: 0, // Default stock if not provided
-      image_url: product.image !== '/placeholder.svg' ? product.image : null
-    };
+    const dbProduct = mapInitialDataProductToDbProduct(product);
     
     console.log('Converted to DB format:', dbProduct);
     
-    // Add auth headers to bypass RLS 
+    // Insert the product into the database
     const { data, error } = await supabase
       .from('products')
       .insert([dbProduct])
@@ -228,19 +222,40 @@ export const updateProduct = async (id: string, updates: Partial<Product>): Prom
     console.log('Updating product with ID:', id);
     console.log('Update data:', updates);
     
-    // Convert to database model format
+    // Get the current product first
+    const { data: currentProduct, error: fetchError } = await supabase
+      .from('products')
+      .select('*')
+      .eq('id', id)
+      .single();
+      
+    if (fetchError) {
+      console.error('Error fetching current product for update:', fetchError);
+      return null;
+    }
+    
+    // Convert updates to database model format
     const dbUpdates: Partial<DbProduct> = {};
     
+    // Only include fields that are actually being updated
     if (updates.name !== undefined) dbUpdates.name = updates.name;
     if (updates.description !== undefined) dbUpdates.description = updates.description;
     if (updates.categoryId !== undefined) dbUpdates.category_id = updates.categoryId;
     if (updates.price !== undefined) dbUpdates.price = updates.price;
+    if (updates.stock !== undefined) dbUpdates.stock_quantity = updates.stock;
+    if (updates.featured !== undefined) dbUpdates.featured = updates.featured;
+    if (updates.colors !== undefined) dbUpdates.colors = updates.colors;
+    if (updates.specifications !== undefined) dbUpdates.specifications = updates.specifications;
+    if (updates.mediaGallery !== undefined) dbUpdates.media_gallery = updates.mediaGallery;
+    
+    // Handle image specifically to prevent overwriting with placeholder
     if (updates.image !== undefined && updates.image !== '/placeholder.svg') {
       dbUpdates.image_url = updates.image;
     }
     
-    console.log('Converted to DB format:', dbUpdates);
+    console.log('Converted to DB format for update:', dbUpdates);
     
+    // Update the product in the database
     const { data, error } = await supabase
       .from('products')
       .update(dbUpdates)
