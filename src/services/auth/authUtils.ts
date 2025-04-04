@@ -15,27 +15,17 @@ export interface AuthState {
 // Check if a user has admin role using multiple methods for reliability
 export const checkIsAdmin = async (): Promise<boolean> => {
   try {
-    // First try the most reliable method: is_admin_safe RPC function
-    const { data: isAdminData, error: isAdminError } = await supabase.rpc('is_admin_safe');
+    // First try the most reliable method: is_admin function
+    const { data: isAdminData, error: isAdminError } = await supabase.rpc('is_admin');
     
     if (!isAdminError) {
-      console.log('Admin check via is_admin_safe:', isAdminData);
+      console.log('Admin check via is_admin:', isAdminData);
       return !!isAdminData;
     }
     
     console.warn('Primary admin check failed, trying fallback...', isAdminError);
     
-    // Fallback method 1: Try the original is_admin function
-    const { data: originalAdminData, error: originalAdminError } = await supabase.rpc('is_admin');
-    
-    if (!originalAdminError) {
-      console.log('Admin check via is_admin:', originalAdminData);
-      return !!originalAdminData;
-    }
-    
-    console.warn('Secondary admin check failed, trying direct query...', originalAdminError);
-    
-    // Fallback method 2: Direct query as last resort
+    // Fallback method: Direct query as last resort
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return false;
     
@@ -43,14 +33,15 @@ export const checkIsAdmin = async (): Promise<boolean> => {
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
-      .eq('role', 'admin');
+      .eq('role', 'admin')
+      .maybeSingle();
       
     if (roleError) {
       console.error('Final fallback query failed:', roleError);
       return false;
     }
     
-    return roleData && roleData.length > 0;
+    return !!roleData;
   } catch (error) {
     console.error('Unexpected error checking admin role:', error);
     return false;

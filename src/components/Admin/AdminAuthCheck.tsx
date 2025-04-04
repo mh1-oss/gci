@@ -16,6 +16,7 @@ const AdminAuthCheck = ({ children }: AdminAuthCheckProps) => {
   const navigate = useNavigate();
   const [dbConnected, setDbConnected] = useState<boolean | null>(null);
   const [checkingDb, setCheckingDb] = useState(false);
+  const [connectionAttempts, setConnectionAttempts] = useState(0);
 
   // Check database connection
   const checkDbConnection = async () => {
@@ -24,6 +25,14 @@ const AdminAuthCheck = ({ children }: AdminAuthCheckProps) => {
       const result = await pingDatabase();
       console.log("Database connection result:", result);
       setDbConnected(result.ok);
+      
+      if (!result.ok && connectionAttempts < 2) {
+        // Auto-retry once after 2 seconds
+        setTimeout(() => {
+          setConnectionAttempts(prev => prev + 1);
+          checkDbConnection();
+        }, 2000);
+      }
     } catch (error) {
       console.error("Error checking database connection:", error);
       setDbConnected(false);
