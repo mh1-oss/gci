@@ -95,6 +95,9 @@ export const useCategoryManagement = () => {
         });
         setDialogOpen(false);
         resetForm();
+        
+        // Clear any existing errors
+        setError(null);
       } else {
         throw new Error("فشل إنشاء الفئة. لم يتم إرجاع أي بيانات.");
       }
@@ -117,6 +120,8 @@ export const useCategoryManagement = () => {
     setName(category.name);
     setDescription(category.description || '');
     setDialogOpen(true);
+    // Clear any existing errors
+    setError(null);
   };
 
   const handleUpdate = async () => {
@@ -157,6 +162,9 @@ export const useCategoryManagement = () => {
         });
         setDialogOpen(false);
         resetForm();
+        
+        // Clear any existing errors
+        setError(null);
       } else {
         throw new Error("فشل تحديث الفئة. لم يتم إرجاع أي بيانات.");
       }
@@ -176,6 +184,8 @@ export const useCategoryManagement = () => {
   const handleDelete = (category: Category) => {
     setDeleteTarget(category);
     setDeleteDialogOpen(true);
+    // Clear any existing errors
+    setError(null);
   };
 
   const handleDeleteConfirm = async () => {
@@ -185,15 +195,25 @@ export const useCategoryManagement = () => {
     setError(null);
     try {
       console.log("Deleting category:", deleteTarget.id);
-      await deleteCategory(deleteTarget.id);
+      const success = await deleteCategory(deleteTarget.id);
       
-      toast({
-        title: "تم الحذف بنجاح",
-        description: "تم حذف الفئة بنجاح."
-      });
-      setCategories(prevCategories => prevCategories.filter(c => c.id !== deleteTarget.id));
+      if (success) {
+        setCategories(prevCategories => 
+          prevCategories.filter(c => c.id !== deleteTarget.id)
+        );
+        toast({
+          title: "تم الحذف بنجاح",
+          description: "تم حذف الفئة بنجاح."
+        });
+      } else {
+        throw new Error("فشل حذف الفئة.");
+      }
+      
       setDeleteDialogOpen(false);
       setDeleteTarget(null);
+      
+      // Clear any existing errors
+      setError(null);
     } catch (err: any) {
       console.error("Error deleting category:", err);
       setError(err.message || "حدث خطأ غير متوقع أثناء حذف الفئة.");
@@ -212,6 +232,8 @@ export const useCategoryManagement = () => {
     setEditTarget(null);
     setName('');
     setDescription('');
+    // Also clear any errors when resetting the form
+    setError(null);
   };
 
   const handleAddNew = () => {
