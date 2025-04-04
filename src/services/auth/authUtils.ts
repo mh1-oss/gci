@@ -20,7 +20,29 @@ export const checkIsAdmin = async (): Promise<boolean> => {
     
     if (error) {
       console.error('Error checking admin role:', error);
-      return false;
+      
+      // Fallback method with direct query if the RPC fails due to recursion
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return false;
+        
+        // Get roles directly, avoiding RPC function
+        const { data: roleData, error: roleError } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .eq('role', 'admin');
+          
+        if (roleError) {
+          console.error('Fallback query error:', roleError);
+          return false;
+        }
+        
+        return roleData && roleData.length > 0;
+      } catch (fallbackError) {
+        console.error('Fallback check failed:', fallbackError);
+        return false;
+      }
     }
     
     return !!data; // Convert to boolean
@@ -61,6 +83,9 @@ export const loginUser = async (email: string, password: string): Promise<{
     }
     
     console.log('Login successful, checking admin status');
+    
+    // Add delay to prevent deadlocks with session updates
+    await new Promise(resolve => setTimeout(resolve, 300));
     
     // Check admin status safely to avoid deadlocks
     const isUserAdmin = await checkIsAdmin();

@@ -27,9 +27,19 @@ export const useAuthState = (): AuthState => {
       }
       
       console.log('Checking admin status for user:', user.id);
-      const isUserAdmin = await checkIsAdmin();
-      console.log('User admin status:', isUserAdmin);
-      setIsAdmin(isUserAdmin);
+      
+      // Use setTimeout to avoid Supabase auth deadlocks
+      setTimeout(async () => {
+        try {
+          const isUserAdmin = await checkIsAdmin();
+          console.log('User admin status:', isUserAdmin);
+          setIsAdmin(isUserAdmin);
+        } catch (error) {
+          console.error('Error in delayed admin check:', error);
+          setIsAdmin(false);
+        }
+      }, 500); // Increased delay for better reliability
+      
     } catch (error) {
       console.error('Error checking admin status:', error);
       setIsAdmin(false);
@@ -67,7 +77,7 @@ export const useAuthState = (): AuthState => {
           setTimeout(() => {
             updateAdminStatus();
             setLoading(false);
-          }, 100); // Increased timeout to ensure auth is fully initialized
+          }, 500); // Increased timeout for better reliability
         } catch (error) {
           console.error('Error initializing auth:', error);
           setLoading(false);
@@ -93,7 +103,7 @@ export const useAuthState = (): AuthState => {
       // Use setTimeout to avoid Supabase auth deadlocks
       setTimeout(() => {
         updateAdminStatus();
-      }, 100); // Increased timeout for better reliability
+      }, 500); // Increased timeout for better reliability
     }
   }, [user, updateAdminStatus]);
 
