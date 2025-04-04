@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -204,6 +205,9 @@ const AdminProducts = () => {
       const productData = {
         ...formData,
         image: imageUrl,
+        images: [imageUrl], // Add missing 'images' property
+        category: categories.find(cat => cat.id === formData.categoryId)?.name || '', // Add missing 'category' property
+        stock: 0, // Add missing 'stock' property
         featured: false,
         colors: [],
         specifications: {},
