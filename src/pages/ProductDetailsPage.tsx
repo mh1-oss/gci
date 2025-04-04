@@ -15,22 +15,38 @@ const ProductDetailsPage = () => {
   const { toast } = useToast();
   const { product, relatedProducts, isLoading, error } = useProductDetails(id);
 
-  // Log navigation and error information for debugging
+  // Validate the ID parameter and provide feedback
   useEffect(() => {
+    // Log basic navigation information
     console.log(`ProductDetailsPage loaded with ID: ${id}`);
     
+    // Validate the ID parameter
     if (!id || typeof id !== 'string' || id.trim() === '') {
+      console.error('Invalid product ID parameter');
       toast({
         title: "خطأ في معرف المنتج",
         description: "معرف المنتج غير صالح",
         variant: "destructive",
       });
+      // Navigate away after showing the toast
+      setTimeout(() => navigate('/products'), 1000);
+      return;
     }
     
+    // Log any errors that occur
     if (error) {
       console.error('Product details error:', error);
+      
+      // Show a toast for "product not found" errors
+      if (error instanceof Error && error.message === "Product not found") {
+        toast({
+          title: "المنتج غير موجود",
+          description: "لم يتم العثور على المنتج الذي تبحث عنه",
+          variant: "destructive",
+        });
+      }
     }
-  }, [id, error, toast]);
+  }, [id, error, toast, navigate]);
 
   // Handle loading state
   if (isLoading) {

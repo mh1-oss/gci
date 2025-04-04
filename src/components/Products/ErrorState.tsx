@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Search } from "lucide-react";
 
 const ProductErrorState = () => {
   const navigate = useNavigate();
@@ -16,11 +16,21 @@ const ProductErrorState = () => {
           <br />
           <span className="text-sm text-gray-500 block mt-2">تأكد من الرابط أو حاول مرة أخرى.</span>
         </p>
-        <div className="space-x-4 rtl:space-x-reverse">
-          <Button onClick={() => navigate('/products')} className="mb-2 sm:mb-0">
+        
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <Button 
+            onClick={() => navigate('/products')} 
+            className="w-full sm:w-auto"
+          >
+            <Search className="ml-2 h-4 w-4" />
             عرض جميع المنتجات
           </Button>
-          <Button variant="outline" onClick={() => navigate(-1)}>
+          
+          <Button 
+            variant="outline" 
+            onClick={() => navigate(-1)}
+            className="w-full sm:w-auto"
+          >
             العودة للصفحة السابقة
           </Button>
         </div>

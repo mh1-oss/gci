@@ -20,11 +20,28 @@ export const useProductDetails = (id: string | undefined) => {
 
         console.log(`Fetching product with ID: ${id}`);
         
+        // First check if the product exists (more efficient query)
+        const { count, error: countError } = await supabase
+          .from('products')
+          .select('*', { count: 'exact', head: true })
+          .eq('id', id);
+          
+        if (countError) {
+          console.error("Error checking product existence:", countError);
+          throw countError;
+        }
+        
+        if (count === 0) {
+          console.log(`Product with ID ${id} does not exist`);
+          throw new Error("Product not found");
+        }
+        
+        // Now fetch the full product with category
         const { data, error } = await supabase
           .from('products')
           .select('*, categories(name)')
           .eq('id', id)
-          .maybeSingle(); // Use maybeSingle instead of single to handle null case gracefully
+          .maybeSingle();
         
         if (error) {
           console.error("Supabase error:", error);
@@ -63,7 +80,11 @@ export const useProductDetails = (id: string | undefined) => {
         throw error;
       }
     },
-    retry: 1, // Limit retries to avoid excessive API calls
+    retry: (failureCount, error: any) => {
+      // Only retry once and not for "not found" errors
+      if (error?.message === "Product not found") return false;
+      return failureCount < 1;
+    },
     enabled: !!id
   });
 
