@@ -52,7 +52,7 @@ export interface DbProduct {
   category_id: string | null;
   created_at: string;
   updated_at: string;
-  categories?: DbCategory;
+  categories?: DbCategory | Record<string, any>;
   featured?: boolean;
   colors?: string[];
   specifications?: Record<string, string>;

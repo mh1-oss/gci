@@ -56,8 +56,32 @@ export const fetchProducts = async (): Promise<InitialDataProduct[]> => {
     }
     
     console.log('Products fetched successfully:', data);
-    return (data || []).map((item: DbProduct) => {
-      const product = mapDbProductToProduct(item);
+    
+    // Safely map the products with proper type handling
+    return (data || []).map((item: any) => {
+      // Convert the raw item to a properly structured DbProduct
+      const dbProduct: DbProduct = {
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        price: item.price,
+        cost_price: item.cost_price,
+        stock_quantity: item.stock_quantity,
+        image_url: item.image_url,
+        category_id: item.category_id,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        categories: item.categories,
+        featured: item.featured,
+        colors: item.colors,
+        specifications: item.specifications,
+        media_gallery: item.media_gallery
+      };
+      
+      // Now safely map to our Product type
+      const product = mapDbProductToProduct(dbProduct);
+      
+      // Finally return the expected InitialDataProduct format
       return {
         id: product.id,
         name: product.name,
@@ -210,7 +234,7 @@ export const createProduct = async (product: Omit<Product, 'id'>): Promise<Produ
     
     console.log('Product created successfully:', data);
     
-    return mapDbProductToProduct(data);
+    return mapDbProductToProduct(data as DbProduct);
   } catch (error) {
     console.error('Unexpected error creating product:', error);
     return null;
@@ -270,7 +294,7 @@ export const updateProduct = async (id: string, updates: Partial<Product>): Prom
     
     console.log('Product updated successfully:', data);
     
-    return mapDbProductToProduct(data);
+    return mapDbProductToProduct(data as DbProduct);
   } catch (error) {
     console.error('Unexpected error updating product:', error);
     return null;

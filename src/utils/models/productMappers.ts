@@ -13,7 +13,9 @@ export const mapDbProductToProduct = (dbProduct: DbProduct): Product => {
     categoryId: dbProduct.category_id || '',
     image: dbProduct.image_url || '/placeholder.svg',
     stock: dbProduct.stock_quantity || 0,
-    category: dbProduct.categories?.name || '',
+    category: dbProduct.categories && typeof dbProduct.categories === 'object' && 'name' in dbProduct.categories 
+      ? dbProduct.categories.name as string
+      : '',
     featured: Boolean(dbProduct.featured) || false,
     images: dbProduct.image_url ? [dbProduct.image_url] : ['/placeholder.svg'],
     colors: dbProduct.colors || [],
