@@ -9,10 +9,10 @@ const ProductErrorState = () => {
   return (
     <div className="container-custom py-12 text-center">
       <div className="max-w-md mx-auto bg-white p-8 rounded-lg shadow-sm border border-gray-100">
-        <AlertTriangle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">لم يتم العثور على المنتج</h2>
+        <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+        <h2 className="text-2xl font-bold text-red-600 mb-4">خطأ في تحميل المنتج</h2>
         <p className="text-gray-600 mb-6">
-          عذراً، لم نتمكن من العثور على المنتج الذي تبحث عنه أو حدث خطأ أثناء تحميل البيانات.
+          حدث خطأ أثناء محاولة تحميل بيانات المنتج
           <br />
           <span className="text-sm text-gray-500 block mt-2">تأكد من الرابط أو حاول مرة أخرى.</span>
         </p>

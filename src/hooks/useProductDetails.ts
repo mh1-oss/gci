@@ -33,7 +33,7 @@ export const useProductDetails = (id: string | undefined) => {
         
         if (!data) {
           console.log("Product not found");
-          return null;
+          throw new Error("Product not found");
         }
 
         // Make sure we convert to the correct type
@@ -53,8 +53,8 @@ export const useProductDetails = (id: string | undefined) => {
         };
         
         return result;
-      } catch (error) {
-        console.error('Error fetching product:', error);
+      } catch (error: any) {
+        console.error('Error fetching product:', error.message);
         toast({
           title: "خطأ في تحميل المنتج",
           description: "حدث خطأ أثناء محاولة تحميل بيانات المنتج",
@@ -63,6 +63,7 @@ export const useProductDetails = (id: string | undefined) => {
         throw error;
       }
     },
+    retry: 1, // Limit retries to avoid excessive API calls
     enabled: !!id
   });
 
@@ -83,7 +84,7 @@ export const useProductDetails = (id: string | undefined) => {
       
       if (error) {
         console.error('Error fetching related products:', error);
-        throw error;
+        return []; // Return empty array on error instead of throwing
       }
       
       // Convert the data to the expected format
@@ -100,7 +101,8 @@ export const useProductDetails = (id: string | undefined) => {
         updated_at: item.updated_at
       })) as DbProduct[];
     },
-    enabled: !!product?.category_id && !!id
+    enabled: !!product?.category_id && !!id,
+    retry: 1
   });
 
   return {
