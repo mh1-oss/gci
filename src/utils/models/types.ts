@@ -31,3 +31,61 @@ export interface Sale {
   currency: 'USD' | 'IQD';
   items: SaleItem[];
 }
+
+// Database model interfaces
+export interface DbProduct {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  cost_price: number;
+  stock_quantity: number;
+  image_url: string | null;
+  category_id: string | null;
+  created_at: string;
+  updated_at: string;
+  categories?: DbCategory;
+}
+
+export interface DbCategory {
+  id: string;
+  name: string;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbCompanyInfo {
+  id: number;
+  name: string;
+  logo_url: string | null;
+  slogan: string | null;
+  about: string | null;
+  contact: any | null;
+  slider_timing: number | null;
+  features_title: string | null;
+  features_description: string | null;
+  reviews_title: string | null;
+  reviews_description: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StockTransaction {
+  id: string;
+  product_id: string;
+  product_name: string;
+  quantity: number;
+  transaction_type: 'in' | 'out';
+  notes: string | null;
+  created_at: string;
+}
+
+export interface DbStockTransaction {
+  id: string;
+  product_id: string;
+  quantity: number;
+  transaction_type: 'in' | 'out';
+  notes: string | null;
+  created_at: string;
+}

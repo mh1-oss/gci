@@ -3,13 +3,13 @@ import { Button } from "@/components/ui/button";
 import { ShoppingCart, Package, ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { DbProduct } from "@/utils/models/types";
+import { Product } from "@/utils/models/types";
 import { useCart } from "@/context/CartContext";
 import { useCurrency } from "@/context/CurrencyContext";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProductInfoProps {
-  product: DbProduct;
+  product: Product;
 }
 
 const ProductInfo = ({ product }: ProductInfoProps) => {
@@ -26,11 +26,11 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
       id: product.id,
       name: product.name,
       price: product.price,
-      image: product.image_url || '/placeholder.svg',
+      image: product.images?.[0] || '/placeholder.svg',
       quantity
     });
     
-    toast({
+    useToast().toast({
       title: "تمت الإضافة إلى السلة",
       description: `تمت إضافة ${product.name} إلى سلة التسوق`,
     });
@@ -39,7 +39,7 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
   // Toggle currency
   const toggleCurrency = () => {
     setCurrency(currency === 'USD' ? 'IQD' : 'USD');
-    toast({
+    useToast().toast({
       title: "تم تغيير العملة",
       description: `تم تغيير العملة إلى ${currency === 'USD' ? 'الدينار العراقي' : 'الدولار الأمريكي'}`,
     });
@@ -59,7 +59,7 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
       <div className="grid md:grid-cols-2 gap-8">
         <div className="bg-white rounded-lg overflow-hidden border border-gray-200">
           <img 
-            src={product.image_url || '/placeholder.svg'} 
+            src={product.images?.[0] || '/placeholder.svg'} 
             alt={product.name} 
             className="w-full h-96 object-contain p-4"
           />
@@ -69,12 +69,12 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
           <div>
             <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
             
-            {product.categories && (
+            {product.category && (
               <div 
                 className="inline-block bg-blue-100 text-blue-800 text-sm font-medium px-2 py-1 rounded mt-2 cursor-pointer"
-                onClick={() => navigate(`/products?category=${product.category_id}`)}
+                onClick={() => navigate(`/products?category=${product.category}`)}
               >
-                {product.categories.name}
+                {product.category}
               </div>
             )}
           </div>
@@ -93,7 +93,7 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
           </div>
           
           <div>
-            {product.stock_quantity > 0 ? (
+            {product.stock > 0 ? (
               <span className="inline-block bg-green-100 text-green-800 text-sm font-medium px-2 py-1 rounded">
                 متوفر
               </span>
@@ -134,7 +134,7 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
             <Button 
               onClick={handleAddToCart} 
               className="w-full md:w-auto"
-              disabled={product.stock_quantity <= 0}
+              disabled={product.stock <= 0}
             >
               <ShoppingCart className="ml-2 h-4 w-4" />
               إضافة إلى السلة
@@ -144,7 +144,7 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
           <div className="border-t border-gray-200 pt-4">
             <p className="flex items-center text-gray-600">
               <Package className="h-4 w-4 ml-2" />
-              المتوفر في المخزون: {product.stock_quantity} وحدة
+              المتوفر في المخزون: {product.stock} وحدة
             </p>
           </div>
         </div>

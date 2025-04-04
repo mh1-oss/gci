@@ -1,10 +1,11 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import type { Category } from '@/data/initialData';
 import {
   mapDbCategoryToCategory,
-  mapCategoryToDbCategory,
-  DbCategory
+  mapCategoryToDbCategory
 } from '@/utils/models';
+import { DbCategory } from '@/utils/models/types';
 
 // Categories
 export const fetchCategories = async (): Promise<Category[]> => {
@@ -64,7 +65,7 @@ export const fetchCategoryById = async (id: string): Promise<Category | null> =>
       return null;
     }
     
-    return data ? mapDbCategoryToCategory(data) : null;
+    return data ? mapDbCategoryToCategory(data as DbCategory) : null;
   } catch (error) {
     console.error('Unexpected error fetching category by id:', error);
     return null;
@@ -87,7 +88,7 @@ export const createCategory = async (category: Omit<Category, 'id'>): Promise<Ca
       return null;
     }
     
-    return mapDbCategoryToCategory(data);
+    return mapDbCategoryToCategory(data as DbCategory);
   } catch (error) {
     console.error('Unexpected error creating category:', error);
     return null;
@@ -100,7 +101,7 @@ export const updateCategory = async (id: string, updates: Partial<Category>): Pr
     const dbUpdates: Partial<DbCategory> = {};
     
     if (updates.name !== undefined) dbUpdates.name = updates.name;
-    if (updates.description !== undefined) dbUpdates.description = updates.description;
+    if (updates.description !== undefined) dbUpdates.description = updates.description || null;
     
     const { data, error } = await supabase
       .from('categories')
@@ -114,7 +115,7 @@ export const updateCategory = async (id: string, updates: Partial<Category>): Pr
       return null;
     }
     
-    return mapDbCategoryToCategory(data);
+    return mapDbCategoryToCategory(data as DbCategory);
   } catch (error) {
     console.error('Unexpected error updating category:', error);
     return null;

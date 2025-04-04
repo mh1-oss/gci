@@ -1,23 +1,29 @@
 
-import type { Product } from '@/data/initialData';
-import { DbProduct } from './types';
+import type { Product as InitialDataProduct } from '@/data/initialData';
+import { DbProduct, Product } from './types';
 
 export function mapDbProductToProduct(dbProduct: DbProduct): Product {
   return {
     id: dbProduct.id,
     name: dbProduct.name,
     description: dbProduct.description || '',
-    categoryId: dbProduct.category_id || '',
+    category: dbProduct.categories?.name || '',
     price: dbProduct.price,
-    image: dbProduct.image_url || '/placeholder.svg',
-    featured: false,
-    colors: [],
-    specifications: {},
-    mediaGallery: []
+    images: [dbProduct.image_url || '/placeholder.svg'],
+    stock: dbProduct.stock_quantity || 0,
+    created_at: dbProduct.created_at
   };
 }
 
-export function mapProductToDbProduct(product: Omit<Product, 'id'>): Omit<DbProduct, 'id' | 'created_at' | 'updated_at' | 'categories'> {
+export function mapInitialDataProductToDbProduct(product: Omit<InitialDataProduct, 'id'>): { 
+  name: string;
+  description: string;
+  category_id: string;
+  price: number;
+  cost_price: number;
+  stock_quantity: number;
+  image_url: string | null;
+} {
   return {
     name: product.name,
     description: product.description,

@@ -13,7 +13,12 @@ export function mapDbStockTransactionToStockTransaction(dbTransaction: DbStockTr
   };
 }
 
-export function mapStockTransactionToDbStockTransaction(transaction: Omit<StockTransaction, 'id' | 'product_name' | 'created_at'>): Omit<DbStockTransaction, 'id' | 'created_at'> {
+export function mapStockTransactionToDbStockTransaction(transaction: Omit<StockTransaction, 'id' | 'product_name' | 'created_at'>): { 
+  product_id: string; 
+  quantity: number; 
+  transaction_type: 'in' | 'out'; 
+  notes: string | null 
+} {
   return {
     product_id: transaction.product_id,
     quantity: transaction.quantity,

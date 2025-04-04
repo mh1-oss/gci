@@ -11,9 +11,9 @@ export function mapDbCategoryToCategory(dbCategory: DbCategory): Category {
   };
 }
 
-export function mapCategoryToDbCategory(category: Omit<Category, 'id'>): Omit<DbCategory, 'id' | 'created_at' | 'updated_at'> {
+export function mapCategoryToDbCategory(category: Omit<Category, 'id'>): { name: string; description: string | null } {
   return {
     name: category.name,
-    description: category.description
+    description: category.description || null
   };
 }

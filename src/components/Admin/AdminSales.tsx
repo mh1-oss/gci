@@ -27,7 +27,7 @@ import { fetchCompanyInfo } from "@/services/company/companyService";
 import { printReceipt } from "@/services/receipt/receiptService";
 import { createSaleFromCart, deleteSale } from '@/services/sales/salesService';
 import { mapDbSaleToSale } from '@/utils/models/salesMappers';
-import { Product } from "@/data/initialData";
+import { Product } from "@/utils/models/types";
 import { useCurrency } from "@/context/CurrencyContext";
 
 // Helper function to format price with the correct currency
@@ -76,8 +76,22 @@ const SalesList = () => {
               console.error(`Error fetching items for sale ${sale.id}:`, itemsError);
               return mapDbSaleToSale(sale); // Return sale without items in case of error
             }
+            
+            // Get product names for each sale item
+            const itemsWithProductNames = await Promise.all(itemsData.map(async (item) => {
+              const { data: productData } = await supabase
+                .from('products')
+                .select('name')
+                .eq('id', item.product_id)
+                .single();
+                
+              return {
+                ...item,
+                product_name: productData?.name || 'Unknown Product'
+              };
+            }));
 
-            return mapDbSaleToSale(sale, itemsData);
+            return mapDbSaleToSale(sale, itemsWithProductNames);
           })
         );
         setSales(salesWithItems);
@@ -86,13 +100,6 @@ const SalesList = () => {
       fetchSaleItems();
     }
   }, [salesData]);
-
-  const filteredSales = sales.filter(sale =>
-    sale.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    sale.customer_phone?.includes(searchQuery) ||
-    sale.customer_email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    sale.id.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   const handleDeleteSale = async (saleId: string) => {
     const confirmDelete = window.confirm("Are you sure you want to delete this sale?");
@@ -105,7 +112,7 @@ const SalesList = () => {
         title: "Sale Deleted",
         description: "The sale has been successfully deleted.",
       });
-      queryClient.invalidateQueries(['sales']);
+      queryClient.invalidateQueries({queryKey: ['sales']});
     } else {
       toast({
         title: "Error",
@@ -184,26 +191,7 @@ const SalesList = () => {
                     <Button
                       variant="destructive"
                       size="sm"
-                      onClick={() => {
-                        const confirmDelete = window.confirm("Are you sure you want to delete this sale?");
-                        if (confirmDelete) {
-                          deleteSale(sale.id).then(({ success, error }) => {
-                            if (success) {
-                              toast({
-                                title: "Sale Deleted",
-                                description: "The sale has been successfully deleted.",
-                              });
-                              queryClient.invalidateQueries(['sales']);
-                            } else {
-                              toast({
-                                title: "Error",
-                                description: `Failed to delete sale: ${error || 'Unknown error'}`,
-                                variant: "destructive",
-                              });
-                            }
-                          });
-                        }
-                      }}
+                      onClick={() => handleDeleteSale(sale.id)}
                     >
                       <Trash className="mr-2 h-4 w-4" />
                       Delete
@@ -282,7 +270,21 @@ const SaleDetails = () => {
           throw new Error(itemsError.message);
         }
 
-        setSale(mapDbSaleToSale(saleData, itemsData));
+        // Get product names for each sale item
+        const itemsWithProductNames = await Promise.all(itemsData.map(async (item) => {
+          const { data: productData } = await supabase
+            .from('products')
+            .select('name')
+            .eq('id', item.product_id)
+            .single();
+            
+          return {
+            ...item,
+            product_name: productData?.name || 'Unknown Product'
+          };
+        }));
+
+        setSale(mapDbSaleToSale(saleData, itemsWithProductNames));
       } catch (error: any) {
         toast({
           title: "Error",
@@ -457,7 +459,7 @@ const NewSale = () => {
         price: item.price,
         quantity: item.quantity,
       })),
-      currency: currency, // Pass the current currency
+      currency: currency,
     };
 
     const { success, error } = await createSaleFromCart(
@@ -528,7 +530,7 @@ const NewSale = () => {
                 <Card key={product.id} className="cursor-pointer" onClick={() => addToCart(product)}>
                   <CardContent>
                     <div className="flex flex-col items-center">
-                      <img src={product.images[0]} alt={product.name} className="h-20 w-20 object-cover mb-2" />
+                      <img src={product.images?.[0] || product.image || '/placeholder.svg'} alt={product.name} className="h-20 w-20 object-cover mb-2" />
                       <p className="text-sm font-semibold">{product.name}</p>
                       <p className="text-xs text-muted-foreground">{product.price}</p>
                     </div>

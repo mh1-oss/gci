@@ -1,11 +1,11 @@
 
 import { Card, CardContent } from "@/components/ui/card";
-import { DbProduct } from "@/utils/models/types";
+import { Product } from "@/utils/models/types";
 import { useCurrency } from "@/context/CurrencyContext";
 import { useNavigate } from "react-router-dom";
 
 interface RelatedProductsProps {
-  products: DbProduct[];
+  products: Product[];
 }
 
 const RelatedProducts = ({ products }: RelatedProductsProps) => {
@@ -28,7 +28,7 @@ const RelatedProducts = ({ products }: RelatedProductsProps) => {
           >
             <div className="h-48 overflow-hidden">
               <img 
-                src={relatedProduct.image_url || '/placeholder.svg'} 
+                src={relatedProduct.images?.[0] || '/placeholder.svg'} 
                 alt={relatedProduct.name} 
                 className="w-full h-full object-cover"
               />

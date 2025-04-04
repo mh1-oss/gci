@@ -10,16 +10,14 @@ export const createSaleFromCart = async (
   customerName: string,
   customerPhone: string | null,
   customerEmail: string | null,
-  cartItems: CartItem[]
+  cartItems: CartItem[],
+  currency: 'USD' | 'IQD' = 'USD'
 ): Promise<{ success: boolean; saleData?: Sale; error?: string }> => {
   try {
     if (!cartItems || cartItems.length === 0) {
       return { success: false, error: "Cart is empty" };
     }
     
-    // Get current currency to record in the sale
-    const currentCurrency = getCurrency();
-
     // Create sales record
     const saleId = uuidv4();
     const saleItems = mapCartItemsToSaleItems(cartItems, saleId);
@@ -34,7 +32,7 @@ export const createSaleFromCart = async (
       total_amount: totalAmount,
       status: "completed",
       created_at: new Date().toISOString(),
-      currency: currentCurrency, // Add currency information
+      currency: currency,
       items: saleItems,
     };
     
