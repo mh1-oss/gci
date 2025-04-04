@@ -53,12 +53,18 @@ export const createCategory = async (category: Omit<Category, 'id'>): Promise<Ca
   try {
     console.log('Creating category with data:', category);
     
-    // Create the category using a direct insert with SECURITY DEFINER function
-    const { data: categoryId, error } = await supabase
-      .rpc('admin_create_category', {
-        p_name: category.name,
-        p_description: category.description || null
-      });
+    // Make sure we have valid parameters for the RPC call
+    const name = category.name?.trim();
+    const description = category.description?.trim() || null;
+    
+    // Log what we're actually sending to the RPC function
+    console.log('Calling admin_create_category with:', { p_name: name, p_description: description });
+    
+    // Call the RPC function with proper parameters
+    const { data: categoryId, error } = await supabase.rpc('admin_create_category', {
+      p_name: name,
+      p_description: description
+    });
     
     if (error) {
       console.error('Error creating category:', error);
@@ -81,15 +87,18 @@ export const createCategory = async (category: Omit<Category, 'id'>): Promise<Ca
 
 export const updateCategory = async (id: string, updates: Partial<Category>): Promise<Category | null> => {
   try {
-    console.log('Updating category:', id, 'with data:', updates);
+    // Extract and clean up the parameters
+    const name = updates.name?.trim();
+    const description = updates.description?.trim() || null;
     
-    // Update the category using our admin_update_category function
-    const { data: success, error } = await supabase
-      .rpc('admin_update_category', {
-        p_id: id,
-        p_name: updates.name,
-        p_description: updates.description
-      });
+    console.log('Updating category:', id, 'with data:', { name, description });
+    
+    // Call the RPC function with proper parameters
+    const { data: success, error } = await supabase.rpc('admin_update_category', {
+      p_id: id,
+      p_name: name,
+      p_description: description
+    });
     
     if (error) {
       console.error('Error updating category:', error);

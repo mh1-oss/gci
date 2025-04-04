@@ -72,10 +72,15 @@ export const useCategoryManagement = () => {
     setIsSaving(true);
     setError(null);
     try {
-      console.log("Creating new category:", { name, description });
+      // Prepare the category data
+      const cleanName = name.trim();
+      const cleanDescription = description.trim() || null;
+      
+      console.log("Creating new category:", { name: cleanName, description: cleanDescription });
+      
       const newCategory: Omit<Category, 'id'> = { 
-        name: name.trim(), 
-        description: description.trim() || null, 
+        name: cleanName, 
+        description: cleanDescription, 
         image: '/placeholder.svg' 
       };
       
@@ -129,11 +134,17 @@ export const useCategoryManagement = () => {
     setIsSaving(true);
     setError(null);
     try {
-      console.log("Updating category:", editTarget.id, { name, description });
+      // Prepare the update data
+      const cleanName = name.trim();
+      const cleanDescription = description.trim() || null;
+      
+      console.log("Updating category:", editTarget.id, { name: cleanName, description: cleanDescription });
+      
       const updatedCategoryData: Partial<Category> = {
-        name: name.trim(),
-        description: description.trim() || null
+        name: cleanName,
+        description: cleanDescription
       };
+      
       const updatedCategory = await updateCategory(editTarget.id, updatedCategoryData);
 
       if (updatedCategory) {
