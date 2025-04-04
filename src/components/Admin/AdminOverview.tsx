@@ -1,11 +1,9 @@
+
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Package, FolderTree, Settings, DollarSign, RefreshCw } from "lucide-react";
 import { useCurrency } from "@/context/CurrencyContext";
 import { toast } from "@/hooks/use-toast";
+import { StatsCardGrid, QuickActions, SystemInfo, ErrorDisplay } from "./Overview";
 
 const AdminOverview = () => {
   const [productCount, setProductCount] = useState(0);
@@ -63,135 +61,18 @@ const AdminOverview = () => {
     <div>
       <h2 className="text-2xl font-bold mb-6">Dashboard Overview</h2>
       
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg mb-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h3 className="font-bold mb-2">Error Loading Data</h3>
-              <p>{error}</p>
-            </div>
-            <Button 
-              onClick={handleRefresh}
-              variant="outline" 
-              className="border-red-300 text-red-700 hover:bg-red-50"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
-          </div>
-        </div>
-      )}
+      <ErrorDisplay error={error} onRefresh={handleRefresh} />
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-lg font-medium">Products</CardTitle>
-            <Package className="h-5 w-5 text-gray-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold mb-1">
-              {loading ? "..." : productCount}
-            </div>
-            <p className="text-sm text-gray-500">Total products in catalog</p>
-            <Link to="/admin/products" className="mt-4 inline-block">
-              <Button variant="outline" size="sm">Manage Products</Button>
-            </Link>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-lg font-medium">Categories</CardTitle>
-            <FolderTree className="h-5 w-5 text-gray-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold mb-1">
-              {loading ? "..." : categoryCount}
-            </div>
-            <p className="text-sm text-gray-500">Product categories</p>
-            <Link to="/admin/categories" className="mt-4 inline-block">
-              <Button variant="outline" size="sm">Manage Categories</Button>
-            </Link>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-lg font-medium">Exchange Rate</CardTitle>
-            <DollarSign className="h-5 w-5 text-gray-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold mb-1">
-              {exchangeRate} IQD
-            </div>
-            <p className="text-sm text-gray-500">
-              Current rate: 1 USD = {exchangeRate} IQD
-            </p>
-            <Link to="/admin/settings" className="mt-4 inline-block">
-              <Button variant="outline" size="sm">Update Rate</Button>
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
+      <StatsCardGrid 
+        productCount={productCount}
+        categoryCount={categoryCount}
+        loading={loading}
+        exchangeRate={exchangeRate}
+      />
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>Common tasks you may want to perform</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <Link to="/admin/products/add" className="block">
-              <Button variant="outline" className="w-full justify-start">
-                <Package className="mr-2 h-4 w-4" />
-                Add New Product
-              </Button>
-            </Link>
-            <Link to="/admin/categories/add" className="block">
-              <Button variant="outline" className="w-full justify-start">
-                <FolderTree className="mr-2 h-4 w-4" />
-                Add New Category
-              </Button>
-            </Link>
-            <Link to="/admin/settings" className="block">
-              <Button variant="outline" className="w-full justify-start">
-                <Settings className="mr-2 h-4 w-4" />
-                Update Settings
-              </Button>
-            </Link>
-            <Button variant="outline" className="w-full justify-start" onClick={handleRefresh}>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh Dashboard
-            </Button>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>System Information</CardTitle>
-            <CardDescription>Current system status</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <dl className="space-y-4">
-              <div className="flex justify-between">
-                <dt className="font-medium text-gray-500">Currency:</dt>
-                <dd>{currency}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="font-medium text-gray-500">Exchange Rate:</dt>
-                <dd>1 USD = {exchangeRate} IQD</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="font-medium text-gray-500">Last Update:</dt>
-                <dd>{new Date().toLocaleDateString()}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="font-medium text-gray-500">Admin User:</dt>
-                <dd>Admin</dd>
-              </div>
-            </dl>
-          </CardContent>
-        </Card>
+        <QuickActions onRefresh={handleRefresh} />
+        <SystemInfo currency={currency} exchangeRate={exchangeRate} />
       </div>
     </div>
   );
