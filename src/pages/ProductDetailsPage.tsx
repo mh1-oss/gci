@@ -1,5 +1,6 @@
 
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import ProductInfo from '@/components/Products/ProductInfo';
 import RelatedProducts from '@/components/Products/RelatedProducts';
 import ProductLoadingState from '@/components/Products/LoadingState';
@@ -9,12 +10,23 @@ import { mapDbProductToProduct } from '@/utils/models/productMappers';
 
 const ProductDetailsPage = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { product, relatedProducts, isLoading, error } = useProductDetails(id);
 
+  // Log navigation and error information for debugging
+  useEffect(() => {
+    console.log(`ProductDetailsPage loaded with ID: ${id}`);
+    if (error) {
+      console.error('Product details error:', error);
+    }
+  }, [id, error]);
+
+  // Handle loading state
   if (isLoading) {
     return <ProductLoadingState />;
   }
 
+  // Handle error or not found state
   if (error || !product) {
     return <ProductErrorState />;
   }

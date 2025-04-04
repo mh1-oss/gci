@@ -2,8 +2,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DbProduct } from "@/utils/models/types";
+import { useToast } from "@/hooks/use-toast";
 
 export const useProductDetails = (id: string | undefined) => {
+  const { toast } = useToast();
+  
   // Fetch product details
   const { 
     data: product, 
@@ -13,13 +16,25 @@ export const useProductDetails = (id: string | undefined) => {
     queryKey: ['product', id],
     queryFn: async () => {
       try {
+        if (!id) throw new Error("No product ID provided");
+
+        console.log(`Fetching product with ID: ${id}`);
+        
         const { data, error } = await supabase
           .from('products')
           .select('*, categories(name)')
           .eq('id', id)
-          .single();
+          .maybeSingle(); // Use maybeSingle instead of single to handle null case gracefully
         
-        if (error) throw error;
+        if (error) {
+          console.error("Supabase error:", error);
+          throw error;
+        }
+        
+        if (!data) {
+          console.log("Product not found");
+          return null;
+        }
 
         // Make sure we convert to the correct type
         const result: DbProduct = {
@@ -40,6 +55,11 @@ export const useProductDetails = (id: string | undefined) => {
         return result;
       } catch (error) {
         console.error('Error fetching product:', error);
+        toast({
+          title: "خطأ في تحميل المنتج",
+          description: "حدث خطأ أثناء محاولة تحميل بيانات المنتج",
+          variant: "destructive",
+        });
         throw error;
       }
     },
@@ -47,10 +67,12 @@ export const useProductDetails = (id: string | undefined) => {
   });
 
   // Also fetch related products from the same category
-  const { data: relatedProducts } = useQuery({
+  const { data: relatedProducts = [] } = useQuery({
     queryKey: ['relatedProducts', product?.category_id],
     queryFn: async () => {
-      if (!product?.category_id) return [];
+      if (!product?.category_id || !id) return [];
+      
+      console.log(`Fetching related products for category ID: ${product.category_id}`);
       
       const { data, error } = await supabase
         .from('products')
@@ -59,7 +81,10 @@ export const useProductDetails = (id: string | undefined) => {
         .neq('id', id)
         .limit(4);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching related products:', error);
+        throw error;
+      }
       
       // Convert the data to the expected format
       return data.map(item => ({
@@ -75,7 +100,7 @@ export const useProductDetails = (id: string | undefined) => {
         updated_at: item.updated_at
       })) as DbProduct[];
     },
-    enabled: !!product?.category_id
+    enabled: !!product?.category_id && !!id
   });
 
   return {
