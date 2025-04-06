@@ -1,7 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Product as InitialDataProduct } from '@/data/initialData';
-import { mapDbProductToProduct } from '@/utils/models/productMappers';
 import { DbProduct, Product } from '@/utils/models/types';
 import { products } from '@/data/initialData';
 
@@ -44,7 +43,7 @@ export const fetchProducts = async (): Promise<InitialDataProduct[]> => {
     console.log('Products fetched successfully:', data);
     
     // Breaking the circular type reference by directly mapping to InitialDataProduct
-    return (data || []).map((item: DbProduct) => {
+    return (data || []).map((item: any) => {
       return {
         id: item.id,
         name: item.name,
@@ -52,8 +51,8 @@ export const fetchProducts = async (): Promise<InitialDataProduct[]> => {
         price: item.price,
         categoryId: item.category_id || '',
         image: item.image_url || '/placeholder.svg',
-        featured: !!item.featured,
-        colors: item.colors || []
+        featured: false, // Default value since it's not in the DB schema
+        colors: [] // Default empty array since it's not in the DB schema
       } as InitialDataProduct;
     });
   } catch (error) {
@@ -102,8 +101,8 @@ export const fetchProductById = async (id: string): Promise<InitialDataProduct |
       price: data.price,
       categoryId: data.category_id || '',
       image: data.image_url || '/placeholder.svg',
-      featured: !!data.featured,
-      colors: data.colors || []
+      featured: false, // Default since it's not in the DB schema
+      colors: [] // Default since it's not in the DB schema
     } as InitialDataProduct;
   } catch (error) {
     console.error('Unexpected error fetching product by id:', error);
@@ -164,13 +163,13 @@ export const fetchProductsByCategory = async (categoryId: string): Promise<Produ
       image: item.image_url || '/placeholder.svg',
       price: Number(item.price) || 0,
       categoryId: item.category_id || '',
-      featured: Boolean(item.featured) || false,
+      featured: false, // Default since it's not in the DB schema
       images: item.image_url ? [item.image_url] : ['/placeholder.svg'],
       category: '',
       stock: item.stock_quantity || 0,
-      colors: item.colors || [],
-      specifications: item.specifications || {},
-      mediaGallery: item.media_gallery || []
+      colors: [], // Default since it's not in the DB schema
+      specifications: {}, // Default since it's not in the DB schema
+      mediaGallery: [] // Default since it's not in the DB schema
     } as Product));
   } catch (error) {
     console.error('Unexpected error fetching products by category:', error);
@@ -201,10 +200,11 @@ export const fetchProductsByCategory = async (categoryId: string): Promise<Produ
  */
 export const fetchFeaturedProducts = async (): Promise<InitialDataProduct[]> => {
   try {
+    // Since 'featured' field doesn't exist in the DB schema,
+    // we'll just get some recent products instead
     const { data, error } = await supabase
       .from('products')
       .select('*')
-      .eq('featured', true)
       .order('created_at', { ascending: false })
       .limit(4);
     
@@ -225,15 +225,15 @@ export const fetchFeaturedProducts = async (): Promise<InitialDataProduct[]> => 
     }
     
     // Direct mapping to avoid circular reference
-    return (data || []).map((item: DbProduct) => ({
+    return (data || []).map((item: any) => ({
       id: item.id,
       name: item.name,
       description: item.description || '',
       price: item.price,
       categoryId: item.category_id || '',
       image: item.image_url || '/placeholder.svg',
-      featured: true,
-      colors: item.colors || []
+      featured: true, // We're treating these as featured since we're limiting to 4
+      colors: [] // Default since it's not in the DB schema
     } as InitialDataProduct));
   } catch (error) {
     console.error('Unexpected error fetching featured products:', error);
