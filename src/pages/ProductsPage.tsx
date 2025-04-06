@@ -1,10 +1,15 @@
+
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Product, Category } from "@/data/initialData";
 import { fetchProducts, fetchProductsByCategory } from "@/services/products/productService";
 import { fetchCategories } from "@/services/categories/categoryService"; 
+import { pingDatabase } from "@/integrations/supabase/client";
 import ProductFilters from "@/components/Products/ProductFilters";
 import ProductGrid from "@/components/Products/ProductGrid";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const ProductsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -14,6 +19,7 @@ const ProductsPage = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState(searchQuery);
   const [selectedCategory, setSelectedCategory] = useState(categoryId);
   
@@ -30,9 +36,16 @@ const ProductsPage = () => {
   // Fetch products when category or search changes
   useEffect(() => {
     setLoading(true);
+    setError(null);
     
     const getProductsData = async () => {
       try {
+        // Check database connection first
+        const pingResult = await pingDatabase();
+        if (!pingResult.ok) {
+          throw new Error("تعذر الاتصال بقاعدة البيانات");
+        }
+        
         let data: Product[];
         
         if (categoryId) {
@@ -53,6 +66,7 @@ const ProductsPage = () => {
         setLoading(false);
       } catch (error) {
         console.error("Error fetching products:", error);
+        setError(error instanceof Error ? error.message : "حدث خطأ أثناء تحميل المنتجات");
         setLoading(false);
       }
     };
@@ -105,12 +119,39 @@ const ProductsPage = () => {
     setSelectedCategory("");
     setSearchParams({});
   };
+  
+  // Retry loading
+  const handleRetry = () => {
+    setError(null);
+    setLoading(true);
+    
+    const params = new URLSearchParams(searchParams);
+    setSearchParams(params);
+  };
 
   return (
     <div className="py-8" dir="rtl">
       <div className="container-custom">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-4">{currentCategory}</h1>
+          
+          {error ? (
+            <Alert variant="destructive" className="mb-6">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>خطأ في تحميل المنتجات</AlertTitle>
+              <AlertDescription>
+                <p className="mb-2">{error}</p>
+                <Button 
+                  variant="outline" 
+                  className="mt-2"
+                  onClick={handleRetry}
+                >
+                  <RefreshCw className="h-4 w-4 ml-2" />
+                  إعادة المحاولة
+                </Button>
+              </AlertDescription>
+            </Alert>
+          ) : null}
           
           <ProductFilters 
             categories={categories}

@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { Product as InitialDataProduct } from '@/data/initialData';
@@ -14,97 +13,21 @@ export const fetchProducts = async (): Promise<InitialDataProduct[]> => {
   try {
     console.log('Fetching products...');
     
-    // First, check if the user is authenticated and is an admin
-    const { data: session } = await supabase.auth.getSession();
-    const isAuthenticated = !!session?.session?.user;
-    
-    console.log('Authentication status:', isAuthenticated ? 'Authenticated' : 'Not authenticated');
-    
-    // Attempt to fetch products - no aggregates
+    // Get the products without using relationships to avoid RLS issues
     const { data, error } = await supabase
       .from('products')
-      .select('*, categories(name)');
+      .select('*');
     
     if (error) {
       console.error('Error fetching products:', error);
-      
-      // If there's an error related to RLS policies and the user is authenticated
-      if (error.code === '42501' && isAuthenticated) {
-        console.log('Using fallback method to fetch products due to RLS error');
-        // Avoid using RPC that might contain aggregate functions
-        const { data: adminData, error: adminError } = await supabase
-          .from('products')
-          .select('*');
-        
-        if (adminError) {
-          console.error('Fallback method failed:', adminError);
-          return [];
-        }
-        
-        console.log('Products fetched via direct query:', adminData);
-        return (adminData || []).map((item: any) => {
-          // Convert the raw item to a properly structured DbProduct
-          const dbProduct: DbProduct = {
-            id: item.id,
-            name: item.name,
-            description: item.description,
-            price: item.price,
-            cost_price: item.cost_price,
-            stock_quantity: item.stock_quantity,
-            image_url: item.image_url,
-            category_id: item.category_id,
-            created_at: item.created_at,
-            updated_at: item.updated_at,
-            categories: null,
-            featured: item.featured || false,
-            colors: item.colors || [],
-            specifications: item.specifications || {},
-            media_gallery: item.media_gallery || []
-          };
-          
-          const product = mapDbProductToProduct(dbProduct);
-          return {
-            id: product.id,
-            name: product.name,
-            description: product.description,
-            price: product.price,
-            categoryId: product.categoryId,
-            image: product.image,
-            featured: product.featured,
-          } as InitialDataProduct;
-        });
-      }
-      
       return [];
     }
     
     console.log('Products fetched successfully:', data);
     
-    // Safely map the products with proper type handling
-    return (data || []).map((item: any) => {
-      // Convert the raw item to a properly structured DbProduct
-      const dbProduct: DbProduct = {
-        id: item.id,
-        name: item.name,
-        description: item.description,
-        price: item.price,
-        cost_price: item.cost_price,
-        stock_quantity: item.stock_quantity,
-        image_url: item.image_url,
-        category_id: item.category_id,
-        created_at: item.created_at,
-        updated_at: item.updated_at,
-        categories: item.categories,
-        featured: item.featured || false,
-        colors: item.colors || [],
-        specifications: item.specifications || {},
-        media_gallery: item.media_gallery || []
-      };
-      
-      // Now safely map to our Product type
-      const product = mapDbProductToProduct(dbProduct);
-      
-      // Finally return the expected InitialDataProduct format
+    // Map products and get categories in a separate step if needed
+    return (data || []).map((item: DbProduct) => {
+      const product = mapDbProductToProduct(item);
       return {
         id: product.id,
         name: product.name,
@@ -173,7 +96,7 @@ export const fetchProductsByCategory = async (categoryId: string): Promise<Produ
 
 export const fetchFeaturedProducts = async (): Promise<InitialDataProduct[]> => {
   try {
-    // Attempt to fetch featured products
+    // Get featured products directly without joins
     const { data, error } = await supabase
       .from('products')
       .select('*')
@@ -182,37 +105,6 @@ export const fetchFeaturedProducts = async (): Promise<InitialDataProduct[]> => 
     
     if (error) {
       console.error('Error fetching featured products:', error);
-      
-      // If there's an error related to RLS policies, try to work around it
-      const { data: session } = await supabase.auth.getSession();
-      const isAuthenticated = !!session?.session?.user;
-      
-      if (error.code === '42P17' && isAuthenticated) {
-        console.log('Using fallback method to fetch featured products due to RLS error');
-        const { data: adminData, error: adminError } = await supabase.rpc('get_all_products');
-        
-        if (adminError) {
-          console.error('Fallback method failed:', adminError);
-          return [];
-        }
-        
-        // Take the first 4 products and mark them as featured
-        return (adminData as DbProduct[])
-          .slice(0, 4)
-          .map(dbProduct => {
-            const product = mapDbProductToProduct(dbProduct);
-            return {
-              id: product.id,
-              name: product.name,
-              description: product.description,
-              price: product.price,
-              categoryId: product.categoryId,
-              image: product.image,
-              featured: true,
-            } as InitialDataProduct;
-          });
-      }
-      
       return [];
     }
     

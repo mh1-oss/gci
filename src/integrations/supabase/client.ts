@@ -31,38 +31,21 @@ export const supabase = createClient<Database>(
   }
 );
 
-// Helper function to check connection to Supabase without using complex queries
+// Helper function to check connection to Supabase using the simplest possible query
 export const pingDatabase = async () => {
   try {
-    const start = Date.now();
-    
-    // Try to get a single record from a simple public table first
+    // Try a simple query that avoids RLS complications
     const { data, error } = await supabase
       .from('company_info')
       .select('id')
-      .limit(1)
-      .single();
-    
-    const end = Date.now();
-    
+      .limit(1);
+      
     if (error) {
       console.error("Database ping failed:", error);
-      
-      // Try an even simpler public query as fallback
-      try {
-        const { error: authError } = await supabase.auth.getSession();
-        if (!authError) {
-          // At least the auth API is working
-          return { ok: true, latency: 0, partial: true };
-        }
-      } catch (e) {
-        console.error("Even auth check failed:", e);
-      }
-      
       return { ok: false, latency: 0, error: error.message };
     }
     
-    return { ok: true, latency: end - start };
+    return { ok: true, latency: 0 };
   } catch (err) {
     console.error("Unexpected error during database ping:", err);
     return { ok: false, latency: 0, error: err instanceof Error ? err.message : 'Unknown error' };
