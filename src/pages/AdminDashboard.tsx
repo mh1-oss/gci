@@ -7,7 +7,7 @@ import AdminTabContent from "@/components/Admin/AdminTabContent";
 import { LogOut, Package, CreditCard, ShoppingCart, Newspaper, RefreshCw } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, pingDatabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 
@@ -34,29 +34,35 @@ const AdminDashboard = () => {
       try {
         console.log("Fetching dashboard stats...");
         
-        // Fetch product count using the RPC function to bypass RLS
-        const { data: productsData, error: productsError } = await supabase
-          .rpc('get_all_products')
-          .select('id');
-
-        if (productsError) {
-          console.error("Error fetching products:", productsError);
-          throw productsError;
+        // Check connection first
+        const pingResult = await pingDatabase();
+        if (!pingResult.ok) {
+          throw new Error("Cannot connect to database");
         }
         
-        const productCount = productsData ? productsData.length : 0;
-
-        // Fetch category count using the RPC function to bypass RLS
-        const { data: categoriesData, error: categoriesError } = await supabase
-          .rpc('get_all_categories')
-          .select('id');
-
-        if (categoriesError) {
-          console.error("Error fetching categories:", categoriesError);
-          throw categoriesError;
+        // Get product count
+        let productCount = 0;
+        try {
+          const { data: productsData } = await supabase
+            .from('products')
+            .select('id', { count: 'exact', head: true });
+          
+          productCount = productsData ? productsData.length : 0;
+        } catch (err) {
+          console.warn("Error getting product count:", err);
         }
         
-        const categoryCount = categoriesData ? categoriesData.length : 0;
+        // Get category count
+        let categoryCount = 0;
+        try {
+          const { data: categoriesData } = await supabase
+            .from('categories')
+            .select('id', { count: 'exact', head: true });
+          
+          categoryCount = categoriesData ? categoriesData.length : 0;
+        } catch (err) {
+          console.warn("Error getting category count:", err);
+        }
 
         // For orders and sales, use fallback values if permissions are an issue
         let orderCount = 0;

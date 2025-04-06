@@ -31,13 +31,13 @@ export const supabase = createClient<Database>(
   }
 );
 
-// Helper function to check connection to Supabase without using ANY aggregates or complex queries
+// Helper function to check connection to Supabase without using complex queries
 export const pingDatabase = async () => {
   try {
     const start = Date.now();
     
-    // Simplest possible query - just check if we get a response at all
-    const { data: health, error } = await supabase
+    // Try to get a single record from a simple public table first
+    const { data, error } = await supabase
       .from('company_info')
       .select('id')
       .limit(1)
