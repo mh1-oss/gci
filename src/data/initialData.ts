@@ -1,4 +1,3 @@
-
 export interface Product {
   id: string;
   name: string;
@@ -7,7 +6,7 @@ export interface Product {
   categoryId: string;
   image: string;
   featured: boolean;
-  colors?: string[];
+  colors: string[];
   specifications?: Record<string, string>;
   mediaGallery?: MediaItem[];
   specsPdf?: string;

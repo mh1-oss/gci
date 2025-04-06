@@ -1,4 +1,3 @@
-
 export interface Product {
   id: string;
   name: string;
@@ -11,7 +10,7 @@ export interface Product {
   categoryId: string;
   image: string;
   featured: boolean;
-  colors: string[]; 
+  colors: string[]; // Required to match initialData.ts
   specifications?: Record<string, string>;
   mediaGallery?: {
     url: string;

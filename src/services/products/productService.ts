@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import type { Product as InitialDataProduct } from '@/data/initialData';
 import {
@@ -7,14 +6,14 @@ import {
   mapInitialDataProductToDbProduct
 } from '@/utils/models/productMappers';
 import { DbProduct, Product } from '@/utils/models/types';
-import { products as initialProducts } from '@/data/initialData';
+import { products } from '@/data/initialData';
 
 /**
  * Get fallback product data from the initial data set
  */
 const getFallbackProducts = (): InitialDataProduct[] => {
   console.log('Using fallback product data');
-  return initialProducts;
+  return products;
 };
 
 /**
@@ -88,7 +87,7 @@ export const fetchProductById = async (id: string): Promise<InitialDataProduct |
         error.message.includes("user_roles")
       )) {
         // Try to find the product in the fallback data
-        const fallbackProduct = initialProducts.find(p => p.id === id);
+        const fallbackProduct = products.find(p => p.id === id);
         return fallbackProduct || null;
       }
       
@@ -111,7 +110,7 @@ export const fetchProductById = async (id: string): Promise<InitialDataProduct |
     console.error('Unexpected error fetching product by id:', error);
     
     // Try to find the product in the fallback data
-    const fallbackProduct = initialProducts.find(p => p.id === id);
+    const fallbackProduct = products.find(p => p.id === id);
     return fallbackProduct || null;
   }
 };
@@ -136,7 +135,7 @@ export const fetchProductsByCategory = async (categoryId: string): Promise<Produ
         error.message.includes("user_roles")
       )) {
         console.warn('RLS policy issue detected, filtering fallback data by category');
-        return initialProducts
+        return products
           .filter(p => p.categoryId === categoryId)
           .map(p => ({
             id: p.id,
@@ -157,7 +156,7 @@ export const fetchProductsByCategory = async (categoryId: string): Promise<Produ
     console.error('Unexpected error fetching products by category:', error);
     
     // Fallback to filtered initial data
-    return initialProducts
+    return products
       .filter(p => p.categoryId === categoryId)
       .map(p => ({
         id: p.id,
@@ -193,7 +192,7 @@ export const fetchFeaturedProducts = async (): Promise<InitialDataProduct[]> => 
         error.message.includes("user_roles")
       )) {
         // Filter featured products from initial data
-        return initialProducts.filter(p => p.featured).slice(0, 4);
+        return products.filter(p => p.featured).slice(0, 4);
       }
       
       throw error;
@@ -214,7 +213,7 @@ export const fetchFeaturedProducts = async (): Promise<InitialDataProduct[]> => 
   } catch (error) {
     console.error('Unexpected error fetching featured products:', error);
     // Return featured products from initial data
-    return initialProducts.filter(p => p.featured).slice(0, 4);
+    return products.filter(p => p.featured).slice(0, 4);
   }
 };
 
@@ -247,7 +246,18 @@ export const createProduct = async (product: Omit<Product, 'id'>): Promise<Produ
       throw new Error(`خطأ في الاتصال بقاعدة البيانات: ${connectionError.message}`);
     }
     
-    const dbProduct = mapInitialDataProductToDbProduct(product);
+    // Fixed: Use the explicit mapping function without recursion
+    const dbProduct = {
+      name: product.name,
+      description: product.description || '',
+      category_id: product.categoryId || null,
+      price: product.price,
+      cost_price: product.price * 0.7, // Default cost to 70% of price if not specified
+      stock_quantity: product.stock || 0,
+      image_url: product.image !== '/placeholder.svg' ? product.image : null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
     
     console.log('Converted to DB format:', dbProduct);
     

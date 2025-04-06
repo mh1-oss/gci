@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -55,19 +54,16 @@ const AdminProductsApp = () => {
   
   const { toast } = useToast();
   
-  // Check database connection on component mount
   useEffect(() => {
     checkConnection();
   }, []);
   
-  // Fetch data when connection status changes
   useEffect(() => {
     if (connectionStatus === 'connected') {
       fetchAllData();
     }
   }, [connectionStatus]);
   
-  // Check database connection
   const checkConnection = async () => {
     try {
       setConnectionStatus('checking');
@@ -83,7 +79,6 @@ const AdminProductsApp = () => {
         setConnectionStatus('connected');
         
         if (warning) {
-          // Show a toast for the warning, but continue
           toast({
             title: "تحذير",
             description: "تم الاتصال بقاعدة البيانات ولكن هناك مشكلة في إعدادات الأمان",
@@ -100,7 +95,6 @@ const AdminProductsApp = () => {
     }
   };
   
-  // Fetch all products and categories
   const fetchAllData = async () => {
     setLoading(true);
     setError(null);
@@ -130,27 +124,23 @@ const AdminProductsApp = () => {
     }
   };
   
-  // Open create product dialog
   const handleOpenCreateDialog = () => {
     setEditMode(false);
     setSelectedProduct(null);
     setFormDialogOpen(true);
   };
   
-  // Open edit product dialog
   const handleOpenEditDialog = (product: Product) => {
     setSelectedProduct(product);
     setEditMode(true);
     setFormDialogOpen(true);
   };
   
-  // Open delete product dialog
   const handleOpenDeleteDialog = (product: Product) => {
     setSelectedProduct(product);
     setDeleteDialogOpen(true);
   };
   
-  // Handle form submission (create or update)
   const handleFormSubmit = async (formData: any) => {
     setIsProcessing(true);
     setError(null);
@@ -158,7 +148,6 @@ const AdminProductsApp = () => {
     try {
       let imageUrl = formData.image;
       
-      // Upload image if provided
       if (formData.imageFile) {
         console.log('Uploading image file:', formData.imageFile.name);
         const uploadResult = await uploadMedia(formData.imageFile);
@@ -181,6 +170,9 @@ const AdminProductsApp = () => {
         category: '',
         stock: 0,
         featured: false,
+        colors: [],
+        specifications: {},
+        mediaGallery: []
       };
       
       let result;
@@ -196,7 +188,6 @@ const AdminProductsApp = () => {
             description: "تم تحديث المنتج بنجاح"
           });
           
-          // Update products list
           setProducts(prevProducts => 
             prevProducts.map(p => p.id === selectedProduct.id ? { ...p, ...productData, id: selectedProduct.id } : p)
           );
@@ -212,12 +203,10 @@ const AdminProductsApp = () => {
             description: "تم إنشاء المنتج بنجاح"
           });
           
-          // Add new product to list
           setProducts(prevProducts => [...prevProducts, result as Product]);
         }
       }
       
-      // Close dialog and reset form
       setFormDialogOpen(false);
       setSelectedProduct(null);
       setEditMode(false);
@@ -229,7 +218,6 @@ const AdminProductsApp = () => {
     }
   };
   
-  // Handle product deletion
   const handleDelete = async () => {
     if (!selectedProduct) return;
     
@@ -247,12 +235,10 @@ const AdminProductsApp = () => {
           description: "تم حذف المنتج بنجاح"
         });
         
-        // Remove product from list
         setProducts(prevProducts => 
           prevProducts.filter(p => p.id !== selectedProduct.id)
         );
         
-        // Close dialog and reset state
         setDeleteDialogOpen(false);
         setSelectedProduct(null);
       }
@@ -264,7 +250,6 @@ const AdminProductsApp = () => {
     }
   };
   
-  // Get category name by ID
   const getCategoryName = (categoryId: string) => {
     const category = categories.find(cat => cat.id === categoryId);
     return category ? category.name : 'غير مصنف';
@@ -363,7 +348,6 @@ const AdminProductsApp = () => {
         </CardContent>
       </Card>
       
-      {/* Product Form Dialog */}
       <ProductFormDialog
         open={formDialogOpen}
         onOpenChange={setFormDialogOpen}
@@ -380,7 +364,6 @@ const AdminProductsApp = () => {
         error={error}
       />
       
-      {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={(open) => {
         if (!isProcessing) setDeleteDialogOpen(open);
       }}>
