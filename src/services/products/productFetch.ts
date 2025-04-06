@@ -43,17 +43,17 @@ export const fetchProducts = async (): Promise<InitialDataProduct[]> => {
     
     console.log('Products fetched successfully:', data);
     
+    // Breaking the circular type reference by directly mapping to InitialDataProduct
     return (data || []).map((item: DbProduct) => {
-      const product = mapDbProductToProduct(item);
       return {
-        id: product.id,
-        name: product.name,
-        description: product.description || '',
-        price: product.price,
-        categoryId: product.categoryId,
-        image: product.image || '/placeholder.svg',
-        featured: !!product.featured,
-        colors: product.colors || [], // Add required colors property
+        id: item.id,
+        name: item.name,
+        description: item.description || '',
+        price: item.price,
+        categoryId: item.category_id || '',
+        image: item.image_url || '/placeholder.svg',
+        featured: !!item.featured,
+        colors: item.colors || []
       } as InitialDataProduct;
     });
   } catch (error) {
@@ -94,15 +94,16 @@ export const fetchProductById = async (id: string): Promise<InitialDataProduct |
     
     if (!data) return null;
     
-    const product = mapDbProductToProduct(data);
+    // Breaking the circular type reference by directly mapping to InitialDataProduct
     return {
-      id: product.id,
-      name: product.name,
-      description: product.description || '',
-      price: product.price,
-      categoryId: product.categoryId,
-      image: product.image || '/placeholder.svg',
-      featured: !!product.featured,
+      id: data.id,
+      name: data.name,
+      description: data.description || '',
+      price: data.price,
+      categoryId: data.category_id || '',
+      image: data.image_url || '/placeholder.svg',
+      featured: !!data.featured,
+      colors: data.colors || []
     } as InitialDataProduct;
   } catch (error) {
     console.error('Unexpected error fetching product by id:', error);
@@ -143,13 +144,34 @@ export const fetchProductsByCategory = async (categoryId: string): Promise<Produ
             price: p.price,
             categoryId: p.categoryId,
             featured: !!p.featured,
+            images: [p.image || '/placeholder.svg'],
+            category: '',
+            stock: 0,
+            colors: p.colors || [],
+            specifications: p.specifications || {},
+            mediaGallery: p.mediaGallery || []
           } as Product));
       }
       
       throw error; // Re-throw if not RLS related
     }
     
-    return (data || []).map(mapDbProductToProduct);
+    // Map database results to Product type directly without using mapper
+    return (data || []).map(item => ({
+      id: item.id,
+      name: item.name,
+      description: item.description || '',
+      image: item.image_url || '/placeholder.svg',
+      price: Number(item.price) || 0,
+      categoryId: item.category_id || '',
+      featured: Boolean(item.featured) || false,
+      images: item.image_url ? [item.image_url] : ['/placeholder.svg'],
+      category: '',
+      stock: item.stock_quantity || 0,
+      colors: item.colors || [],
+      specifications: item.specifications || {},
+      mediaGallery: item.media_gallery || []
+    } as Product));
   } catch (error) {
     console.error('Unexpected error fetching products by category:', error);
     
@@ -164,6 +186,12 @@ export const fetchProductsByCategory = async (categoryId: string): Promise<Produ
         price: p.price, 
         categoryId: p.categoryId,
         featured: !!p.featured,
+        images: [p.image || '/placeholder.svg'],
+        category: '',
+        stock: 0,
+        colors: p.colors || [],
+        specifications: p.specifications || {},
+        mediaGallery: p.mediaGallery || []
       } as Product));
   }
 };
@@ -196,18 +224,17 @@ export const fetchFeaturedProducts = async (): Promise<InitialDataProduct[]> => 
       throw error;
     }
     
-    return (data || []).map((item: DbProduct) => {
-      const product = mapDbProductToProduct(item);
-      return {
-        id: product.id,
-        name: product.name,
-        description: product.description || '',
-        price: product.price,
-        categoryId: product.categoryId,
-        image: product.image || '/placeholder.svg',
-        featured: true,
-      } as InitialDataProduct;
-    });
+    // Direct mapping to avoid circular reference
+    return (data || []).map((item: DbProduct) => ({
+      id: item.id,
+      name: item.name,
+      description: item.description || '',
+      price: item.price,
+      categoryId: item.category_id || '',
+      image: item.image_url || '/placeholder.svg',
+      featured: true,
+      colors: item.colors || []
+    } as InitialDataProduct));
   } catch (error) {
     console.error('Unexpected error fetching featured products:', error);
     // Return featured products from initial data
