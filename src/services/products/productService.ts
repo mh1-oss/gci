@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import type { Product as InitialDataProduct } from '@/data/initialData';
 import {
@@ -56,6 +57,7 @@ export const fetchProducts = async (): Promise<InitialDataProduct[]> => {
         categoryId: product.categoryId,
         image: product.image || '/placeholder.svg',
         featured: !!product.featured,
+        colors: product.colors || [], // Add required colors property
       } as InitialDataProduct;
     });
   } catch (error) {
@@ -246,7 +248,7 @@ export const createProduct = async (product: Omit<Product, 'id'>): Promise<Produ
       throw new Error(`خطأ في الاتصال بقاعدة البيانات: ${connectionError.message}`);
     }
     
-    // Fixed: Use the explicit mapping function without recursion
+    // Fixed: Use direct mapping without relying on mapProductToDbProduct to avoid infinite type recursion
     const dbProduct = {
       name: product.name,
       description: product.description || '',
@@ -255,6 +257,9 @@ export const createProduct = async (product: Omit<Product, 'id'>): Promise<Produ
       cost_price: product.price * 0.7, // Default cost to 70% of price if not specified
       stock_quantity: product.stock || 0,
       image_url: product.image !== '/placeholder.svg' ? product.image : null,
+      colors: product.colors || [],
+      specifications: product.specifications || {},
+      media_gallery: product.mediaGallery || [],
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };

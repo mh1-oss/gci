@@ -113,7 +113,7 @@ const AdminProductsApp = () => {
       setCategories(categoriesData);
     } catch (error: any) {
       console.error('Error fetching data:', error);
-      setError(error?.message || "خطأ في تحميل البيانات من قاعدة البيانات");
+      setError(error?.message || "��طأ في تحميل البيانات من قاعدة البيانات");
       toast({
         title: "خطأ في تحميل البيانات",
         description: error?.message || "حدث خطأ أثناء تحميل المنتجات والفئات",
