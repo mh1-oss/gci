@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import type { Product as InitialDataProduct } from '@/data/initialData';
 import {
@@ -248,7 +247,7 @@ export const createProduct = async (product: Omit<Product, 'id'>): Promise<Produ
       throw new Error(`خطأ في الاتصال بقاعدة البيانات: ${connectionError.message}`);
     }
     
-    // Fixed: Use direct mapping without relying on mapProductToDbProduct to avoid infinite type recursion
+    // Create the database product object directly without using mappers
     const dbProduct = {
       name: product.name,
       description: product.description || '',
