@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import type { Product as InitialDataProduct } from '@/data/initialData';
 import {
@@ -6,7 +7,7 @@ import {
   mapInitialDataProductToDbProduct
 } from '@/utils/models/productMappers';
 import { DbProduct, Product } from '@/utils/models/types';
-import { initialProducts } from '@/data/initialData';
+import { products as initialProducts } from '@/data/initialData';
 
 const getFallbackProducts = (): InitialDataProduct[] => {
   console.log('Using fallback product data');

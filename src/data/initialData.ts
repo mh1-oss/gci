@@ -1,3 +1,4 @@
+
 export interface Product {
   id: string;
   name: string;
@@ -153,6 +154,9 @@ export const products: Product[] = [
     colors: ["أبيض فائق"]
   }
 ];
+
+// Export the products array as initialProducts for backward compatibility
+export const initialProducts = products;
 
 export const categories: Category[] = [
   {

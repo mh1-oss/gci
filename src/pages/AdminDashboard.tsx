@@ -183,7 +183,7 @@ const AdminDashboard = () => {
             </p>
             
             {connectionWarning && (
-              <Alert variant="warning" className="mb-6 bg-amber-50 border-amber-200">
+              <Alert className="mb-6 bg-amber-50 border-amber-200">
                 <AlertTriangle className="h-4 w-4 text-amber-500" />
                 <AlertTitle className="text-amber-700">تحذير حول اتصال قاعدة البيانات</AlertTitle>
                 <AlertDescription className="text-amber-600">
