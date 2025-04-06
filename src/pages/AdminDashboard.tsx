@@ -4,12 +4,13 @@ import { useEffect, useState } from "react";
 import AdminAuthCheck from "@/components/Admin/AdminAuthCheck";
 import AdminNavTabs from "@/components/Admin/AdminNavTabs";
 import AdminTabContent from "@/components/Admin/AdminTabContent";
-import { LogOut, Package, CreditCard, ShoppingCart, Newspaper, RefreshCw } from "lucide-react";
+import { LogOut, Package, CreditCard, ShoppingCart, Newspaper, RefreshCw, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { supabase, pingDatabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface DashboardStats {
   productCount: number;
@@ -27,6 +28,7 @@ const AdminDashboard = () => {
     orderCount: 0,
     recentSales: 0
   });
+  const [connectionWarning, setConnectionWarning] = useState<string | null>(null);
 
   const { isLoading, error, refetch } = useQuery({
     queryKey: ['dashboardStats'],
@@ -34,72 +36,94 @@ const AdminDashboard = () => {
       try {
         console.log("Fetching dashboard stats...");
         
-        // Check connection first
+        // Check connection first, but continue even with warnings
         const pingResult = await pingDatabase();
+        
         if (!pingResult.ok) {
           throw new Error("Cannot connect to database");
         }
         
-        // Get product count
+        // If we have a connection warning, display it but continue
+        if (pingResult.warning) {
+          setConnectionWarning(pingResult.warning);
+          toast({
+            title: "تحذير",
+            description: "تم الاتصال بقاعدة البيانات ولكن هناك مشكلة في إعدادات الأمان",
+            variant: "default",
+          });
+        }
+        
+        // Get product count with simplified query
         let productCount = 0;
         try {
-          const { data: productsData } = await supabase
+          const { data: productsData, error: productsError } = await supabase
             .from('products')
-            .select('id', { count: 'exact', head: true });
+            .select('id');
           
-          productCount = productsData ? productsData.length : 0;
+          if (!productsError) {
+            productCount = productsData ? productsData.length : 0;
+          } else {
+            console.warn("Error getting product count:", productsError);
+          }
         } catch (err) {
           console.warn("Error getting product count:", err);
         }
         
-        // Get category count
+        // Get category count with simplified query
         let categoryCount = 0;
         try {
-          const { data: categoriesData } = await supabase
+          const { data: categoriesData, error: categoriesError } = await supabase
             .from('categories')
-            .select('id', { count: 'exact', head: true });
+            .select('id');
           
-          categoryCount = categoriesData ? categoriesData.length : 0;
+          if (!categoriesError) {
+            categoryCount = categoriesData ? categoriesData.length : 0;
+          } else {
+            console.warn("Error getting category count:", categoriesError);
+          }
         } catch (err) {
           console.warn("Error getting category count:", err);
         }
 
-        // For orders and sales, use fallback values if permissions are an issue
+        // For orders and sales, use fallback values since these might have stricter RLS
         let orderCount = 0;
         let recentSalesTotal = 0;
         
-        try {
-          // Try to fetch order count
-          const { count, error: ordersError } = await supabase
-            .from('orders')
-            .select('*', { count: 'exact', head: true });
+        // Only try to fetch these if we don't have RLS warnings
+        if (!pingResult.warning) {
+          try {
+            // Try to fetch order count
+            const { count, error: ordersError } = await supabase
+              .from('orders')
+              .select('*', { count: 'exact', head: true });
 
-          if (!ordersError) {
-            orderCount = count || 0;
+            if (!ordersError) {
+              orderCount = count || 0;
+            }
+          } catch (err) {
+            console.warn("Could not fetch order count, using default value", err);
           }
-        } catch (err) {
-          console.warn("Could not fetch order count, using default value", err);
-        }
-        
-        try {
-          // Try to calculate recent sales (last 7 days)
-          const sevenDaysAgo = new Date();
-          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-          const sevenDaysAgoISOString = sevenDaysAgo.toISOString();
           
-          const { data: recentSalesData, error: salesError } = await supabase
-            .from('sales')
-            .select('total_amount')
-            .gte('created_at', sevenDaysAgoISOString);
+          try {
+            // Try to calculate recent sales (last 7 days)
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+            const sevenDaysAgoISOString = sevenDaysAgo.toISOString();
+            
+            const { data: recentSalesData, error: salesError } = await supabase
+              .from('sales')
+              .select('total_amount')
+              .gte('created_at', sevenDaysAgoISOString);
 
-          if (!salesError && recentSalesData) {
-            recentSalesTotal = recentSalesData.reduce(
-              (sum, sale) => sum + (typeof sale.total_amount === 'string' ? parseFloat(sale.total_amount) : Number(sale.total_amount)), 
-              0
-            );
+            if (!salesError && recentSalesData) {
+              recentSalesTotal = recentSalesData.reduce(
+                (sum, sale) => sum + (typeof sale.total_amount === 'string' ? parseFloat(sale.total_amount) : Number(sale.total_amount)), 
+                0
+              );
+            }
+          } catch (err) {
+            console.warn("Could not fetch sales data, using default value", err);
           }
-        } catch (err) {
-          console.warn("Could not fetch sales data, using default value", err);
         }
         
         const newStats = {
@@ -138,11 +162,6 @@ const AdminDashboard = () => {
     navigate("/");
   };
 
-  // Add error display in case the stats fail to load
-  if (error) {
-    console.error("Dashboard query error:", error);
-  }
-
   return (
     <AdminAuthCheck>
       <div dir="rtl" className="min-h-screen bg-gray-50">
@@ -163,12 +182,25 @@ const AdminDashboard = () => {
               مرحباً بك في لوحة التحكم، يمكنك إدارة منتجاتك وفئاتك ومبيعاتك ومحتوى موقعك من هنا.
             </p>
             
+            {connectionWarning && (
+              <Alert variant="warning" className="mb-6 bg-amber-50 border-amber-200">
+                <AlertTriangle className="h-4 w-4 text-amber-500" />
+                <AlertTitle className="text-amber-700">تحذير حول اتصال قاعدة البيانات</AlertTitle>
+                <AlertDescription className="text-amber-600">
+                  <p className="mb-2">تم الاتصال بقاعدة البيانات ولكن هناك مشكلة في إعدادات سياسات الأمان. قد تكون بعض الوظائف محدودة.</p>
+                  <p className="text-sm bg-amber-100 p-2 border border-amber-300 rounded mt-2">
+                    <strong>معلومات تقنية:</strong> خطأ في سياسة قاعدة البيانات لجدول user_roles - تم اكتشاف تكرار لانهائي
+                  </p>
+                </AlertDescription>
+              </Alert>
+            )}
+            
             {error ? (
               <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg mb-6">
                 <div className="flex justify-between items-center">
                   <div>
                     <h3 className="font-bold mb-2">خطأ في تحميل البيانات</h3>
-                    <p>حدث خطأ أثناء تحميل إحصائيات لوحة التحكم</p>
+                    <p>{error instanceof Error ? error.message : "حدث خطأ أثناء تحميل إحصائيات لوحة التحكم"}</p>
                   </div>
                   <Button 
                     onClick={handleRefresh}

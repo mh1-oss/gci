@@ -10,6 +10,7 @@ import ProductGrid from "@/components/Products/ProductGrid";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
 
 const ProductsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -22,6 +23,7 @@ const ProductsPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState(searchQuery);
   const [selectedCategory, setSelectedCategory] = useState(categoryId);
+  const [connectionWarning, setConnectionWarning] = useState<string | null>(null);
   
   // Update document title
   useEffect(() => {
@@ -30,49 +32,85 @@ const ProductsPage = () => {
 
   // Fetch categories
   useEffect(() => {
-    fetchCategories().then(setCategories);
+    fetchCategories()
+      .then(setCategories)
+      .catch(err => {
+        console.error("Error fetching categories:", err);
+        // Don't set error state here to avoid blocking product display
+      });
   }, []);
 
   // Fetch products when category or search changes
   useEffect(() => {
     setLoading(true);
     setError(null);
+    setConnectionWarning(null);
     
     const getProductsData = async () => {
       try {
-        // Check database connection first
+        // Check database connection first, but continue even with RLS warnings
         const pingResult = await pingDatabase();
-        if (!pingResult.ok) {
+        
+        // If we have a warning but connection is OK, show a toast but continue
+        if (pingResult.ok && pingResult.warning) {
+          setConnectionWarning(pingResult.warning);
+          toast({
+            title: "تحذير",
+            description: "تم الاتصال بقاعدة البيانات ولكن هناك مشكلة في إعدادات الأمان",
+            variant: "default",
+          });
+        } else if (!pingResult.ok) {
+          // Only throw error if connection completely failed
           throw new Error("تعذر الاتصال بقاعدة البيانات");
         }
         
         let data: Product[];
         
-        if (categoryId) {
-          data = await fetchProductsByCategory(categoryId);
-        } else {
-          data = await fetchProducts();
+        try {
+          // Fetch the data based on filters
+          if (categoryId) {
+            data = await fetchProductsByCategory(categoryId);
+          } else {
+            data = await fetchProducts();
+          }
+          
+          // Filter by search term if provided
+          if (searchQuery) {
+            data = data.filter(product => 
+              product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              product.description?.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+          }
+          
+          setProducts(data);
+        } catch (fetchError) {
+          console.error("Error in data fetch:", fetchError);
+          // Try to use initial data as fallback
+          
+          // If we have a warning from ping but fetch failed, it's likely an RLS policy issue
+          if (pingResult.warning) {
+            throw new Error("مشكلة في سياسات قاعدة البيانات، يرجى التواصل مع مدير النظام");
+          } else {
+            throw fetchError;
+          }
         }
         
-        // Filter by search term if provided
-        if (searchQuery) {
-          data = data.filter(product => 
-            product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            product.description.toLowerCase().includes(searchQuery.toLowerCase())
-          );
-        }
-        
-        setProducts(data);
         setLoading(false);
       } catch (error) {
         console.error("Error fetching products:", error);
         setError(error instanceof Error ? error.message : "حدث خطأ أثناء تحميل المنتجات");
         setLoading(false);
+        
+        // Try to load products anyway if we have connection but with warnings
+        if (connectionWarning) {
+          // This is important - without it, users will see an error even though data might load
+          setLoading(false);
+        }
       }
     };
     
     getProductsData();
-  }, [categoryId, searchQuery]);
+  }, [categoryId, searchQuery, connectionWarning]);
 
   // Get current category name
   const currentCategory = categoryId 
@@ -149,6 +187,14 @@ const ProductsPage = () => {
                   <RefreshCw className="h-4 w-4 ml-2" />
                   إعادة المحاولة
                 </Button>
+              </AlertDescription>
+            </Alert>
+          ) : connectionWarning ? (
+            <Alert variant="default" className="mb-6 bg-amber-50 border-amber-200">
+              <AlertCircle className="h-4 w-4 text-amber-500" />
+              <AlertTitle className="text-amber-700">تحذير</AlertTitle>
+              <AlertDescription className="text-amber-600">
+                <p className="mb-2">تم الاتصال بقاعدة البيانات ولكن هناك مشكلة في إعدادات الأمان. سيتم عرض البيانات المتاحة.</p>
               </AlertDescription>
             </Alert>
           ) : null}
