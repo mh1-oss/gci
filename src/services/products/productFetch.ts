@@ -42,19 +42,17 @@ export const fetchProducts = async (): Promise<InitialDataProduct[]> => {
     
     console.log('Products fetched successfully:', data);
     
-    // Breaking the circular type reference by directly mapping to InitialDataProduct
-    return (data || []).map((item: any) => {
-      return {
-        id: item.id,
-        name: item.name,
-        description: item.description || '',
-        price: item.price,
-        categoryId: item.category_id || '',
-        image: item.image_url || '/placeholder.svg',
-        featured: false, // Default value since it's not in the DB schema
-        colors: [] // Default empty array since it's not in the DB schema
-      } as InitialDataProduct;
-    });
+    // Map the database results to the InitialDataProduct type
+    return (data || []).map((item: any) => ({
+      id: item.id,
+      name: item.name,
+      description: item.description || '',
+      price: item.price,
+      categoryId: item.category_id || '',
+      image: item.image_url || '/placeholder.svg',
+      featured: false, // Default value since it's not in the DB schema
+      colors: [] // Default empty array since it's not in the DB schema
+    }));
   } catch (error) {
     console.error('Unexpected error fetching products:', error);
     return getFallbackProducts();
@@ -93,7 +91,7 @@ export const fetchProductById = async (id: string): Promise<InitialDataProduct |
     
     if (!data) return null;
     
-    // Breaking the circular type reference by directly mapping to InitialDataProduct
+    // Map to InitialDataProduct type
     return {
       id: data.id,
       name: data.name,
@@ -103,7 +101,7 @@ export const fetchProductById = async (id: string): Promise<InitialDataProduct |
       image: data.image_url || '/placeholder.svg',
       featured: false, // Default since it's not in the DB schema
       colors: [] // Default since it's not in the DB schema
-    } as InitialDataProduct;
+    };
   } catch (error) {
     console.error('Unexpected error fetching product by id:', error);
     
@@ -149,13 +147,13 @@ export const fetchProductsByCategory = async (categoryId: string): Promise<Produ
             colors: p.colors || [],
             specifications: p.specifications || {},
             mediaGallery: p.mediaGallery || []
-          } as Product));
+          }));
       }
       
       throw error; // Re-throw if not RLS related
     }
     
-    // Map database results to Product type directly without using mapper
+    // Map database results to Product type explicitly
     return (data || []).map(item => ({
       id: item.id,
       name: item.name,
@@ -170,7 +168,7 @@ export const fetchProductsByCategory = async (categoryId: string): Promise<Produ
       colors: [], // Default since it's not in the DB schema
       specifications: {}, // Default since it's not in the DB schema
       mediaGallery: [] // Default since it's not in the DB schema
-    } as Product));
+    }));
   } catch (error) {
     console.error('Unexpected error fetching products by category:', error);
     
@@ -191,7 +189,7 @@ export const fetchProductsByCategory = async (categoryId: string): Promise<Produ
         colors: p.colors || [],
         specifications: p.specifications || {},
         mediaGallery: p.mediaGallery || []
-      } as Product));
+      }));
   }
 };
 
@@ -224,8 +222,8 @@ export const fetchFeaturedProducts = async (): Promise<InitialDataProduct[]> => 
       throw error;
     }
     
-    // Direct mapping to avoid circular reference
-    return (data || []).map((item: any) => ({
+    // Map directly to InitialDataProduct type
+    return (data || []).map(item => ({
       id: item.id,
       name: item.name,
       description: item.description || '',
@@ -234,7 +232,7 @@ export const fetchFeaturedProducts = async (): Promise<InitialDataProduct[]> => 
       image: item.image_url || '/placeholder.svg',
       featured: true, // We're treating these as featured since we're limiting to 4
       colors: [] // Default since it's not in the DB schema
-    } as InitialDataProduct));
+    }));
   } catch (error) {
     console.error('Unexpected error fetching featured products:', error);
     // Return featured products from initial data
