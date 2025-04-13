@@ -42,8 +42,8 @@ export const fetchProducts = async (): Promise<InitialDataProduct[]> => {
     
     console.log('Products fetched successfully:', data);
     
-    // Map the database results to the InitialDataProduct type
-    return (data || []).map((item: any) => ({
+    // Explicitly cast and map the database results with proper defaults for missing fields
+    return (data || []).map((item: any): InitialDataProduct => ({
       id: item.id,
       name: item.name,
       description: item.description || '',
@@ -91,8 +91,8 @@ export const fetchProductById = async (id: string): Promise<InitialDataProduct |
     
     if (!data) return null;
     
-    // Map to InitialDataProduct type
-    return {
+    // Explicitly cast and map to InitialDataProduct type with defaults
+    const product: InitialDataProduct = {
       id: data.id,
       name: data.name,
       description: data.description || '',
@@ -102,6 +102,8 @@ export const fetchProductById = async (id: string): Promise<InitialDataProduct |
       featured: false, // Default since it's not in the DB schema
       colors: [] // Default since it's not in the DB schema
     };
+    
+    return product;
   } catch (error) {
     console.error('Unexpected error fetching product by id:', error);
     
@@ -131,9 +133,10 @@ export const fetchProductsByCategory = async (categoryId: string): Promise<Produ
         error.message.includes("user_roles")
       )) {
         console.warn('RLS policy issue detected, filtering fallback data by category');
+        // Cast each product to the Product type to avoid type errors
         return products
           .filter(p => p.categoryId === categoryId)
-          .map(p => ({
+          .map((p): Product => ({
             id: p.id,
             name: p.name,
             description: p.description || '',
@@ -153,8 +156,8 @@ export const fetchProductsByCategory = async (categoryId: string): Promise<Produ
       throw error; // Re-throw if not RLS related
     }
     
-    // Map database results to Product type explicitly
-    return (data || []).map(item => ({
+    // Explicitly cast and map database results to Product type with defaults
+    return (data || []).map((item): Product => ({
       id: item.id,
       name: item.name,
       description: item.description || '',
@@ -172,10 +175,10 @@ export const fetchProductsByCategory = async (categoryId: string): Promise<Produ
   } catch (error) {
     console.error('Unexpected error fetching products by category:', error);
     
-    // Fallback to filtered initial data
+    // Fallback to filtered initial data with proper casting
     return products
       .filter(p => p.categoryId === categoryId)
-      .map(p => ({
+      .map((p): Product => ({
         id: p.id,
         name: p.name,
         description: p.description || '',
@@ -222,8 +225,8 @@ export const fetchFeaturedProducts = async (): Promise<InitialDataProduct[]> => 
       throw error;
     }
     
-    // Map directly to InitialDataProduct type
-    return (data || []).map(item => ({
+    // Explicitly cast and map to InitialDataProduct type with defaults
+    return (data || []).map((item): InitialDataProduct => ({
       id: item.id,
       name: item.name,
       description: item.description || '',
