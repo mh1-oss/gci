@@ -13,9 +13,9 @@ export const isRlsPolicyError = checkRlsPolicyError;
 /**
  * Get fallback products from initial data
  */
-export const getFallbackProducts = (): InitialDataProduct[] => {
+export const getFallbackProducts = (): Product[] => {
   console.log('Using fallback product data');
-  return products;
+  return products.map(p => mapInitialToProduct(p));
 };
 
 /**
@@ -45,9 +45,9 @@ export const mapDbToInitialDataProduct = (dbProduct: any): InitialDataProduct =>
     price: Number(dbProduct.price),
     categoryId: dbProduct.category_id || '',
     image: dbProduct.image_url || '/placeholder.svg',
-    featured: Boolean(dbProduct.featured) || false,
+    featured: dbProduct.featured !== undefined ? Boolean(dbProduct.featured) : false,
     colors: Array.isArray(dbProduct.colors) ? dbProduct.colors : [],
-    specifications: typeof dbProduct.specifications === 'object' && dbProduct.specifications !== null ? dbProduct.specifications || {} : {},
+    specifications: dbProduct.specifications && typeof dbProduct.specifications === 'object' ? dbProduct.specifications : {},
     mediaGallery: Array.isArray(dbProduct.media_gallery) ? dbProduct.media_gallery : []
   };
 };
@@ -64,9 +64,9 @@ export const mapDbToProduct = (dbProduct: any): Product => {
     categoryId: dbProduct.category_id || '',
     image: dbProduct.image_url || '/placeholder.svg',
     images: dbProduct.image_url ? [dbProduct.image_url] : ['/placeholder.svg'],
-    featured: Boolean(dbProduct.featured) || false,
+    featured: dbProduct.featured !== undefined ? Boolean(dbProduct.featured) : false,
     stock: dbProduct.stock_quantity || 0,
-    specifications: typeof dbProduct.specifications === 'object' && dbProduct.specifications !== null ? dbProduct.specifications || {} : {},
+    specifications: dbProduct.specifications && typeof dbProduct.specifications === 'object' ? dbProduct.specifications : {},
     colors: Array.isArray(dbProduct.colors) ? dbProduct.colors : [],
     mediaGallery: Array.isArray(dbProduct.media_gallery) ? dbProduct.media_gallery : [],
     category: dbProduct.categories && typeof dbProduct.categories === 'object' && dbProduct.categories !== null && 'name' in dbProduct.categories 

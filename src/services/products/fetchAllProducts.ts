@@ -25,21 +25,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
       if (isRlsPolicyError(error)) {
         console.warn('RLS policy issue detected, using fallback data');
         // Convert fallback data to match Product type from utils/models/types
-        return getFallbackProducts().map(product => ({
-          id: product.id,
-          name: product.name,
-          description: product.description || '',
-          price: Number(product.price) || 0,
-          categoryId: product.categoryId || '',
-          image: product.image || '/placeholder.svg',
-          images: product.image ? [product.image] : ['/placeholder.svg'],
-          category: '',
-          stock: 0,
-          featured: product.featured || false,
-          colors: product.colors || [],
-          specifications: product.specifications || {},
-          mediaGallery: product.mediaGallery || []
-        }));
+        return getFallbackProducts();
       }
       
       console.error('Error fetching products:', error);
@@ -48,22 +34,8 @@ export const fetchProducts = async (): Promise<Product[]> => {
     
     if (!data || data.length === 0) {
       console.log('No products found in database, using fallback data');
-      // Convert fallback data to match Product type from utils/models/types
-      return getFallbackProducts().map(product => ({
-        id: product.id,
-        name: product.name,
-        description: product.description || '',
-        price: Number(product.price) || 0,
-        categoryId: product.categoryId || '',
-        image: product.image || '/placeholder.svg',
-        images: product.image ? [product.image] : ['/placeholder.svg'],
-        category: '',
-        stock: 0,
-        featured: product.featured || false,
-        colors: product.colors || [],
-        specifications: product.specifications || {},
-        mediaGallery: product.mediaGallery || []
-      }));
+      // Return fallback products
+      return getFallbackProducts();
     }
     
     // Map DB products to frontend Product type
@@ -87,31 +59,17 @@ export const fetchProducts = async (): Promise<Product[]> => {
         images: product.image_url ? [product.image_url] : ['/placeholder.svg'],
         category: categoryName,
         stock: product.stock_quantity || 0,
-        featured: Boolean(product.featured) || false,
+        featured: product.featured !== undefined ? Boolean(product.featured) : false,
         colors: Array.isArray(product.colors) ? product.colors : [],
-        specifications: typeof product.specifications === 'object' && product.specifications !== null ? product.specifications : {},
+        specifications: product.specifications && typeof product.specifications === 'object' ? product.specifications : {},
         mediaGallery: Array.isArray(product.media_gallery) ? product.media_gallery : []
       };
     });
   } catch (error) {
     console.error('Error fetching products:', error);
     if (isRlsPolicyError(error)) {
-      // Convert fallback data to match Product type from utils/models/types
-      return getFallbackProducts().map(product => ({
-        id: product.id,
-        name: product.name,
-        description: product.description || '',
-        price: Number(product.price) || 0,
-        categoryId: product.categoryId || '',
-        image: product.image || '/placeholder.svg',
-        images: product.image ? [product.image] : ['/placeholder.svg'],
-        category: '',
-        stock: 0,
-        featured: product.featured || false,
-        colors: product.colors || [],
-        specifications: product.specifications || {},
-        mediaGallery: product.mediaGallery || []
-      }));
+      // Return fallback products
+      return getFallbackProducts();
     }
     throw error;
   }

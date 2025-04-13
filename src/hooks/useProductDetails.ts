@@ -68,7 +68,12 @@ export const useProductDetails = (id: string | undefined) => {
           category_id: data.category_id,
           created_at: data.created_at,
           updated_at: data.updated_at,
-          categories: categoryName ? { name: categoryName } : null
+          categories: categoryName ? { name: categoryName } : null,
+          // Handle fields that might not exist in the database
+          featured: data.featured || null,
+          colors: data.colors || null,
+          specifications: data.specifications || null,
+          media_gallery: data.media_gallery || null
         };
         
         return result;

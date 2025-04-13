@@ -72,9 +72,9 @@ export const createProduct = async (product: Omit<Product, 'id'>): Promise<Produ
       images: data.image_url ? [data.image_url] : ['/placeholder.svg'],
       category: '',
       stock: data.stock_quantity || 0,
-      featured: typeof data.featured === 'boolean' ? data.featured : false,
+      featured: data.featured !== undefined ? Boolean(data.featured) : false,
       colors: Array.isArray(data.colors) ? data.colors : [],
-      specifications: typeof data.specifications === 'object' && data.specifications !== null ? data.specifications : {},
+      specifications: data.specifications && typeof data.specifications === 'object' ? data.specifications : {},
       mediaGallery: Array.isArray(data.media_gallery) ? data.media_gallery : []
     };
     

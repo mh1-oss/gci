@@ -1,4 +1,3 @@
-
 export interface Product {
   id: string;
   name: string;
@@ -53,13 +52,13 @@ export interface DbProduct {
   created_at: string;
   updated_at: string;
   categories?: DbCategory | Record<string, any> | null;
-  featured: boolean;
-  colors: string[];
-  specifications: Record<string, string> | null;
+  featured: boolean | null; // Made nullable since it might not exist in the database
+  colors: string[] | null; // Made nullable since it might not exist in the database
+  specifications: Record<string, string> | null; // Made nullable since it might not exist in the database
   media_gallery: {
     url: string;
     type: 'image' | 'video';
-  }[] | null;
+  }[] | null; // Made nullable since it might not exist in the database
 }
 
 export interface DbCategory {
