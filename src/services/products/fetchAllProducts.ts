@@ -3,7 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Product } from '@/utils/models/types';
 import { getFallbackProducts } from './utils/productUtils';
 import { isRlsPolicyError, createRlsError } from '@/services/rls/rlsErrorHandler';
-import { mapDbToProduct } from './utils/productUtils';
 
 /**
  * Fetch all products
@@ -38,13 +37,13 @@ export const fetchProducts = async (): Promise<Product[]> => {
     
     // Map DB products to frontend Product type with proper type handling
     return data.map(product => {
-      // Enhanced null-safe category name extraction
+      // Safely handle categories that might be null
       const categoryName = 
-        product.categories && 
-        typeof product.categories === 'object' && 
-        product.categories !== null && 
-        'name' in product.categories 
-          ? String(product.categories.name ?? '') 
+        product.categories 
+        && typeof product.categories === 'object' 
+        && product.categories !== null 
+        && 'name' in product.categories
+          ? String(product.categories?.name ?? '') 
           : '';
 
       return {
