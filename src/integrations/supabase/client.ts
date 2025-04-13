@@ -39,14 +39,15 @@ export const pingDatabase = async () => {
     
     // Use a simple table that doesn't have complex RLS policies
     // We'll try multiple tables in sequence to find one that works
-    let tables = ['company_info', 'products', 'categories'];
+    const tables = ['company_info', 'products', 'categories'];
     let success = false;
     let errorMessage = '';
     
     for (const table of tables) {
       try {
+        // Using type assertion to handle the dynamic table name
         const { data, error } = await supabase
-          .from(table)
+          .from(table as any)
           .select('id')
           .limit(1);
           

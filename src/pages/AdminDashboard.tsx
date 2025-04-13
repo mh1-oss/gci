@@ -87,7 +87,7 @@ const AdminDashboard = () => {
 
         // For orders and sales, use fallback values since these might have stricter RLS
         let orderCount = 0;
-        let recentSalesTotal = 0;
+        let recentSales = 0;
         
         // Only try to fetch these if we don't have RLS warnings
         if (!pingResult.warning) {
@@ -116,7 +116,7 @@ const AdminDashboard = () => {
               .gte('created_at', sevenDaysAgoISOString);
 
             if (!salesError && recentSalesData) {
-              recentSalesTotal = recentSalesData.reduce(
+              recentSales = recentSalesData.reduce(
                 (sum, sale) => sum + (typeof sale.total_amount === 'string' ? parseFloat(sale.total_amount) : Number(sale.total_amount)), 
                 0
               );
@@ -130,7 +130,7 @@ const AdminDashboard = () => {
           productCount,
           categoryCount,
           orderCount,
-          recentSales: recentSalesTotal
+          recentSales
         };
         
         console.log("Dashboard stats fetched:", newStats);
