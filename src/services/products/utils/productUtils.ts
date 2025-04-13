@@ -2,14 +2,13 @@
 import { products, categories } from "@/data/initialData";
 import type { Product } from '@/utils/models/types';
 import type { Product as InitialDataProduct } from '@/data/initialData';
-import { isRlsInfiniteRecursionError, isRlsPolicyError } from './rlsErrorHandler';
+import { isRlsInfiniteRecursionError, isRlsPolicyError as checkRlsPolicyError } from './rlsErrorHandler';
 
 /**
  * Check if an error is related to RLS policy issues
+ * Re-export from rlsErrorHandler
  */
-export const isRlsPolicyError = (error: any): boolean => {
-  return isRlsPolicyError(error);
-};
+export const isRlsPolicyError = checkRlsPolicyError;
 
 /**
  * Get fallback products from initial data
@@ -45,7 +44,6 @@ export const mapDbToInitialDataProduct = (dbProduct: any): InitialDataProduct =>
     description: dbProduct.description || '',
     price: Number(dbProduct.price),
     categoryId: dbProduct.category_id || '',
-    category: '', // Will be populated later if needed
     image: dbProduct.image_url || '/placeholder.svg',
     images: dbProduct.image_url ? [dbProduct.image_url] : ['/placeholder.svg'], 
     featured: Boolean(dbProduct.featured) || false,
@@ -65,7 +63,6 @@ export const mapDbToProduct = (dbProduct: any): Product => {
     description: dbProduct.description || '',
     price: Number(dbProduct.price),
     categoryId: dbProduct.category_id || '',
-    category: '', // Will be populated later if needed
     image: dbProduct.image_url || '/placeholder.svg',
     images: dbProduct.image_url ? [dbProduct.image_url] : ['/placeholder.svg'], 
     featured: Boolean(dbProduct.featured) || false,
@@ -82,6 +79,7 @@ export const mapDbToProduct = (dbProduct: any): Product => {
 export const mapInitialToProduct = (initialProduct: InitialDataProduct): Product => {
   return {
     ...initialProduct,
-    stock: 0, // Default stock since it's not in initial data
+    images: initialProduct.images || [initialProduct.image],
+    stock: 0 // Default stock since it's not in initial data
   };
 };
