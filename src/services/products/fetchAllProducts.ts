@@ -45,7 +45,8 @@ export const fetchProducts = async (): Promise<Product[]> => {
           product.categories !== undefined && 
           typeof product.categories === 'object') {
         // Create a non-null reference to categories to satisfy TypeScript
-        const categoriesObj = product.categories;
+        // Using a type assertion to help TypeScript understand this object structure
+        const categoriesObj = product.categories as { name?: string };
         // Additional safety check to ensure it's not null before we access it
         if (categoriesObj && 'name' in categoriesObj) {
           const nameValue = categoriesObj.name;
