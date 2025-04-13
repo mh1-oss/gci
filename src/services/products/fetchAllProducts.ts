@@ -37,16 +37,17 @@ export const fetchProducts = async (): Promise<Product[]> => {
     
     // Map DB products to frontend Product type with proper type handling
     return data.map(product => {
-      // Define a safe way to extract category name with null checks
+      // Define a safe way to extract category name
       let categoryName = '';
       
       // Only try to access name if categories exists and is an object
       if (product.categories !== null && 
           product.categories !== undefined && 
           typeof product.categories === 'object') {
-        // Now TypeScript knows categories is not null
+        // Create a non-null reference to categories to satisfy TypeScript
         const categoriesObj = product.categories;
-        if ('name' in categoriesObj) {
+        // Additional safety check to ensure it's not null before we access it
+        if (categoriesObj && 'name' in categoriesObj) {
           const nameValue = categoriesObj.name;
           categoryName = nameValue ? String(nameValue) : '';
         }
