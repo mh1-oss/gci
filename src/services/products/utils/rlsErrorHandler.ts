@@ -15,6 +15,24 @@ export const isRlsInfiniteRecursionError = (error: any): boolean => {
 };
 
 /**
+ * More comprehensive check for any type of RLS policy error
+ */
+export const isRlsPolicyError = (error: any): boolean => {
+  // Check for standard RLS recursion errors
+  if (isRlsInfiniteRecursionError(error)) {
+    return true;
+  }
+  
+  // Check for other common RLS error patterns
+  return !!(error?.message && (
+    error.message.includes("permission denied") ||
+    error.message.includes("new row violates row-level security") ||
+    error.message.includes("RLS") ||
+    error.message.includes("policy")
+  ));
+};
+
+/**
  * Handles database connectivity check with RLS error awareness
  * @returns Object with connection status and any relevant messages
  */

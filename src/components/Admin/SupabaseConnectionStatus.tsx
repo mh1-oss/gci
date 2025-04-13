@@ -1,10 +1,10 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { checkDatabaseConnectivity } from "@/services/products/utils/rlsErrorHandler";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { DatabaseIcon, RefreshCw, AlertCircle, WifiOff } from "lucide-react";
+import { DatabaseIcon, RefreshCw, AlertCircle, WifiOff, CheckCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
 interface SupabaseConnectionStatusProps {
@@ -19,6 +19,7 @@ const SupabaseConnectionStatus = ({ showWhenConnected = false }: SupabaseConnect
     queryFn: checkDatabaseConnectivity,
     refetchOnWindowFocus: false,
     staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 2,
   });
   
   const handleRefresh = async () => {
@@ -54,7 +55,7 @@ const SupabaseConnectionStatus = ({ showWhenConnected = false }: SupabaseConnect
   
   if (isLoading) {
     return (
-      <Alert className="mb-4 bg-gray-50">
+      <Alert className="mb-4 bg-gray-50 border-gray-200">
         <RefreshCw className="h-4 w-4 animate-spin text-gray-500" />
         <AlertTitle>جاري التحقق من الاتصال</AlertTitle>
         <AlertDescription>
@@ -125,7 +126,7 @@ const SupabaseConnectionStatus = ({ showWhenConnected = false }: SupabaseConnect
   if (data?.isConnected && showWhenConnected) {
     return (
       <Alert className="mb-4 bg-green-50 border-green-200">
-        <DatabaseIcon className="h-4 w-4 text-green-600" />
+        <CheckCircle className="h-4 w-4 text-green-600" />
         <AlertTitle className="text-green-800">تم الاتصال بقاعدة البيانات</AlertTitle>
         <AlertDescription className="text-green-700">
           تم الاتصال بقاعدة البيانات بنجاح.

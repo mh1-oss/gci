@@ -1,15 +1,18 @@
 
-import { products } from '@/data/initialData';
+import { products, categories } from "@/data/initialData";
+import type { Product } from '@/utils/models/types';
 import type { Product as InitialDataProduct } from '@/data/initialData';
-import { isRlsInfiniteRecursionError } from './rlsErrorHandler';
+import { isRlsInfiniteRecursionError, isRlsPolicyError } from './rlsErrorHandler';
 
 /**
  * Check if an error is related to RLS policy issues
  */
-export const isRlsPolicyError = isRlsInfiniteRecursionError;
+export const isRlsPolicyError = (error: any): boolean => {
+  return isRlsPolicyError(error);
+};
 
 /**
- * Get fallback product data from the initial data set
+ * Get fallback products from initial data
  */
 export const getFallbackProducts = (): InitialDataProduct[] => {
   console.log('Using fallback product data');
@@ -17,67 +20,68 @@ export const getFallbackProducts = (): InitialDataProduct[] => {
 };
 
 /**
- * Find a product by ID in the fallback data
+ * Get a fallback product by ID from initial data
  */
 export const getFallbackProductById = (id: string): InitialDataProduct | null => {
-  const product = products.find(p => p.id === id);
-  return product || null;
+  console.log('Using fallback product data for ID:', id);
+  return products.find(p => p.id === id) || null;
 };
 
 /**
- * Map database product to InitialDataProduct format
+ * Get a fallback category name from initial data
  */
-export const mapDbToInitialDataProduct = (item: any): InitialDataProduct => {
+export const getFallbackCategoryName = (categoryId: string): string => {
+  const category = categories.find(c => c.id === categoryId);
+  return category ? category.name : '';
+};
+
+/**
+ * Map database product to InitialDataProduct type
+ */
+export const mapDbToInitialDataProduct = (dbProduct: any): InitialDataProduct => {
   return {
-    id: item.id,
-    name: item.name,
-    description: item.description || '',
-    price: Number(item.price) || 0,
-    categoryId: item.category_id || '',
-    image: item.image_url || '/placeholder.svg',
-    featured: false, // Default since it's not in DB schema
-    colors: [] // Default since it's not in DB schema
+    id: dbProduct.id,
+    name: dbProduct.name,
+    description: dbProduct.description || '',
+    price: Number(dbProduct.price),
+    categoryId: dbProduct.category_id || '',
+    category: '', // Will be populated later if needed
+    image: dbProduct.image_url || '/placeholder.svg',
+    images: dbProduct.image_url ? [dbProduct.image_url] : ['/placeholder.svg'], 
+    featured: Boolean(dbProduct.featured) || false,
+    specifications: dbProduct.specifications || {},
+    colors: dbProduct.colors || [],
+    mediaGallery: dbProduct.media_gallery || []
   };
 };
 
 /**
- * Map database product to Product format
+ * Map database product to Product type
  */
-export const mapDbToProduct = (item: any): any => {
+export const mapDbToProduct = (dbProduct: any): Product => {
   return {
-    id: item.id,
-    name: item.name,
-    description: item.description || '',
-    image: item.image_url || '/placeholder.svg',
-    price: Number(item.price) || 0,
-    categoryId: item.category_id || '',
-    featured: false, // Default since it's not in DB schema
-    images: item.image_url ? [item.image_url] : ['/placeholder.svg'],
-    category: '',
-    stock: item.stock_quantity || 0,
-    colors: [], // Default since it's not in DB schema
-    specifications: {}, // Default since it's not in DB schema
-    mediaGallery: [] // Default since it's not in DB schema
+    id: dbProduct.id,
+    name: dbProduct.name,
+    description: dbProduct.description || '',
+    price: Number(dbProduct.price),
+    categoryId: dbProduct.category_id || '',
+    category: '', // Will be populated later if needed
+    image: dbProduct.image_url || '/placeholder.svg',
+    images: dbProduct.image_url ? [dbProduct.image_url] : ['/placeholder.svg'], 
+    featured: Boolean(dbProduct.featured) || false,
+    stock: dbProduct.stock_quantity || 0,
+    specifications: dbProduct.specifications || {},
+    colors: dbProduct.colors || [],
+    mediaGallery: dbProduct.media_gallery || []
   };
 };
 
 /**
- * Map initial data product to Product format (for category filtering)
+ * Map InitialDataProduct to Product type
  */
-export const mapInitialToProduct = (p: InitialDataProduct): any => {
+export const mapInitialToProduct = (initialProduct: InitialDataProduct): Product => {
   return {
-    id: p.id,
-    name: p.name,
-    description: p.description || '',
-    image: p.image || '/placeholder.svg',
-    price: p.price,
-    categoryId: p.categoryId,
-    featured: !!p.featured,
-    images: [p.image || '/placeholder.svg'],
-    category: '',
-    stock: 0,
-    colors: p.colors || [],
-    specifications: p.specifications || {},
-    mediaGallery: p.mediaGallery || []
+    ...initialProduct,
+    stock: 0, // Default stock since it's not in initial data
   };
 };
