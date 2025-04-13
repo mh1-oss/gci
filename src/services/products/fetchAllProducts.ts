@@ -37,14 +37,20 @@ export const fetchProducts = async (): Promise<Product[]> => {
     
     // Map DB products to frontend Product type with proper type handling
     return data.map(product => {
-      // Safely handle categories that might be null
-      const categoryName = 
-        product.categories && 
-        typeof product.categories === 'object' && 
-        product.categories !== null && 
-        'name' in product.categories
-          ? String(product.categories?.name ?? '') 
-          : '';
+      // Define a safe way to extract category name with null checks
+      let categoryName = '';
+      
+      // Only try to access name if categories exists and is an object
+      if (product.categories !== null && 
+          product.categories !== undefined && 
+          typeof product.categories === 'object') {
+        // Now TypeScript knows categories is not null
+        const categoriesObj = product.categories;
+        if ('name' in categoriesObj) {
+          const nameValue = categoriesObj.name;
+          categoryName = nameValue ? String(nameValue) : '';
+        }
+      }
 
       return {
         id: product.id,
@@ -75,4 +81,3 @@ export const fetchProducts = async (): Promise<Product[]> => {
     throw error;
   }
 };
-
