@@ -39,10 +39,10 @@ export const fetchProducts = async (): Promise<Product[]> => {
     return data.map(product => {
       // Safely handle categories that might be null
       const categoryName = 
-        product.categories 
-        && typeof product.categories === 'object' 
-        && product.categories !== null 
-        && 'name' in product.categories
+        product.categories && 
+        typeof product.categories === 'object' && 
+        product.categories !== null && 
+        'name' in product.categories
           ? String(product.categories?.name ?? '') 
           : '';
 
