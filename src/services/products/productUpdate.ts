@@ -1,7 +1,8 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { mapDbProductToProduct } from '@/utils/models/productMappers';
+import { mapDbProductToProduct, mapProductToDbProduct } from '@/utils/models/productMappers';
 import { DbProduct, Product } from '@/utils/models/types';
+import { isRlsPolicyError, createRlsError } from '@/services/rls/rlsErrorHandler';
 
 /**
  * Update an existing product
@@ -21,13 +22,9 @@ export const updateProduct = async (id: string, updates: Partial<Product>): Prom
       
     if (fetchError) {
       // Check for RLS policy issues
-      if (fetchError.message && (
-        fetchError.message.includes("infinite recursion") || 
-        fetchError.message.includes("policy for relation") ||
-        fetchError.message.includes("user_roles")
-      )) {
+      if (isRlsPolicyError(fetchError)) {
         console.warn('RLS policy issue detected during update operation');
-        throw new Error("مشكلة في سياسات قاعدة البيانات. لا يمكن تحديث المنتج حالياً");
+        throw createRlsError('update');
       }
       
       console.error('Error fetching current product for update:', fetchError);
@@ -67,13 +64,9 @@ export const updateProduct = async (id: string, updates: Partial<Product>): Prom
     
     if (error) {
       // Check for RLS policy issues
-      if (error.message && (
-        error.message.includes("infinite recursion") || 
-        error.message.includes("policy for relation") ||
-        error.message.includes("user_roles")
-      )) {
+      if (isRlsPolicyError(error)) {
         console.warn('RLS policy issue detected during update operation');
-        throw new Error("مشكلة في سياسات قاعدة البيانات. لا يمكن تحديث المنتج حالياً");
+        throw createRlsError('update');
       }
       
       console.error('Error updating product:', error);
@@ -85,6 +78,6 @@ export const updateProduct = async (id: string, updates: Partial<Product>): Prom
     return mapDbProductToProduct(data as DbProduct);
   } catch (error) {
     console.error('Unexpected error updating product:', error);
-    throw error instanceof Error ? error : new Error('فشلت عملية تحديث المنتج لسبب غير معروف');
+    throw error;
   }
 };

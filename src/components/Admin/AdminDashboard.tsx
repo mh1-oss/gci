@@ -1,4 +1,3 @@
-
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import AdminAuthCheck from "@/components/Admin/AdminAuthCheck";
@@ -12,6 +11,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import SupabaseConnectionStatus from "./SupabaseConnectionStatus";
+import { isRlsPolicyError, getRlsErrorMessage } from '@/services/rls/rlsErrorHandler';
+import RlsErrorDisplay from '@/components/ErrorHandling/RlsErrorDisplay';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -178,22 +179,29 @@ const AdminDashboard = () => {
             <SupabaseConnectionStatus />
             
             {error ? (
-              <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg mb-6">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h3 className="font-bold mb-2">خطأ في تحميل البيانات</h3>
-                    <p>{error instanceof Error ? error.message : "حدث خطأ أثناء تحميل إحصائيات لوحة التحكم"}</p>
+              isRlsPolicyError(error) ? (
+                <RlsErrorDisplay
+                  error={error}
+                  onRetry={handleRefresh}
+                />
+              ) : (
+                <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg mb-6">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h3 className="font-bold mb-2">خطأ في تحميل البيانات</h3>
+                      <p>{error instanceof Error ? error.message : "حدث خطأ أثناء تحميل إحصائيات لوحة التحكم"}</p>
+                    </div>
+                    <Button 
+                      onClick={handleRefresh}
+                      variant="outline" 
+                      className="border-red-300 text-red-700 hover:bg-red-50"
+                    >
+                      <RefreshCw className="h-4 w-4 ml-2" />
+                      تحديث
+                    </Button>
                   </div>
-                  <Button 
-                    onClick={handleRefresh}
-                    variant="outline" 
-                    className="border-red-300 text-red-700 hover:bg-red-50"
-                  >
-                    <RefreshCw className="h-4 w-4 ml-2" />
-                    تحديث
-                  </Button>
                 </div>
-              </div>
+              )
             ) : !isLoading && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
                 <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">

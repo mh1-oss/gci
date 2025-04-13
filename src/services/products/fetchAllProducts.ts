@@ -1,38 +1,61 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import type { Product as InitialDataProduct } from '@/data/initialData';
-import { isRlsPolicyError, getFallbackProducts, mapDbToInitialDataProduct } from './utils/productUtils';
+import { Product } from '@/utils/models/types';
+import { getFallbackProducts } from './utils/productUtils';
+import { isRlsPolicyError, createRlsError } from '@/services/rls/rlsErrorHandler';
 
 /**
- * Fetch all products from the database
- * Falls back to initial data if there's an RLS policy issue
+ * Fetch all products
+ * Returns array of products or throws an error
  */
-export const fetchProducts = async (): Promise<InitialDataProduct[]> => {
+export const fetchProducts = async (): Promise<Product[]> => {
   try {
-    console.log('Fetching products...');
-    
+    // Try fetching products from Supabase
     const { data, error } = await supabase
       .from('products')
-      .select('*');
+      .select(`
+        *,
+        categories (
+          name
+        )
+      `);
     
     if (error) {
-      console.error('Error fetching products:', error);
-      
-      // Check if the error is related to RLS policy issues
       if (isRlsPolicyError(error)) {
         console.warn('RLS policy issue detected, using fallback data');
         return getFallbackProducts();
       }
       
-      throw error; // Re-throw the error if it's not an RLS issue
+      console.error('Error fetching products:', error);
+      throw error;
     }
     
-    console.log('Products fetched successfully:', data);
+    if (!data || data.length === 0) {
+      console.log('No products found in database, using fallback data');
+      return getFallbackProducts();
+    }
     
-    // Map database results to InitialDataProduct type with proper defaults
-    return (data || []).map(mapDbToInitialDataProduct);
+    // Map DB products to frontend Product type
+    return data.map(product => ({
+      id: product.id,
+      name: product.name,
+      description: product.description || '',
+      price: Number(product.price) || 0,
+      categoryId: product.category_id || '',
+      image: product.image_url || '/placeholder.svg',
+      images: product.image_url ? [product.image_url] : ['/placeholder.svg'],
+      category: product.categories && product.categories.name ? product.categories.name : '',
+      stock: product.stock_quantity || 0,
+      featured: Boolean(product.featured) || false,
+      colors: product.colors || [],
+      specifications: product.specifications || {},
+      mediaGallery: product.media_gallery || []
+    }));
   } catch (error) {
-    console.error('Unexpected error fetching products:', error);
-    return getFallbackProducts();
+    console.error('Error fetching products:', error);
+    if (isRlsPolicyError(error)) {
+      return getFallbackProducts();
+    }
+    throw error;
   }
 };

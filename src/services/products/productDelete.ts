@@ -1,5 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { isRlsPolicyError, createRlsError } from '@/services/rls/rlsErrorHandler';
 
 /**
  * Delete a product by ID
@@ -18,13 +19,9 @@ export const deleteProduct = async (id: string): Promise<boolean> => {
     
     if (checkError) {
       // Check for RLS policy issues
-      if (checkError.message && (
-        checkError.message.includes("infinite recursion") || 
-        checkError.message.includes("policy for relation") ||
-        checkError.message.includes("user_roles")
-      )) {
+      if (isRlsPolicyError(checkError)) {
         console.warn('RLS policy issue detected during delete operation');
-        throw new Error("مشكلة في سياسات قاعدة البيانات. لا يمكن حذف المنتج حالياً");
+        throw createRlsError('delete');
       }
       
       if (checkError.code === 'PGRST116') {
@@ -48,13 +45,9 @@ export const deleteProduct = async (id: string): Promise<boolean> => {
     
     if (error) {
       // Check for RLS policy issues
-      if (error.message && (
-        error.message.includes("infinite recursion") || 
-        error.message.includes("policy for relation") ||
-        error.message.includes("user_roles")
-      )) {
+      if (isRlsPolicyError(error)) {
         console.warn('RLS policy issue detected during delete operation');
-        throw new Error("مشكلة في سياسات قاعدة البيانات. لا يمكن حذف المنتج حالياً");
+        throw createRlsError('delete');
       }
       
       console.error('Error deleting product:', error);
@@ -65,6 +58,6 @@ export const deleteProduct = async (id: string): Promise<boolean> => {
     return true;
   } catch (error) {
     console.error('Unexpected error deleting product:', error);
-    throw error instanceof Error ? error : new Error('فشلت عملية حذف المنتج لسبب غير معروف');
+    throw error;
   }
 };

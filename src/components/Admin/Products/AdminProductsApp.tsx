@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -40,6 +39,8 @@ import ProductErrorHandler from './ProductErrorHandler';
 import AdminProductActions from './AdminProductActions';
 import ProductFormDialog from './ProductFormDialog';
 import SupabaseConnectionStatus from '../SupabaseConnectionStatus';
+import { isRlsPolicyError, getRlsErrorMessage } from '@/services/rls/rlsErrorHandler';
+import RlsErrorDisplay from '@/components/ErrorHandling/RlsErrorDisplay';
 
 const AdminProductsApp = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -151,13 +152,18 @@ const AdminProductsApp = () => {
       
       if (formData.imageFile) {
         console.log('Uploading image file:', formData.imageFile.name);
-        const uploadResult = await uploadMedia(formData.imageFile);
-        
-        if (uploadResult) {
-          console.log('Image uploaded successfully:', uploadResult);
-          imageUrl = uploadResult;
-        } else {
-          throw new Error("فشل تحميل الصورة");
+        try {
+          const uploadResult = await uploadMedia(formData.imageFile);
+          
+          if (uploadResult) {
+            console.log('Image uploaded successfully:', uploadResult);
+            imageUrl = uploadResult;
+          } else {
+            throw new Error("فشل تحميل الصورة");
+          }
+        } catch (uploadError) {
+          console.error('Error uploading image:', uploadError);
+          throw new Error(`فشل تحميل الصورة: ${uploadError instanceof Error ? uploadError.message : 'خطأ غير معروف'}`);
         }
       }
       
@@ -180,37 +186,54 @@ const AdminProductsApp = () => {
       
       if (editMode && selectedProduct) {
         console.log('Updating existing product:', selectedProduct.id);
-        result = await updateProduct(selectedProduct.id, productData);
-        
-        if (result) {
-          console.log('Product updated successfully:', result);
-          toast({
-            title: "تم التحديث بنجاح",
-            description: "تم تحديث المنتج بنجاح"
-          });
+        try {
+          result = await updateProduct(selectedProduct.id, productData);
           
-          setProducts(prevProducts => 
-            prevProducts.map(p => p.id === selectedProduct.id ? { ...p, ...productData, id: selectedProduct.id } : p)
-          );
+          if (result) {
+            console.log('Product updated successfully:', result);
+            toast({
+              title: "تم التحديث بنجاح",
+              description: "تم تحديث المنتج بنجاح"
+            });
+            
+            setProducts(prevProducts => 
+              prevProducts.map(p => p.id === selectedProduct.id ? { ...p, ...productData, id: selectedProduct.id } : p)
+            );
+            
+            setFormDialogOpen(false);
+            setSelectedProduct(null);
+            setEditMode(false);
+          }
+        } catch (updateError) {
+          if (isRlsPolicyError(updateError)) {
+            setError(getRlsErrorMessage('update'));
+          } else {
+            setError(updateError instanceof Error ? updateError.message : "حدث خطأ أثناء تحديث المنتج");
+          }
         }
       } else {
         console.log('Creating new product');
-        result = await createProduct(productData);
-        
-        if (result) {
-          console.log('Product created successfully:', result);
-          toast({
-            title: "تم الإنشاء بنجاح",
-            description: "تم إنشاء المنتج بنجاح"
-          });
+        try {
+          result = await createProduct(productData);
           
-          setProducts(prevProducts => [...prevProducts, result as Product]);
+          if (result) {
+            console.log('Product created successfully:', result);
+            toast({
+              title: "تم الإنشاء بنجاح",
+              description: "تم إنشاء المنتج بنجاح"
+            });
+            
+            setProducts(prevProducts => [...prevProducts, result as Product]);
+            setFormDialogOpen(false);
+          }
+        } catch (createError) {
+          if (isRlsPolicyError(createError)) {
+            setError(getRlsErrorMessage('create'));
+          } else {
+            setError(createError instanceof Error ? createError.message : "حدث خطأ أثناء إنشاء المنتج");
+          }
         }
       }
-      
-      setFormDialogOpen(false);
-      setSelectedProduct(null);
-      setEditMode(false);
     } catch (error: any) {
       console.error('Error saving product:', error);
       setError(error?.message || "حدث خطأ أثناء حفظ المنتج");
@@ -227,21 +250,29 @@ const AdminProductsApp = () => {
     
     try {
       console.log('Deleting product:', selectedProduct.id);
-      const success = await deleteProduct(selectedProduct.id);
-      
-      if (success) {
-        console.log('Product deleted successfully');
-        toast({
-          title: "تم الحذف بنجاح",
-          description: "تم حذف المنتج بنجاح"
-        });
+      try {
+        const success = await deleteProduct(selectedProduct.id);
         
-        setProducts(prevProducts => 
-          prevProducts.filter(p => p.id !== selectedProduct.id)
-        );
-        
-        setDeleteDialogOpen(false);
-        setSelectedProduct(null);
+        if (success) {
+          console.log('Product deleted successfully');
+          toast({
+            title: "تم الحذف بنجاح",
+            description: "تم حذف المنتج بنجاح"
+          });
+          
+          setProducts(prevProducts => 
+            prevProducts.filter(p => p.id !== selectedProduct.id)
+          );
+          
+          setDeleteDialogOpen(false);
+          setSelectedProduct(null);
+        }
+      } catch (deleteError) {
+        if (isRlsPolicyError(deleteError)) {
+          setError(getRlsErrorMessage('delete'));
+        } else {
+          setError(deleteError instanceof Error ? deleteError.message : "حدث خطأ أثناء حذف المنتج");
+        }
       }
     } catch (error: any) {
       console.error('Error deleting product:', error);
@@ -271,7 +302,6 @@ const AdminProductsApp = () => {
           />
         </CardHeader>
         <CardContent>
-          {/* Add the connection status component here */}
           <SupabaseConnectionStatus />
           
           {connectionStatus === 'disconnected' && (
@@ -281,7 +311,12 @@ const AdminProductsApp = () => {
             />
           )}
           
-          {error && connectionStatus !== 'disconnected' && (
+          {error && connectionStatus !== 'disconnected' && isRlsPolicyError(error) ? (
+            <RlsErrorDisplay 
+              error={error}
+              onRetry={fetchAllData}
+            />
+          ) : error && connectionStatus !== 'disconnected' && (
             <ProductErrorHandler
               error={error}
               onRetry={fetchAllData}
@@ -381,7 +416,12 @@ const AdminProductsApp = () => {
             </DialogDescription>
           </DialogHeader>
           
-          {error && (
+          {error && isRlsPolicyError(error) ? (
+            <RlsErrorDisplay 
+              error={error}
+              className="mt-2" 
+            />
+          ) : error && (
             <ProductErrorHandler 
               error={error} 
               className="mt-2"
