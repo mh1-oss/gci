@@ -12,12 +12,12 @@ export const mapDbProductToProduct = (dbProduct: DbProduct): Product => {
     price: Number(dbProduct.price) || 0,
     categoryId: dbProduct.category_id || '',
     image: dbProduct.image_url || '/placeholder.svg',
+    images: dbProduct.image_url ? [dbProduct.image_url] : ['/placeholder.svg'],
     stock: dbProduct.stock_quantity || 0,
     category: dbProduct.categories && typeof dbProduct.categories === 'object' && 'name' in dbProduct.categories 
       ? dbProduct.categories.name as string
       : '',
     featured: Boolean(dbProduct.featured) || false,
-    images: dbProduct.image_url ? [dbProduct.image_url] : ['/placeholder.svg'],
     colors: dbProduct.colors || [],
     specifications: dbProduct.specifications || {},
     mediaGallery: dbProduct.media_gallery || [],
@@ -25,7 +25,7 @@ export const mapDbProductToProduct = (dbProduct: DbProduct): Product => {
 };
 
 export const mapProductToDbProduct = (product: Product): DbProduct => {
-  console.log('Mapping app model to DB product:', product);
+  console.log('Mapping app product to DB product:', product);
   
   return {
     id: product.id,

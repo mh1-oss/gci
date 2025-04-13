@@ -63,6 +63,7 @@ export const mapDbToProduct = (dbProduct: any): Product => {
     price: Number(dbProduct.price),
     categoryId: dbProduct.category_id || '',
     image: dbProduct.image_url || '/placeholder.svg',
+    images: dbProduct.image_url ? [dbProduct.image_url] : ['/placeholder.svg'],
     featured: Boolean(dbProduct.featured) || false,
     stock: dbProduct.stock_quantity || 0,
     specifications: dbProduct.specifications || {},
@@ -80,6 +81,7 @@ export const mapDbToProduct = (dbProduct: any): Product => {
 export const mapInitialToProduct = (initialProduct: InitialDataProduct): Product => {
   return {
     ...initialProduct,
+    images: [initialProduct.image],
     stock: 0, // Default stock since it's not in initial data
     category: categories.find(c => c.id === initialProduct.categoryId)?.name || ''
   };
