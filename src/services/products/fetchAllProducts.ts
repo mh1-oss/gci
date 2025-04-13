@@ -38,13 +38,13 @@ export const fetchProducts = async (): Promise<Product[]> => {
     
     // Map DB products to frontend Product type with proper type handling
     return data.map(product => {
-      // Safely handle categories that might be null
+      // Enhanced null-safe category name extraction
       const categoryName = 
         product.categories && 
         typeof product.categories === 'object' && 
         product.categories !== null && 
-        'name' in product.categories
-          ? String(product.categories.name) // Ensure string conversion
+        'name' in product.categories 
+          ? String(product.categories.name ?? '') 
           : '';
 
       return {
