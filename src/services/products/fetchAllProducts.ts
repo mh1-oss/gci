@@ -10,49 +10,51 @@ import { isRlsPolicyError, createRlsError } from '@/services/rls/rlsErrorHandler
  */
 export const fetchProducts = async (): Promise<Product[]> => {
   try {
-    // Try fetching products from Supabase
-    const { data, error } = await supabase
+    // Try fetching products from Supabase - without using JOIN
+    const { data: productsData, error: productsError } = await supabase
       .from('products')
-      .select(`
-        *,
-        categories (
-          name
-        )
-      `);
+      .select('*');
     
-    if (error) {
-      if (isRlsPolicyError(error)) {
+    if (productsError) {
+      if (isRlsPolicyError(productsError)) {
         console.warn('RLS policy issue detected, using fallback data');
         return getFallbackProducts();
       }
       
-      console.error('Error fetching products:', error);
-      throw error;
+      console.error('Error fetching products:', productsError);
+      throw productsError;
     }
     
-    if (!data || data.length === 0) {
+    if (!productsData || productsData.length === 0) {
       console.log('No products found in database, using fallback data');
       return getFallbackProducts();
     }
     
-    // Map DB products to frontend Product type with proper type handling
-    return data.map(product => {
-      // Define a safe way to extract category name
-      let categoryName = '';
-      
-      // Only try to access name if categories exists and is an object
-      if (product.categories !== null && 
-          product.categories !== undefined && 
-          typeof product.categories === 'object') {
-        // Create a non-null reference to categories to satisfy TypeScript
-        // Using a type assertion to help TypeScript understand this object structure
-        const categoriesObj = product.categories as { name?: string };
-        // Additional safety check to ensure it's not null before we access it
-        if (categoriesObj && 'name' in categoriesObj) {
-          const nameValue = categoriesObj.name;
-          categoryName = nameValue ? String(nameValue) : '';
-        }
+    // Fetch categories separately to manually associate with products
+    let categoriesMap = new Map();
+    try {
+      const { data: categoriesData, error: categoriesError } = await supabase
+        .from('categories')
+        .select('id, name');
+        
+      if (!categoriesError && categoriesData) {
+        // Create a map of category id -> name for quick lookups
+        categoriesData.forEach(category => {
+          categoriesMap.set(category.id, category.name);
+        });
+      } else {
+        console.warn('Error fetching categories:', categoriesError);
       }
+    } catch (err) {
+      console.warn('Failed to fetch categories:', err);
+    }
+    
+    // Map DB products to frontend Product type
+    return productsData.map(product => {
+      // Get category name from our map if available
+      const categoryName = product.category_id 
+        ? categoriesMap.get(product.category_id) || ''
+        : '';
 
       return {
         id: product.id,
