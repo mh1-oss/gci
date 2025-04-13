@@ -1,7 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { mapDbProductToProduct } from '@/utils/models/productMappers';
-import { DbProduct, Product } from '@/utils/models/types';
+import { Product } from '@/utils/models/types';
 
 /**
  * Create a new product
@@ -32,7 +31,7 @@ export const createProduct = async (product: Omit<Product, 'id'>): Promise<Produ
       throw new Error(`خطأ في الاتصال بقاعدة البيانات: ${connectionError.message}`);
     }
     
-    // Create the database product object directly without using mappers
+    // Create the database product object directly
     const dbProduct = {
       name: product.name,
       description: product.description || '',
@@ -40,12 +39,7 @@ export const createProduct = async (product: Omit<Product, 'id'>): Promise<Produ
       price: product.price,
       cost_price: product.price * 0.7, // Default cost to 70% of price if not specified
       stock_quantity: product.stock || 0,
-      image_url: product.image !== '/placeholder.svg' ? product.image : null,
-      colors: product.colors || [],
-      specifications: product.specifications || {},
-      media_gallery: product.mediaGallery || [],
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      image_url: product.image !== '/placeholder.svg' ? product.image : null
     };
     
     console.log('Converted to DB format:', dbProduct);
@@ -63,7 +57,22 @@ export const createProduct = async (product: Omit<Product, 'id'>): Promise<Produ
     
     console.log('Product created successfully:', data);
     
-    return mapDbProductToProduct(data as DbProduct);
+    // Map to the Product type with defaults for missing fields
+    return {
+      id: data.id,
+      name: data.name,
+      description: data.description || '',
+      price: Number(data.price) || 0,
+      categoryId: data.category_id || '',
+      image: data.image_url || '/placeholder.svg',
+      featured: false, // Default since it's not in DB schema
+      images: data.image_url ? [data.image_url] : ['/placeholder.svg'],
+      category: '',
+      stock: data.stock_quantity || 0,
+      colors: [], // Default since it's not in DB schema
+      specifications: {}, // Default since it's not in DB schema
+      mediaGallery: [] // Default since it's not in DB schema
+    };
   } catch (error) {
     console.error('Unexpected error creating product:', error);
     throw error;

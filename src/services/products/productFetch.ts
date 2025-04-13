@@ -42,16 +42,16 @@ export const fetchProducts = async (): Promise<InitialDataProduct[]> => {
     
     console.log('Products fetched successfully:', data);
     
-    // Explicitly cast and map the database results with proper defaults for missing fields
+    // Map database results to InitialDataProduct type with proper defaults
     return (data || []).map((item: any): InitialDataProduct => ({
       id: item.id,
       name: item.name,
       description: item.description || '',
-      price: item.price,
+      price: Number(item.price) || 0,
       categoryId: item.category_id || '',
       image: item.image_url || '/placeholder.svg',
-      featured: false, // Default value since it's not in the DB schema
-      colors: [] // Default empty array since it's not in the DB schema
+      featured: false, // Default since it's not in DB schema
+      colors: [] // Default since it's not in DB schema
     }));
   } catch (error) {
     console.error('Unexpected error fetching products:', error);
@@ -91,19 +91,17 @@ export const fetchProductById = async (id: string): Promise<InitialDataProduct |
     
     if (!data) return null;
     
-    // Explicitly cast and map to InitialDataProduct type with defaults
-    const product: InitialDataProduct = {
+    // Map to InitialDataProduct type with proper defaults
+    return {
       id: data.id,
       name: data.name,
       description: data.description || '',
-      price: data.price,
+      price: Number(data.price) || 0,
       categoryId: data.category_id || '',
       image: data.image_url || '/placeholder.svg',
-      featured: false, // Default since it's not in the DB schema
-      colors: [] // Default since it's not in the DB schema
+      featured: false, // Default since it's not in DB schema
+      colors: [] // Default since it's not in DB schema
     };
-    
-    return product;
   } catch (error) {
     console.error('Unexpected error fetching product by id:', error);
     
@@ -133,7 +131,7 @@ export const fetchProductsByCategory = async (categoryId: string): Promise<Produ
         error.message.includes("user_roles")
       )) {
         console.warn('RLS policy issue detected, filtering fallback data by category');
-        // Cast each product to the Product type to avoid type errors
+        // Map filtered initial data to Product type
         return products
           .filter(p => p.categoryId === categoryId)
           .map((p): Product => ({
@@ -156,26 +154,26 @@ export const fetchProductsByCategory = async (categoryId: string): Promise<Produ
       throw error; // Re-throw if not RLS related
     }
     
-    // Explicitly cast and map database results to Product type with defaults
-    return (data || []).map((item): Product => ({
+    // Map database results to Product type with proper defaults
+    return (data || []).map((item: any): Product => ({
       id: item.id,
       name: item.name,
       description: item.description || '',
       image: item.image_url || '/placeholder.svg',
       price: Number(item.price) || 0,
       categoryId: item.category_id || '',
-      featured: false, // Default since it's not in the DB schema
+      featured: false, // Default since it's not in DB schema
       images: item.image_url ? [item.image_url] : ['/placeholder.svg'],
       category: '',
       stock: item.stock_quantity || 0,
-      colors: [], // Default since it's not in the DB schema
-      specifications: {}, // Default since it's not in the DB schema
-      mediaGallery: [] // Default since it's not in the DB schema
+      colors: [], // Default since it's not in DB schema
+      specifications: {}, // Default since it's not in DB schema
+      mediaGallery: [] // Default since it's not in DB schema
     }));
   } catch (error) {
     console.error('Unexpected error fetching products by category:', error);
     
-    // Fallback to filtered initial data with proper casting
+    // Fallback to filtered initial data
     return products
       .filter(p => p.categoryId === categoryId)
       .map((p): Product => ({
@@ -183,7 +181,7 @@ export const fetchProductsByCategory = async (categoryId: string): Promise<Produ
         name: p.name,
         description: p.description || '',
         image: p.image || '/placeholder.svg',
-        price: p.price, 
+        price: p.price,
         categoryId: p.categoryId,
         featured: !!p.featured,
         images: [p.image || '/placeholder.svg'],
@@ -225,16 +223,16 @@ export const fetchFeaturedProducts = async (): Promise<InitialDataProduct[]> => 
       throw error;
     }
     
-    // Explicitly cast and map to InitialDataProduct type with defaults
-    return (data || []).map((item): InitialDataProduct => ({
+    // Map database results to InitialDataProduct type with proper defaults
+    return (data || []).map((item: any): InitialDataProduct => ({
       id: item.id,
       name: item.name,
       description: item.description || '',
-      price: item.price,
+      price: Number(item.price) || 0,
       categoryId: item.category_id || '',
       image: item.image_url || '/placeholder.svg',
       featured: true, // We're treating these as featured since we're limiting to 4
-      colors: [] // Default since it's not in the DB schema
+      colors: [] // Default since it's not in DB schema
     }));
   } catch (error) {
     console.error('Unexpected error fetching featured products:', error);
