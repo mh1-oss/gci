@@ -24,7 +24,6 @@ export const fetchProducts = async (): Promise<Product[]> => {
     if (error) {
       if (isRlsPolicyError(error)) {
         console.warn('RLS policy issue detected, using fallback data');
-        // Convert fallback data to match Product type from utils/models/types
         return getFallbackProducts();
       }
       
@@ -34,19 +33,18 @@ export const fetchProducts = async (): Promise<Product[]> => {
     
     if (!data || data.length === 0) {
       console.log('No products found in database, using fallback data');
-      // Return fallback products
       return getFallbackProducts();
     }
     
     // Map DB products to frontend Product type with proper type handling
     return data.map(product => {
-      // Handle the possibility of categories being null safely
+      // Safely handle categories that might be null
       const categoryName = 
         product.categories && 
         typeof product.categories === 'object' && 
         product.categories !== null && 
         'name' in product.categories
-          ? product.categories.name as string
+          ? String(product.categories.name) // Ensure string conversion
           : '';
 
       return {
