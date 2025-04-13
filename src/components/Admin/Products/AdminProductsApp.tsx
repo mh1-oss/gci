@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -24,8 +25,7 @@ import {
   DialogTitle
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Edit, Trash2, Loader2, AlertCircle } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Edit, Trash2, Loader2 } from 'lucide-react';
 import { 
   fetchProducts, 
   createProduct, 
@@ -35,10 +35,11 @@ import {
 import { fetchCategories } from '@/services/categories/categoryService';
 import { uploadMedia } from '@/services/media/mediaService';
 import { Product, Category } from '@/data/initialData';
-import { pingDatabase } from '@/integrations/supabase/client';
+import { checkDatabaseConnectivity } from "@/services/products/utils/rlsErrorHandler";
 import ProductErrorHandler from './ProductErrorHandler';
 import AdminProductActions from './AdminProductActions';
 import ProductFormDialog from './ProductFormDialog';
+import SupabaseConnectionStatus from '../SupabaseConnectionStatus';
 
 const AdminProductsApp = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -68,17 +69,17 @@ const AdminProductsApp = () => {
     try {
       setConnectionStatus('checking');
       
-      const { ok, error, warning } = await pingDatabase();
+      const connectionResult = await checkDatabaseConnectivity();
       
-      if (!ok) {
-        console.error('Supabase connection error:', error);
+      if (!connectionResult.isConnected) {
+        console.error('Supabase connection error:', connectionResult.error);
         setConnectionStatus('disconnected');
-        setError(`خطأ في الاتصال بقاعدة البيانات: ${error}`);
+        setError(`خطأ في الاتصال بقاعدة البيانات: ${connectionResult.error}`);
       } else {
         console.log('Supabase connection successful');
         setConnectionStatus('connected');
         
-        if (warning) {
+        if (connectionResult.hasRlsIssue) {
           toast({
             title: "تحذير",
             description: "تم الاتصال بقاعدة البيانات ولكن هناك مشكلة في إعدادات الأمان",
@@ -270,6 +271,9 @@ const AdminProductsApp = () => {
           />
         </CardHeader>
         <CardContent>
+          {/* Add the connection status component here */}
+          <SupabaseConnectionStatus />
+          
           {connectionStatus === 'disconnected' && (
             <ProductErrorHandler
               error="لا يمكن الاتصال بقاعدة البيانات. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى."

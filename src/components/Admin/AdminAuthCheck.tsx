@@ -2,10 +2,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { AlertTriangle, Loader2, WifiOff, RefreshCw } from "lucide-react";
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { pingDatabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
+import { checkDatabaseConnectivity } from "@/services/products/utils/rlsErrorHandler";
+import DatabaseConnectionError from "../ErrorHandling/DatabaseConnectionError";
 
 interface AdminAuthCheckProps {
   children: React.ReactNode;
@@ -14,139 +13,82 @@ interface AdminAuthCheckProps {
 const AdminAuthCheck = ({ children }: AdminAuthCheckProps) => {
   const { isAuthenticated, isAdmin, loading } = useAuth();
   const navigate = useNavigate();
-  const [dbConnected, setDbConnected] = useState<boolean | null>(null);
-  const [checkingDb, setCheckingDb] = useState(false);
-  const [connectionAttempts, setConnectionAttempts] = useState(0);
-
-  // Check database connection
-  const checkDbConnection = async () => {
-    setCheckingDb(true);
-    try {
-      const result = await pingDatabase();
-      console.log("Database connection result:", result);
-      setDbConnected(result.ok);
-      
-      if (!result.ok && connectionAttempts < 2) {
-        // Auto-retry once after 2 seconds
-        setTimeout(() => {
-          setConnectionAttempts(prev => prev + 1);
-          checkDbConnection();
-        }, 2000);
-      }
-    } catch (error) {
-      console.error("Error checking database connection:", error);
-      setDbConnected(false);
-    } finally {
-      setCheckingDb(false);
-    }
-  };
+  const [dbCheckDone, setDbCheckDone] = useState(false);
+  const [dbError, setDbError] = useState<string | null>(null);
+  const [dbHasRlsIssue, setDbHasRlsIssue] = useState(false);
 
   useEffect(() => {
-    document.title = "لوحة تحكم المدير - الشركة الذهبية للصناعات الكيمياوية";
-    
-    // Check database connection on mount
-    checkDbConnection();
-    
-    // Only redirect if we're sure the user is not authenticated (loading completed)
+    // Check if the user is authenticated and admin
     if (!loading && !isAuthenticated) {
-      console.log("Not authenticated, redirecting to login");
       navigate("/login");
+    } else if (!loading && isAuthenticated && !isAdmin) {
+      navigate("/"); // Redirect non-admin users
     }
-  }, [isAuthenticated, loading, navigate]);
+  }, [isAuthenticated, isAdmin, loading, navigate]);
 
-  // Database connection error
-  if (dbConnected === false) {
+  // Check database connection
+  useEffect(() => {
+    const checkDbConnection = async () => {
+      try {
+        const result = await checkDatabaseConnectivity();
+        console.log("Database connection result:", result);
+        
+        if (!result.isConnected) {
+          setDbError(result.error || "تعذر الاتصال بقاعدة البيانات");
+        } else if (result.hasRlsIssue) {
+          // We can still continue with RLS issues, just log it
+          setDbHasRlsIssue(true);
+          console.log("Database connection has RLS issues but is functional");
+        }
+        
+        setDbCheckDone(true);
+      } catch (error) {
+        console.error("Error checking database connection:", error);
+        setDbError("حدث خطأ غير متوقع أثناء التحقق من اتصال قاعدة البيانات");
+        setDbCheckDone(true);
+      }
+    };
+
+    if (isAuthenticated && isAdmin && !dbCheckDone) {
+      checkDbConnection();
+    }
+  }, [isAuthenticated, isAdmin, dbCheckDone]);
+
+  // Show loading state
+  if (loading || (isAuthenticated && isAdmin && !dbCheckDone)) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]" dir="rtl">
-        <div className="text-center p-8 max-w-md">
-          <WifiOff className="mx-auto h-12 w-12 text-yellow-500 mb-4" />
-          <h2 className="text-2xl font-bold mb-4">خطأ في الاتصال بقاعدة البيانات</h2>
-          <p className="text-gray-600 mb-6">
-            لا يمكن الاتصال بقاعدة البيانات. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.
-          </p>
-          <div className="space-y-3">
-            <Button 
-              onClick={checkDbConnection} 
-              disabled={checkingDb}
-              className="w-full"
-            >
-              {checkingDb ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="mr-2 h-4 w-4" />
-              )}
-              إعادة المحاولة
-            </Button>
-            <Link 
-              to="/" 
-              className="inline-block w-full px-6 py-3 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors text-center"
-            >
-              العودة إلى الصفحة الرئيسية
-            </Link>
-          </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-lg font-medium">جاري التحميل...</p>
         </div>
       </div>
     );
   }
 
-  // Show loading state while checking authentication
-  if (loading || dbConnected === null) {
+  // Show database error if there's a critical connection issue
+  if (dbError && dbCheckDone) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]" dir="rtl">
-        <div className="text-center p-8">
-          <Loader2 className="mx-auto h-12 w-12 text-brand-blue animate-spin mb-4" />
-          <h2 className="text-2xl font-medium mb-2">جاري التحقق...</h2>
-          <p className="text-gray-600">
-            يرجى الانتظار بينما نتحقق من صلاحيات الوصول الخاصة بك.
-          </p>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <div className="w-full max-w-md">
+          <DatabaseConnectionError 
+            message={dbError}
+            retryFn={() => {
+              setDbCheckDone(false);
+              setDbError(null);
+            }}
+          />
         </div>
       </div>
     );
   }
 
-  // Show access denied if authenticated but not an admin
-  if (isAuthenticated && !isAdmin) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]" dir="rtl">
-        <div className="text-center p-8 max-w-md">
-          <AlertTriangle className="mx-auto h-12 w-12 text-yellow-500 mb-4" />
-          <h2 className="text-2xl font-bold mb-4">تم رفض الوصول</h2>
-          <p className="text-gray-600 mb-6">
-            حسابك ليس لديه صلاحيات إدارية كافية للوصول إلى لوحة التحكم.
-          </p>
-          <Link 
-            to="/" 
-            className="inline-block px-6 py-3 bg-brand-blue text-white rounded-md hover:bg-brand-darkblue transition-colors"
-          >
-            العودة إلى الصفحة الرئيسية
-          </Link>
-        </div>
-      </div>
-    );
+  // If user is admin and authenticated (and db is ok or has manageable issues)
+  if (isAuthenticated && isAdmin) {
+    return <>{children}</>;
   }
 
-  // Show access denied if not authenticated
-  if (!isAuthenticated) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]" dir="rtl">
-        <div className="text-center p-8 max-w-md">
-          <AlertTriangle className="mx-auto h-12 w-12 text-yellow-500 mb-4" />
-          <h2 className="text-2xl font-bold mb-4">تم رفض الوصول</h2>
-          <p className="text-gray-600 mb-6">
-            تحتاج إلى تسجيل الدخول كمسؤول للوصول إلى هذه الصفحة.
-          </p>
-          <Link 
-            to="/login" 
-            className="inline-block px-6 py-3 bg-brand-blue text-white rounded-md hover:bg-brand-darkblue transition-colors"
-          >
-            الذهاب إلى تسجيل الدخول
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  return <>{children}</>;
+  return null;
 };
 
 export default AdminAuthCheck;

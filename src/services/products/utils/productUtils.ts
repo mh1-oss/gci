@@ -1,18 +1,12 @@
 
-import { supabase } from "@/integrations/supabase/client";
 import { products } from '@/data/initialData';
 import type { Product as InitialDataProduct } from '@/data/initialData';
+import { isRlsInfiniteRecursionError } from './rlsErrorHandler';
 
 /**
  * Check if an error is related to RLS policy issues
  */
-export const isRlsPolicyError = (error: any): boolean => {
-  return !!(error?.message && (
-    error.message.includes("infinite recursion") || 
-    error.message.includes("policy for relation") ||
-    error.message.includes("user_roles")
-  ));
-};
+export const isRlsPolicyError = isRlsInfiniteRecursionError;
 
 /**
  * Get fallback product data from the initial data set

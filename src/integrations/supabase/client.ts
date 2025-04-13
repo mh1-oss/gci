@@ -31,20 +31,42 @@ export const supabase = createClient<Database>(
   }
 );
 
-// Modified helper function to check connection to Supabase
+// Improved helper function to check connection to Supabase
 // that can bypass RLS policy issues with the user_roles table
 export const pingDatabase = async () => {
   try {
+    console.log("Attempting to ping database...");
+    
     // Use a simple table that doesn't have complex RLS policies
-    // "company_info" is a good choice since it generally has minimal security constraints
-    const { data, error } = await supabase
-      .from('company_info')
-      .select('id')
-      .limit(1);
-      
-    // If we get a specific RLS recursion error with user_roles, we'll handle it gracefully
-    if (error && error.message && error.message.includes("infinite recursion") && error.message.includes("user_roles")) {
-      console.warn("Known RLS policy issue detected:", error.message);
+    // We'll try multiple tables in sequence to find one that works
+    let tables = ['company_info', 'products', 'categories'];
+    let success = false;
+    let errorMessage = '';
+    
+    for (const table of tables) {
+      try {
+        const { data, error } = await supabase
+          .from(table)
+          .select('id')
+          .limit(1);
+          
+        if (!error) {
+          // Found a working table
+          success = true;
+          console.log(`Database ping successful using ${table} table`);
+          break;
+        } else {
+          errorMessage = error.message;
+        }
+      } catch (err) {
+        // Continue to next table
+        console.warn(`Failed to ping using ${table} table, trying next option`);
+      }
+    }
+    
+    // If all tables failed, but we detect the specific RLS recursion error
+    if (!success && errorMessage && errorMessage.includes("infinite recursion") && errorMessage.includes("user_roles")) {
+      console.warn("Known RLS policy issue detected:", errorMessage);
       // Return partial success - we know the DB is up, but has policy configuration issues
       return { 
         ok: true, 
@@ -53,16 +75,20 @@ export const pingDatabase = async () => {
       };
     }
     
-    // Handle any other errors
-    if (error) {
-      console.error("Database ping failed:", error);
-      return { ok: false, latency: 0, error: error.message };
+    // If we got here and success is still false, we have a real connection issue
+    if (!success) {
+      console.error("Database ping failed for all tables:", errorMessage);
+      return { ok: false, latency: 0, error: errorMessage || "Could not connect to any table" };
     }
     
     return { ok: true, latency: 0 };
   } catch (err) {
     console.error("Unexpected error during database ping:", err);
-    return { ok: false, latency: 0, error: err instanceof Error ? err.message : 'Unknown error' };
+    return { 
+      ok: false, 
+      latency: 0, 
+      error: err instanceof Error ? err.message : 'Unknown error during ping' 
+    };
   }
 };
 
