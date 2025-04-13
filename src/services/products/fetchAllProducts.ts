@@ -68,9 +68,14 @@ export const fetchProducts = async (): Promise<Product[]> => {
     
     // Map DB products to frontend Product type
     return data.map(product => {
-      const categoryName = product.categories && typeof product.categories === 'object' && 'name' in product.categories
-        ? product.categories.name as string
-        : '';
+      // Handle the possibility of categories being null safely
+      const categoryName = 
+        product.categories && 
+        typeof product.categories === 'object' && 
+        product.categories !== null && 
+        'name' in product.categories
+          ? product.categories.name as string
+          : '';
 
       return {
         id: product.id,
@@ -84,7 +89,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
         stock: product.stock_quantity || 0,
         featured: Boolean(product.featured) || false,
         colors: Array.isArray(product.colors) ? product.colors : [],
-        specifications: typeof product.specifications === 'object' ? product.specifications || {} : {},
+        specifications: typeof product.specifications === 'object' && product.specifications !== null ? product.specifications : {},
         mediaGallery: Array.isArray(product.media_gallery) ? product.media_gallery : []
       };
     });

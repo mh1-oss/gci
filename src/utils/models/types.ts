@@ -53,13 +53,13 @@ export interface DbProduct {
   created_at: string;
   updated_at: string;
   categories?: DbCategory | Record<string, any> | null;
-  featured?: boolean;
-  colors?: string[];
-  specifications?: Record<string, string>;
-  media_gallery?: {
+  featured: boolean;
+  colors: string[];
+  specifications: Record<string, string> | null;
+  media_gallery: {
     url: string;
     type: 'image' | 'video';
-  }[];
+  }[] | null;
 }
 
 export interface DbCategory {

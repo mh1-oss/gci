@@ -14,12 +14,12 @@ export const mapDbProductToProduct = (dbProduct: DbProduct): Product => {
     image: dbProduct.image_url || '/placeholder.svg',
     images: dbProduct.image_url ? [dbProduct.image_url] : ['/placeholder.svg'],
     stock: dbProduct.stock_quantity || 0,
-    category: dbProduct.categories && typeof dbProduct.categories === 'object' && 'name' in dbProduct.categories 
+    category: dbProduct.categories && typeof dbProduct.categories === 'object' && dbProduct.categories !== null && 'name' in dbProduct.categories 
       ? dbProduct.categories.name as string
       : '',
     featured: Boolean(dbProduct.featured) || false,
     colors: Array.isArray(dbProduct.colors) ? dbProduct.colors : [],
-    specifications: typeof dbProduct.specifications === 'object' ? dbProduct.specifications || {} : {},
+    specifications: typeof dbProduct.specifications === 'object' && dbProduct.specifications !== null ? dbProduct.specifications || {} : {},
     mediaGallery: Array.isArray(dbProduct.media_gallery) ? dbProduct.media_gallery : [],
   };
 };
@@ -40,8 +40,8 @@ export const mapProductToDbProduct = (product: Product): DbProduct => {
     updated_at: new Date().toISOString(),
     featured: product.featured || false,
     colors: product.colors || [],
-    specifications: product.specifications || {},
-    media_gallery: product.mediaGallery || [],
+    specifications: product.specifications || null,
+    media_gallery: product.mediaGallery || null,
     categories: null // We don't need to send this to DB
   };
 };
@@ -61,8 +61,8 @@ export const mapInitialDataProductToDbProduct = (product: Omit<Product, 'id'>): 
     updated_at: new Date().toISOString(),
     featured: product.featured || false,
     colors: product.colors || [],
-    specifications: product.specifications || {},
-    media_gallery: product.mediaGallery || [],
+    specifications: product.specifications || null,
+    media_gallery: product.mediaGallery || null,
     categories: null // We don't need to send this to DB
   };
 };
