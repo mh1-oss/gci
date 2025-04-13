@@ -18,9 +18,13 @@ export const mapDbProductToProduct = (dbProduct: DbProduct): Product => {
       ? dbProduct.categories.name as string
       : '',
     featured: Boolean(dbProduct.featured) || false,
-    colors: Array.isArray(dbProduct.colors) ? dbProduct.colors : [],
-    specifications: typeof dbProduct.specifications === 'object' && dbProduct.specifications !== null ? dbProduct.specifications || {} : {},
-    mediaGallery: Array.isArray(dbProduct.media_gallery) ? dbProduct.media_gallery : [],
+    colors: Array.isArray(dbProduct.colors) ? dbProduct.colors as string[] : [],
+    specifications: typeof dbProduct.specifications === 'object' && dbProduct.specifications !== null 
+      ? dbProduct.specifications as Record<string, string> 
+      : {},
+    mediaGallery: Array.isArray(dbProduct.media_gallery) 
+      ? dbProduct.media_gallery as { url: string; type: 'image' | 'video' }[] 
+      : [],
   };
 };
 
@@ -40,8 +44,8 @@ export const mapProductToDbProduct = (product: Product): DbProduct => {
     updated_at: new Date().toISOString(),
     featured: product.featured || false,
     colors: product.colors || [],
-    specifications: product.specifications || null,
-    media_gallery: product.mediaGallery || null,
+    specifications: product.specifications || {},
+    media_gallery: product.mediaGallery || [],
     categories: null // We don't need to send this to DB
   };
 };
@@ -61,8 +65,8 @@ export const mapInitialDataProductToDbProduct = (product: Omit<Product, 'id'>): 
     updated_at: new Date().toISOString(),
     featured: product.featured || false,
     colors: product.colors || [],
-    specifications: product.specifications || null,
-    media_gallery: product.mediaGallery || null,
+    specifications: product.specifications || {},
+    media_gallery: product.mediaGallery || [],
     categories: null // We don't need to send this to DB
   };
 };

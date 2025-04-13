@@ -38,7 +38,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
       return getFallbackProducts();
     }
     
-    // Map DB products to frontend Product type
+    // Map DB products to frontend Product type with proper type handling
     return data.map(product => {
       // Handle the possibility of categories being null safely
       const categoryName = 
@@ -60,10 +60,14 @@ export const fetchProducts = async (): Promise<Product[]> => {
         category: categoryName,
         stock: product.stock_quantity || 0,
         featured: product.featured !== undefined ? Boolean(product.featured) : false,
-        colors: Array.isArray(product.colors) ? product.colors : [],
-        specifications: product.specifications && typeof product.specifications === 'object' ? product.specifications : {},
-        mediaGallery: Array.isArray(product.media_gallery) ? product.media_gallery : []
-      };
+        colors: Array.isArray(product.colors) ? product.colors as string[] : [],
+        specifications: typeof product.specifications === 'object' && product.specifications !== null 
+          ? product.specifications as Record<string, string> 
+          : {},
+        mediaGallery: Array.isArray(product.media_gallery) 
+          ? product.media_gallery as { url: string; type: 'image' | 'video' }[] 
+          : []
+      } as Product;
     });
   } catch (error) {
     console.error('Error fetching products:', error);

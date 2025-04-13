@@ -69,11 +69,13 @@ export const useProductDetails = (id: string | undefined) => {
           created_at: data.created_at,
           updated_at: data.updated_at,
           categories: categoryName ? { name: categoryName } : null,
-          // Handle the new fields with null checking
-          featured: data.featured || null,
-          colors: data.colors || null,
-          specifications: data.specifications || null,
-          media_gallery: data.media_gallery || null
+          // Handle the new fields with proper type conversion
+          featured: data.featured || false,
+          colors: Array.isArray(data.colors) ? data.colors as string[] : [],
+          specifications: typeof data.specifications === 'object' ? 
+            data.specifications as Record<string, string> : {},
+          media_gallery: Array.isArray(data.media_gallery) ? 
+            data.media_gallery as { url: string; type: 'image' | 'video' }[] : []
         };
         
         return result;
@@ -115,7 +117,7 @@ export const useProductDetails = (id: string | undefined) => {
         return []; // Return empty array on error instead of throwing
       }
       
-      // Convert the data to the expected format - include the new fields
+      // Convert the data to the expected format - include the new fields with proper type conversion
       return data.map(item => ({
         id: item.id,
         name: item.name,
@@ -127,10 +129,12 @@ export const useProductDetails = (id: string | undefined) => {
         category_id: item.category_id,
         created_at: item.created_at,
         updated_at: item.updated_at,
-        featured: item.featured || null,
-        colors: item.colors || null,
-        specifications: item.specifications || null,
-        media_gallery: item.media_gallery || null
+        featured: item.featured || false,
+        colors: Array.isArray(item.colors) ? item.colors as string[] : [],
+        specifications: typeof item.specifications === 'object' ? 
+          item.specifications as Record<string, string> : {},
+        media_gallery: Array.isArray(item.media_gallery) ? 
+          item.media_gallery as { url: string; type: 'image' | 'video' }[] : []
       })) as DbProduct[];
     },
     enabled: !!product?.category_id && !!id,

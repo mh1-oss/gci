@@ -61,7 +61,7 @@ export const createProduct = async (product: Omit<Product, 'id'>): Promise<Produ
     
     console.log('Product created successfully:', data);
     
-    // Use mapper to convert DB product to app model
+    // Use mapper to convert DB product to app model with proper type handling
     const createdProduct: Product = {
       id: data.id,
       name: data.name,
@@ -73,9 +73,13 @@ export const createProduct = async (product: Omit<Product, 'id'>): Promise<Produ
       category: '',
       stock: data.stock_quantity || 0,
       featured: data.featured !== undefined ? Boolean(data.featured) : false,
-      colors: Array.isArray(data.colors) ? data.colors : [],
-      specifications: data.specifications && typeof data.specifications === 'object' ? data.specifications : {},
-      mediaGallery: Array.isArray(data.media_gallery) ? data.media_gallery : []
+      colors: Array.isArray(data.colors) ? data.colors as string[] : [],
+      specifications: typeof data.specifications === 'object' && data.specifications !== null 
+        ? data.specifications as Record<string, string> 
+        : {},
+      mediaGallery: Array.isArray(data.media_gallery) 
+        ? data.media_gallery as { url: string; type: 'image' | 'video' }[] 
+        : []
     };
     
     return createdProduct;
