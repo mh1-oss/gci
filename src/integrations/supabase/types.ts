@@ -302,37 +302,49 @@ export type Database = {
       products: {
         Row: {
           category_id: string | null
+          colors: Json | null
           cost_price: number
           created_at: string
           description: string | null
+          featured: boolean | null
           id: string
           image_url: string | null
+          media_gallery: Json | null
           name: string
           price: number
+          specifications: Json | null
           stock_quantity: number
           updated_at: string
         }
         Insert: {
           category_id?: string | null
+          colors?: Json | null
           cost_price: number
           created_at?: string
           description?: string | null
+          featured?: boolean | null
           id?: string
           image_url?: string | null
+          media_gallery?: Json | null
           name: string
           price: number
+          specifications?: Json | null
           stock_quantity?: number
           updated_at?: string
         }
         Update: {
           category_id?: string | null
+          colors?: Json | null
           cost_price?: number
           created_at?: string
           description?: string | null
+          featured?: boolean | null
           id?: string
           image_url?: string | null
+          media_gallery?: Json | null
           name?: string
           price?: number
+          specifications?: Json | null
           stock_quantity?: number
           updated_at?: string
         }
@@ -539,13 +551,17 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: {
           category_id: string | null
+          colors: Json | null
           cost_price: number
           created_at: string
           description: string | null
+          featured: boolean | null
           id: string
           image_url: string | null
+          media_gallery: Json | null
           name: string
           price: number
+          specifications: Json | null
           stock_quantity: number
           updated_at: string
         }[]

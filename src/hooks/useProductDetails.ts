@@ -69,7 +69,7 @@ export const useProductDetails = (id: string | undefined) => {
           created_at: data.created_at,
           updated_at: data.updated_at,
           categories: categoryName ? { name: categoryName } : null,
-          // Handle fields that might not exist in the database
+          // Handle the new fields with null checking
           featured: data.featured || null,
           colors: data.colors || null,
           specifications: data.specifications || null,
@@ -115,7 +115,7 @@ export const useProductDetails = (id: string | undefined) => {
         return []; // Return empty array on error instead of throwing
       }
       
-      // Convert the data to the expected format
+      // Convert the data to the expected format - include the new fields
       return data.map(item => ({
         id: item.id,
         name: item.name,
@@ -126,7 +126,11 @@ export const useProductDetails = (id: string | undefined) => {
         stock_quantity: item.stock_quantity,
         category_id: item.category_id,
         created_at: item.created_at,
-        updated_at: item.updated_at
+        updated_at: item.updated_at,
+        featured: item.featured || null,
+        colors: item.colors || null,
+        specifications: item.specifications || null,
+        media_gallery: item.media_gallery || null
       })) as DbProduct[];
     },
     enabled: !!product?.category_id && !!id,
