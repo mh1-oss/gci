@@ -72,10 +72,10 @@ export const createProduct = async (product: Omit<Product, 'id'>): Promise<Produ
       images: data.image_url ? [data.image_url] : ['/placeholder.svg'],
       category: '',
       stock: data.stock_quantity || 0,
-      featured: Boolean(data.featured) || false,
-      colors: data.colors || [],
-      specifications: data.specifications || {},
-      mediaGallery: data.media_gallery || []
+      featured: typeof data.featured === 'boolean' ? data.featured : false,
+      colors: Array.isArray(data.colors) ? data.colors : [],
+      specifications: typeof data.specifications === 'object' ? data.specifications || {} : {},
+      mediaGallery: Array.isArray(data.media_gallery) ? data.media_gallery : []
     };
     
     return createdProduct;

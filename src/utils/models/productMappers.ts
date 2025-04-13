@@ -18,9 +18,9 @@ export const mapDbProductToProduct = (dbProduct: DbProduct): Product => {
       ? dbProduct.categories.name as string
       : '',
     featured: Boolean(dbProduct.featured) || false,
-    colors: dbProduct.colors || [],
-    specifications: dbProduct.specifications || {},
-    mediaGallery: dbProduct.media_gallery || [],
+    colors: Array.isArray(dbProduct.colors) ? dbProduct.colors : [],
+    specifications: typeof dbProduct.specifications === 'object' ? dbProduct.specifications || {} : {},
+    mediaGallery: Array.isArray(dbProduct.media_gallery) ? dbProduct.media_gallery : [],
   };
 };
 
@@ -42,6 +42,7 @@ export const mapProductToDbProduct = (product: Product): DbProduct => {
     colors: product.colors || [],
     specifications: product.specifications || {},
     media_gallery: product.mediaGallery || [],
+    categories: null // We don't need to send this to DB
   };
 };
 
@@ -62,5 +63,6 @@ export const mapInitialDataProductToDbProduct = (product: Omit<Product, 'id'>): 
     colors: product.colors || [],
     specifications: product.specifications || {},
     media_gallery: product.mediaGallery || [],
+    categories: null // We don't need to send this to DB
   };
 };

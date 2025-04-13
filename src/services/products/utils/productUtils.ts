@@ -46,9 +46,9 @@ export const mapDbToInitialDataProduct = (dbProduct: any): InitialDataProduct =>
     categoryId: dbProduct.category_id || '',
     image: dbProduct.image_url || '/placeholder.svg',
     featured: Boolean(dbProduct.featured) || false,
-    specifications: dbProduct.specifications || {},
-    colors: dbProduct.colors || [],
-    mediaGallery: dbProduct.media_gallery || []
+    colors: Array.isArray(dbProduct.colors) ? dbProduct.colors : [],
+    specifications: typeof dbProduct.specifications === 'object' ? dbProduct.specifications || {} : {},
+    mediaGallery: Array.isArray(dbProduct.media_gallery) ? dbProduct.media_gallery : []
   };
 };
 
@@ -66,9 +66,9 @@ export const mapDbToProduct = (dbProduct: any): Product => {
     images: dbProduct.image_url ? [dbProduct.image_url] : ['/placeholder.svg'],
     featured: Boolean(dbProduct.featured) || false,
     stock: dbProduct.stock_quantity || 0,
-    specifications: dbProduct.specifications || {},
-    colors: dbProduct.colors || [],
-    mediaGallery: dbProduct.media_gallery || [],
+    specifications: typeof dbProduct.specifications === 'object' ? dbProduct.specifications || {} : {},
+    colors: Array.isArray(dbProduct.colors) ? dbProduct.colors : [],
+    mediaGallery: Array.isArray(dbProduct.media_gallery) ? dbProduct.media_gallery : [],
     category: dbProduct.categories && typeof dbProduct.categories === 'object' && 'name' in dbProduct.categories 
       ? dbProduct.categories.name as string
       : ''

@@ -1,3 +1,4 @@
+
 export interface Product {
   id: string;
   name: string;
@@ -51,7 +52,7 @@ export interface DbProduct {
   category_id: string | null;
   created_at: string;
   updated_at: string;
-  categories?: DbCategory | Record<string, any>;
+  categories?: DbCategory | Record<string, any> | null;
   featured?: boolean;
   colors?: string[];
   specifications?: Record<string, string>;
