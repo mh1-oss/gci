@@ -1,4 +1,3 @@
-
 import { DbProduct, Product } from './types';
 import type { Product as InitialDataProduct } from '@/data/initialData';
 
@@ -13,7 +12,7 @@ export const mapDbProductToProduct = (dbProduct: DbProduct): Product => {
     categoryId: dbProduct.category_id || '',
     image: dbProduct.image_url || '/placeholder.svg',
     images: dbProduct.image_url ? [dbProduct.image_url] : ['/placeholder.svg'],
-    stock: dbProduct.stock_quantity || 0,
+    stock_quantity: dbProduct.stock_quantity || 0, // Changed from 'stock' to 'stock_quantity'
     category: dbProduct.categories && typeof dbProduct.categories === 'object' && dbProduct.categories !== null && 'name' in dbProduct.categories 
       ? dbProduct.categories.name as string
       : '',
@@ -37,7 +36,7 @@ export const mapProductToDbProduct = (product: Product): DbProduct => {
     description: product.description || '',
     price: product.price,
     cost_price: product.price * 0.7, // Default cost to 70% of price if not specified
-    stock_quantity: product.stock || 0,
+    stock_quantity: product.stock_quantity || 0,
     category_id: product.categoryId || null,
     image_url: product.image !== '/placeholder.svg' ? product.image : null,
     created_at: new Date().toISOString(),
@@ -58,7 +57,7 @@ export const mapInitialDataProductToDbProduct = (product: Omit<Product, 'id'>): 
     description: product.description || '',
     price: product.price,
     cost_price: product.price * 0.7, // Default cost to 70% of price if not specified
-    stock_quantity: product.stock || 0,
+    stock_quantity: product.stock_quantity || 0,
     category_id: product.categoryId || null,
     image_url: product.image !== '/placeholder.svg' ? product.image : null,
     created_at: new Date().toISOString(),
