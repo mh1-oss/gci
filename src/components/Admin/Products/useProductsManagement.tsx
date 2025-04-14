@@ -3,6 +3,7 @@ import { useConnectionStatus } from './hooks/useConnectionStatus';
 import { useProductData } from './hooks/useProductData';
 import { useProductDialogs } from './hooks/useProductDialogs';
 import { useProductOperations } from './hooks/useProductOperations';
+import { Product } from '@/utils/models/types'; // Changed from data/initialData to utils/models/types
 
 export const useProductsManagement = () => {
   // Get connection status
@@ -60,11 +61,11 @@ export const useProductsManagement = () => {
   
   // Wrap operations to provide current state
   const handleFormSubmit = async (formData: any) => {
-    await handleFormSubmitOperation(formData, editMode, selectedProduct);
+    await handleFormSubmitOperation(formData, editMode, selectedProduct as Product);
   };
   
   const handleDelete = async () => {
-    await handleDeleteOperation(selectedProduct);
+    await handleDeleteOperation(selectedProduct as Product);
   };
 
   return {

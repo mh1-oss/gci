@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DbProduct, Product } from "@/utils/models/types";
@@ -43,7 +44,7 @@ export const useProductDetails = (id: string | undefined) => {
                 description: fallbackProduct.description || '',
                 price: fallbackProduct.price,
                 cost_price: fallbackProduct.price * 0.7, // Default cost price as 70% of price
-                stock_quantity: fallbackProduct.stock_quantity || 0, // Updated from 'stock'
+                stock_quantity: fallbackProduct.stock_quantity || 0, // Using the correct property name
                 image_url: fallbackProduct.image || '',
                 category_id: fallbackProduct.categoryId || '',
                 created_at: new Date().toISOString(),

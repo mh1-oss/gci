@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Product } from '@/data/initialData';
+import { Product } from '@/utils/models/types'; // Changed from data/initialData to utils/models/types
 
 export const useProductDialogs = () => {
   const [formDialogOpen, setFormDialogOpen] = useState(false);
