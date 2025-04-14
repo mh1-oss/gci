@@ -1,7 +1,8 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Product as InitialDataProduct } from '@/data/initialData';
-import { isRlsPolicyError, getFallbackProductById, mapDbToInitialDataProduct } from './utils/productUtils';
+import { isRlsPolicyError, createRlsError, getRlsErrorMessage } from '@/services/rls/rlsErrorHandler';
+import { getFallbackProductById, mapDbToInitialDataProduct } from './utils/productUtils';
 
 /**
  * Fetch a product by ID
@@ -9,6 +10,8 @@ import { isRlsPolicyError, getFallbackProductById, mapDbToInitialDataProduct } f
  */
 export const fetchProductById = async (id: string): Promise<InitialDataProduct | null> => {
   try {
+    console.log(`Fetching product with ID: ${id}`);
+    
     // First try to get from database
     const { data, error } = await supabase
       .from('products')
@@ -21,19 +24,34 @@ export const fetchProductById = async (id: string): Promise<InitialDataProduct |
       
       // Check if the error is related to RLS policy issues
       if (isRlsPolicyError(error)) {
+        console.warn('RLS policy error detected, trying fallback data');
         // Try to find the product in the fallback data
-        return getFallbackProductById(id);
+        const fallbackProduct = getFallbackProductById(id);
+        
+        if (!fallbackProduct) {
+          throw createRlsError('fetch');
+        }
+        
+        return fallbackProduct;
       }
       
       return null;
     }
     
-    if (!data) return null;
+    if (!data) {
+      console.log(`No product found with ID: ${id}`);
+      return null;
+    }
     
     // Map to InitialDataProduct type with proper defaults
     return mapDbToInitialDataProduct(data);
   } catch (error) {
     console.error('Unexpected error fetching product by id:', error);
+    
+    if (isRlsPolicyError(error)) {
+      // Log specific RLS error information
+      console.warn('RLS policy error in fetchProductById:', error);
+    }
     
     // Try to find the product in the fallback data
     return getFallbackProductById(id);
