@@ -6,7 +6,6 @@ import RelatedProducts from '@/components/Products/RelatedProducts';
 import ProductLoadingState from '@/components/Products/LoadingState';
 import ProductErrorState from '@/components/Products/ErrorState';
 import { useProductDetails } from '@/hooks/useProductDetails';
-import { mapDbProductToProduct } from '@/utils/models/productMappers';
 import { useToast } from '@/hooks/use-toast';
 import RlsErrorDisplay from '@/components/ErrorHandling/RlsErrorDisplay';
 import { isRlsPolicyError } from '@/services/rls/rlsErrorHandler';
@@ -82,7 +81,7 @@ const ProductDetailsPage = () => {
             </div>
             
             {/* Display product info from fallback */}
-            <ProductInfo product={mapDbProductToProduct(product)} />
+            <ProductInfo product={product} />
           </div>
         )}
       </div>
@@ -95,16 +94,12 @@ const ProductDetailsPage = () => {
     return <ProductErrorState />;
   }
 
-  // Map DbProduct to Product
-  const mappedProduct = mapDbProductToProduct(product);
-  const mappedRelatedProducts = relatedProducts.map(mapDbProductToProduct);
-
   return (
     <div className="container-custom py-12" dir="rtl">
-      <ProductInfo product={mappedProduct} />
+      <ProductInfo product={product} />
       
-      {mappedRelatedProducts.length > 0 && (
-        <RelatedProducts products={mappedRelatedProducts} />
+      {relatedProducts.length > 0 && (
+        <RelatedProducts products={relatedProducts} />
       )}
     </div>
   );

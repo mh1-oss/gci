@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DbProduct, Product } from "@/utils/models/types";
@@ -36,14 +37,23 @@ export const useProductDetails = (id: string | undefined) => {
             // Try fallback method
             const fallbackProduct = await fetchProductById(id);
             if (fallbackProduct) {
-              // Convert to DbProduct format
+              // Convert to DbProduct format with all required properties
               return {
-                ...fallbackProduct,
-                stock_quantity: fallbackProduct.stock, // Correct mapping
-                image_url: fallbackProduct.image,
-                category_id: fallbackProduct.categoryId,
+                id: fallbackProduct.id,
+                name: fallbackProduct.name,
+                description: fallbackProduct.description || '',
+                price: fallbackProduct.price,
+                cost_price: fallbackProduct.price * 0.7, // Default cost price as 70% of price
+                stock_quantity: fallbackProduct.stock || 0, 
+                image_url: fallbackProduct.image || '',
+                category_id: fallbackProduct.categoryId || '',
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
+                featured: fallbackProduct.featured || false,
+                colors: fallbackProduct.colors || [],
+                specifications: fallbackProduct.specifications || {},
+                media_gallery: fallbackProduct.mediaGallery || [],
+                categories: null
               } as DbProduct;
             }
           }
@@ -111,25 +121,7 @@ export const useProductDetails = (id: string | undefined) => {
           throw error;
         }
         
-        // Convert the data to the expected format - include the new fields with proper type conversion
-        return data.map(item => ({
-          id: item.id,
-          name: item.name,
-          description: item.description,
-          image_url: item.image_url,
-          price: item.price,
-          cost_price: item.cost_price,
-          stock_quantity: item.stock_quantity,
-          category_id: item.category_id,
-          created_at: item.created_at,
-          updated_at: item.updated_at,
-          featured: item.featured || false,
-          colors: Array.isArray(item.colors) ? item.colors as string[] : [],
-          specifications: typeof item.specifications === 'object' ? 
-            item.specifications as Record<string, string> : {},
-          media_gallery: Array.isArray(item.media_gallery) ? 
-            item.media_gallery as { url: string; type: 'image' | 'video' }[] : []
-        })) as DbProduct[];
+        return data as DbProduct[];
       } catch (err) {
         console.error('Error in related products query:', err);
         return [];
@@ -140,8 +132,8 @@ export const useProductDetails = (id: string | undefined) => {
   });
 
   return {
-    product: product ? mapDbProductToProduct(product) : null,
-    relatedProducts: relatedProducts.map(mapDbProductToProduct),
+    product: product ? mapDbProductToProduct(product as DbProduct) : null,
+    relatedProducts: relatedProducts.map(prod => mapDbProductToProduct(prod)),
     isLoading,
     error
   };
