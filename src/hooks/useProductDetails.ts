@@ -1,10 +1,10 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { DbProduct } from "@/utils/models/types";
+import { DbProduct, Product } from "@/utils/models/types";
 import { useToast } from "@/hooks/use-toast";
 import { isRlsPolicyError, getRlsErrorMessage } from "@/services/rls/rlsErrorHandler";
 import { fetchProductById } from "@/services/products/fetchProductById";
+import { mapDbProductToProduct } from "@/utils/models/productMappers";
 
 export const useProductDetails = (id: string | undefined) => {
   const { toast } = useToast();
@@ -22,8 +22,6 @@ export const useProductDetails = (id: string | undefined) => {
 
         console.log(`Fetching product with ID: ${id} in useProductDetails`);
         
-        // Fetch the product without using JOIN or aggregate functions
-        // This is to avoid RLS issues with aggregate functions
         const { data, error } = await supabase
           .from('products')
           .select('*')
@@ -40,21 +38,12 @@ export const useProductDetails = (id: string | undefined) => {
             if (fallbackProduct) {
               // Convert to DbProduct format
               return {
-                id: fallbackProduct.id,
-                name: fallbackProduct.name,
-                description: fallbackProduct.description || '',
-                price: fallbackProduct.price,
-                cost_price: 0,
-                stock_quantity: fallbackProduct.stock || 0, // Use stock instead of stock_quantity
-                image_url: fallbackProduct.image || '', // Use image field
+                ...fallbackProduct,
+                stock_quantity: fallbackProduct.stock, // Correct mapping
+                image_url: fallbackProduct.image,
                 category_id: fallbackProduct.categoryId,
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
-                categories: { name: fallbackProduct.categoryId || '' }, // Use categoryId as fallback
-                featured: fallbackProduct.featured,
-                colors: fallbackProduct.colors,
-                specifications: fallbackProduct.specifications || {},
-                media_gallery: []
               } as DbProduct;
             }
           }
@@ -69,45 +58,7 @@ export const useProductDetails = (id: string | undefined) => {
 
         console.log("Product data fetched successfully:", data);
         
-        // If we need the category name, we'll fetch it separately
-        let categoryName = null;
-        if (data.category_id) {
-          const { data: categoryData, error: categoryError } = await supabase
-            .from('categories')
-            .select('name')
-            .eq('id', data.category_id)
-            .maybeSingle();
-            
-          if (categoryError) {
-            console.error("Error fetching category:", categoryError);
-          } else if (categoryData) {
-            categoryName = categoryData.name;
-          }
-        }
-
-        // Make sure we convert to the correct type
-        const result: DbProduct = {
-          id: data.id,
-          name: data.name,
-          description: data.description,
-          image_url: data.image_url,
-          price: data.price,
-          cost_price: data.cost_price,
-          stock_quantity: data.stock_quantity,
-          category_id: data.category_id,
-          created_at: data.created_at,
-          updated_at: data.updated_at,
-          categories: categoryName ? { name: categoryName } : null,
-          // Handle the new fields with proper type conversion
-          featured: data.featured || false,
-          colors: Array.isArray(data.colors) ? data.colors as string[] : [],
-          specifications: typeof data.specifications === 'object' ? 
-            data.specifications as Record<string, string> : {},
-          media_gallery: Array.isArray(data.media_gallery) ? 
-            data.media_gallery as { url: string; type: 'image' | 'video' }[] : []
-        };
-        
-        return result;
+        return data;
       } catch (error: any) {
         console.error('Error fetching product:', error.message);
         throw error;
@@ -189,8 +140,8 @@ export const useProductDetails = (id: string | undefined) => {
   });
 
   return {
-    product,
-    relatedProducts: relatedProducts || [],
+    product: product ? mapDbProductToProduct(product) : null,
+    relatedProducts: relatedProducts.map(mapDbProductToProduct),
     isLoading,
     error
   };
