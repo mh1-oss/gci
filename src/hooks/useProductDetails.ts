@@ -45,12 +45,12 @@ export const useProductDetails = (id: string | undefined) => {
                 description: fallbackProduct.description || '',
                 price: fallbackProduct.price,
                 cost_price: 0,
-                stock_quantity: fallbackProduct.stock || 0,
-                image_url: fallbackProduct.image || fallbackProduct.images?.[0],
+                stock_quantity: fallbackProduct.stock_quantity || 0,
+                image_url: fallbackProduct.image || '', // Use image field
                 category_id: fallbackProduct.categoryId,
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
-                categories: { name: fallbackProduct.category },
+                categories: { name: fallbackProduct.categoryId || '' }, // Use categoryId as fallback
                 featured: fallbackProduct.featured,
                 colors: fallbackProduct.colors,
                 specifications: fallbackProduct.specifications || {},

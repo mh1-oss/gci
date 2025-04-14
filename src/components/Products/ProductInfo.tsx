@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, Package, ArrowLeft } from "lucide-react";
 import { useState } from "react";
@@ -15,6 +16,7 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const { formatPrice, currency, setCurrency } = useCurrency();
+  const { toast } = useToast(); // Correctly use the hook here
   const [quantity, setQuantity] = useState(1);
 
   const incrementQuantity = () => setQuantity(prev => prev + 1);
@@ -25,11 +27,11 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
       id: product.id,
       name: product.name,
       price: product.price,
-      image: product.images?.[0] || '/placeholder.svg',
+      image: product.image,
       quantity
     });
     
-    useToast().toast({
+    toast({
       title: "تمت الإضافة إلى السلة",
       description: `تمت إضافة ${product.name} إلى سلة التسوق`,
     });
@@ -37,7 +39,7 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
 
   const toggleCurrency = () => {
     setCurrency(currency === 'USD' ? 'IQD' : 'USD');
-    useToast().toast({
+    toast({
       title: "تم تغيير العملة",
       description: `تم تغيير العملة إلى ${currency === 'USD' ? 'الدينار العراقي' : 'الدولار الأمريكي'}`,
     });
@@ -57,7 +59,7 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
       <div className="grid md:grid-cols-2 gap-8">
         <div className="bg-white rounded-lg overflow-hidden border border-gray-200">
           <img 
-            src={product.images?.[0] || '/placeholder.svg'} 
+            src={product.image || '/placeholder.svg'} 
             alt={product.name} 
             className="w-full h-96 object-contain p-4"
           />
