@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { createProduct, updateProduct, deleteProduct } from '@/services/products/productService';
 import { uploadMedia } from '@/services/media/mediaService';
-import { Product } from '@/data/initialData';
+import { Product } from '@/utils/models/types';
 import { isRlsPolicyError } from '@/services/rls/rlsErrorHandler';
 
 interface UseProductOperationsProps {
@@ -59,7 +59,7 @@ export const useProductOperations = ({
         image: imageUrl,
         images: [imageUrl],
         category: '',
-        stock_quantity: 0,
+        stock_quantity: 0, // Changed from 'stock' to 'stock_quantity'
         featured: false,
         colors: [],
         specifications: {},
