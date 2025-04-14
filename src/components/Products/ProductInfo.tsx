@@ -93,7 +93,7 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
           </div>
           
           <div>
-            {product.stock > 0 ? (
+            {product.stock_quantity > 0 ? (
               <span className="inline-block bg-green-100 text-green-800 text-sm font-medium px-2 py-1 rounded">
                 متوفر
               </span>
@@ -134,7 +134,7 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
             <Button 
               onClick={handleAddToCart} 
               className="w-full md:w-auto"
-              disabled={product.stock <= 0}
+              disabled={product.stock_quantity <= 0}
             >
               <ShoppingCart className="ml-2 h-4 w-4" />
               إضافة إلى السلة
@@ -144,7 +144,7 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
           <div className="border-t border-gray-200 pt-4">
             <p className="flex items-center text-gray-600">
               <Package className="h-4 w-4 ml-2" />
-              المتوفر في المخزون: {product.stock} وحدة
+              المتوفر في المخزون: {product.stock_quantity} وحدة
             </p>
           </div>
         </div>

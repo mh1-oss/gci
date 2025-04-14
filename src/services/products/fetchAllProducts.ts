@@ -65,7 +65,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
         image: product.image_url || '/placeholder.svg',
         images: product.image_url ? [product.image_url] : ['/placeholder.svg'],
         category: categoryName,
-        stock: product.stock_quantity || 0,
+        stock_quantity: product.stock_quantity || 0,
         featured: product.featured !== undefined ? Boolean(product.featured) : false,
         colors: Array.isArray(product.colors) ? product.colors as string[] : [],
         specifications: typeof product.specifications === 'object' && product.specifications !== null 

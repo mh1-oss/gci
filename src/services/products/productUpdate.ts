@@ -43,7 +43,7 @@ export const updateProduct = async (id: string, updates: Partial<Product>): Prom
     if (updates.description !== undefined) dbUpdates.description = updates.description;
     if (updates.categoryId !== undefined) dbUpdates.category_id = updates.categoryId;
     if (updates.price !== undefined) dbUpdates.price = updates.price;
-    if (updates.stock !== undefined) dbUpdates.stock_quantity = updates.stock;
+    if (updates.stock_quantity !== undefined) dbUpdates.stock_quantity = updates.stock_quantity;
     if (updates.featured !== undefined) dbUpdates.featured = updates.featured;
     if (updates.colors !== undefined) dbUpdates.colors = updates.colors;
     if (updates.specifications !== undefined) dbUpdates.specifications = updates.specifications;

@@ -59,7 +59,7 @@ export const useProductOperations = ({
         image: imageUrl,
         images: [imageUrl],
         category: '',
-        stock: 0,
+        stock_quantity: 0,
         featured: false,
         colors: [],
         specifications: {},

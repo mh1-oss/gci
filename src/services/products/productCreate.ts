@@ -71,7 +71,7 @@ export const createProduct = async (product: Omit<Product, 'id'>): Promise<Produ
       image: data.image_url || '/placeholder.svg',
       images: data.image_url ? [data.image_url] : ['/placeholder.svg'],
       category: '',
-      stock: data.stock_quantity || 0,
+      stock_quantity: data.stock_quantity || 0,
       featured: data.featured !== undefined ? Boolean(data.featured) : false,
       colors: Array.isArray(data.colors) ? data.colors as string[] : [],
       specifications: typeof data.specifications === 'object' && data.specifications !== null 

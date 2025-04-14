@@ -65,7 +65,7 @@ export const mapDbToProduct = (dbProduct: any): Product => {
     image: dbProduct.image_url || '/placeholder.svg',
     images: dbProduct.image_url ? [dbProduct.image_url] : ['/placeholder.svg'],
     featured: dbProduct.featured !== undefined ? Boolean(dbProduct.featured) : false,
-    stock: dbProduct.stock_quantity || 0,
+    stock_quantity: dbProduct.stock_quantity || 0,
     specifications: dbProduct.specifications && typeof dbProduct.specifications === 'object' ? dbProduct.specifications : {},
     colors: Array.isArray(dbProduct.colors) ? dbProduct.colors : [],
     mediaGallery: Array.isArray(dbProduct.media_gallery) ? dbProduct.media_gallery : [],
@@ -82,7 +82,7 @@ export const mapInitialToProduct = (initialProduct: InitialDataProduct): Product
   return {
     ...initialProduct,
     images: [initialProduct.image],
-    stock: 0, // Default stock since it's not in initial data
+    stock_quantity: 0, // Default stock since it's not in initial data
     category: categories.find(c => c.id === initialProduct.categoryId)?.name || ''
   };
 };
