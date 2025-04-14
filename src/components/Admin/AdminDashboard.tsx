@@ -1,18 +1,21 @@
+
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import AdminAuthCheck from "@/components/Admin/AdminAuthCheck";
 import AdminNavTabs from "@/components/Admin/AdminNavTabs";
 import AdminTabContent from "@/components/Admin/AdminTabContent";
-import { LogOut, Package, CreditCard, ShoppingCart, Newspaper, RefreshCw, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { supabase, pingDatabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import SupabaseConnectionStatus from "./SupabaseConnectionStatus";
-import { isRlsPolicyError, getRlsErrorMessage } from '@/services/rls/rlsErrorHandler';
-import RlsErrorDisplay from '@/components/ErrorHandling/RlsErrorDisplay';
+import { 
+  DashboardHeader, 
+  DashboardStats, 
+  QuickActionsPanel, 
+  DashboardWelcome,
+  ErrorNotification
+} from "./Dashboard";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -159,163 +162,20 @@ const AdminDashboard = () => {
     <AdminAuthCheck>
       <div dir="rtl" className="min-h-screen bg-gray-50">
         <div className="container-custom py-6">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold">لوحة تحكم المدير</h1>
-            <button
-              onClick={handleLogout}
-              className="flex items-center px-4 py-2 text-sm text-gray-600 hover:text-gray-900"
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              تسجيل الخروج
-            </button>
-          </div>
+          <DashboardHeader onLogout={handleLogout} />
 
           <div className="mb-6">
-            <p className="text-gray-600 mb-4">
-              مرحباً بك في لوحة التحكم، يمكنك إدارة منتجاتك وفئاتك ومبيعاتك ومحتوى موقعك من هنا.
-            </p>
+            <DashboardWelcome />
             
             {/* Display database connection status */}
             <SupabaseConnectionStatus />
             
-            {error ? (
-              isRlsPolicyError(error) ? (
-                <RlsErrorDisplay
-                  error={error}
-                  onRetry={handleRefresh}
-                />
-              ) : (
-                <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg mb-6">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h3 className="font-bold mb-2">خطأ في تحميل البيانات</h3>
-                      <p>{error instanceof Error ? error.message : "حدث خطأ أثناء تحميل إحصائيات لوحة التحكم"}</p>
-                    </div>
-                    <Button 
-                      onClick={handleRefresh}
-                      variant="outline" 
-                      className="border-red-300 text-red-700 hover:bg-red-50"
-                    >
-                      <RefreshCw className="h-4 w-4 ml-2" />
-                      تحديث
-                    </Button>
-                  </div>
-                </div>
-              )
-            ) : !isLoading && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-                  <div className="flex items-center">
-                    <div className="p-3 rounded-full bg-blue-50 text-blue-500 mr-4">
-                      <Package className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">المنتجات</p>
-                      <p className="text-2xl font-bold">{stats.productCount}</p>
-                    </div>
-                  </div>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="w-full mt-3 text-blue-600"
-                    onClick={() => navigate('/admin/products')}
-                  >
-                    إدارة المنتجات
-                  </Button>
-                </div>
-                
-                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-                  <div className="flex items-center">
-                    <div className="p-3 rounded-full bg-green-50 text-green-500 mr-4">
-                      <Package className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">الفئات</p>
-                      <p className="text-2xl font-bold">{stats.categoryCount}</p>
-                    </div>
-                  </div>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="w-full mt-3 text-green-600"
-                    onClick={() => navigate('/admin/categories')}
-                  >
-                    إدارة الفئات
-                  </Button>
-                </div>
-                
-                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-                  <div className="flex items-center">
-                    <div className="p-3 rounded-full bg-amber-50 text-amber-500 mr-4">
-                      <ShoppingCart className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">المبيعات</p>
-                      <p className="text-2xl font-bold">{stats.orderCount}</p>
-                    </div>
-                  </div>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="w-full mt-3 text-amber-600"
-                    onClick={() => navigate('/admin/sales')}
-                  >
-                    إدارة المبيعات
-                  </Button>
-                </div>
-                
-                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-                  <div className="flex items-center">
-                    <div className="p-3 rounded-full bg-purple-50 text-purple-500 mr-4">
-                      <CreditCard className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">المبيعات (آخر 7 أيام)</p>
-                      <p className="text-2xl font-bold">{stats.recentSales.toFixed(2)} د.ع</p>
-                    </div>
-                  </div>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="w-full mt-3 text-purple-600"
-                    onClick={() => navigate('/admin/sales')}
-                  >
-                    تفاصيل المبيعات
-                  </Button>
-                </div>
-              </div>
-            )}
+            <ErrorNotification error={error as Error | null} onRefresh={handleRefresh} />
+            
+            <DashboardStats stats={stats} isLoading={isLoading} />
           </div>
 
-          <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 mb-6">
-            <h2 className="text-xl font-bold mb-4">الإجراءات السريعة</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              <Button 
-                variant="outline" 
-                className="flex items-center justify-center p-4 h-auto"
-                onClick={() => navigate('/admin/products')}
-              >
-                <Package className="h-5 w-5 ml-2" />
-                <span>إضافة منتج جديد</span>
-              </Button>
-              <Button 
-                variant="outline" 
-                className="flex items-center justify-center p-4 h-auto"
-                onClick={() => navigate('/admin/categories')}
-              >
-                <Package className="h-5 w-5 ml-2" />
-                <span>إضافة فئة جديدة</span>
-              </Button>
-              <Button 
-                variant="outline" 
-                className="flex items-center justify-center p-4 h-auto"
-                onClick={() => navigate('/admin/content')}
-              >
-                <Newspaper className="h-5 w-5 ml-2" />
-                <span>تعديل محتوى الموقع</span>
-              </Button>
-            </div>
-          </div>
+          <QuickActionsPanel />
 
           <AdminNavTabs />
           
