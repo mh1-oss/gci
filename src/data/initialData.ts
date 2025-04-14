@@ -11,6 +11,7 @@ export interface Product {
   mediaGallery?: MediaItem[];
   specsPdf?: string;
   coverage?: number; // Adding coverage property for paint products
+  stock_quantity?: number; // Adding stock_quantity to match the DbProduct schema
 }
 
 export interface MediaItem {

@@ -1,88 +1,104 @@
 
-import { products, categories } from "@/data/initialData";
-import type { Product } from '@/utils/models/types';
+// If this file doesn't exist yet, we'll create it with the needed functions
+import { products } from '@/data/initialData';
 import type { Product as InitialDataProduct } from '@/data/initialData';
-import { isRlsInfiniteRecursionError, isRlsPolicyError as checkRlsPolicyError } from './rlsErrorHandler';
+import { DbProduct, Product } from '@/utils/models/types';
+
+/**
+ * Get a product by ID from the fallback data
+ */
+export const getFallbackProductById = (id: string): InitialDataProduct | null => {
+  const product = products.find(p => p.id === id);
+  return product || null;
+};
+
+/**
+ * Get all products from fallback data
+ */
+export const getFallbackProducts = (): Product[] => {
+  return products.map(mapInitialToProduct);
+};
 
 /**
  * Check if an error is related to RLS policy issues
- * Re-export from rlsErrorHandler
  */
-export const isRlsPolicyError = checkRlsPolicyError;
-
-/**
- * Get fallback products from initial data
- */
-export const getFallbackProducts = (): Product[] => {
-  console.log('Using fallback product data');
-  return products.map(p => mapInitialToProduct(p));
+export const isRlsPolicyError = (error: any): boolean => {
+  if (!error) return false;
+  
+  const message = typeof error === 'string' 
+    ? error 
+    : error.message || error.error || '';
+    
+  return message.toLowerCase().includes('policy') || 
+         message.toLowerCase().includes('permission denied') ||
+         message.toLowerCase().includes('rls');
 };
 
 /**
- * Get a fallback product by ID from initial data
- */
-export const getFallbackProductById = (id: string): InitialDataProduct | null => {
-  console.log('Using fallback product data for ID:', id);
-  return products.find(p => p.id === id) || null;
-};
-
-/**
- * Get a fallback category name from initial data
- */
-export const getFallbackCategoryName = (categoryId: string): string => {
-  const category = categories.find(c => c.id === categoryId);
-  return category ? category.name : '';
-};
-
-/**
- * Map database product to InitialDataProduct type
+ * Map database product to initial data product format
  */
 export const mapDbToInitialDataProduct = (dbProduct: any): InitialDataProduct => {
   return {
     id: dbProduct.id,
     name: dbProduct.name,
     description: dbProduct.description || '',
-    price: Number(dbProduct.price),
+    price: Number(dbProduct.price) || 0,
     categoryId: dbProduct.category_id || '',
     image: dbProduct.image_url || '/placeholder.svg',
     featured: dbProduct.featured !== undefined ? Boolean(dbProduct.featured) : false,
     colors: Array.isArray(dbProduct.colors) ? dbProduct.colors : [],
-    specifications: dbProduct.specifications && typeof dbProduct.specifications === 'object' ? dbProduct.specifications : {},
-    mediaGallery: Array.isArray(dbProduct.media_gallery) ? dbProduct.media_gallery : []
+    specifications: typeof dbProduct.specifications === 'object' && dbProduct.specifications !== null 
+      ? dbProduct.specifications 
+      : {},
+    stock_quantity: dbProduct.stock_quantity || 0, // Make sure to include stock_quantity
+    mediaGallery: Array.isArray(dbProduct.media_gallery) 
+      ? dbProduct.media_gallery 
+      : []
   };
 };
 
 /**
- * Map database product to Product type
+ * Map database product to app Product type
  */
 export const mapDbToProduct = (dbProduct: any): Product => {
   return {
     id: dbProduct.id,
     name: dbProduct.name,
     description: dbProduct.description || '',
-    price: Number(dbProduct.price),
+    price: Number(dbProduct.price) || 0,
     categoryId: dbProduct.category_id || '',
     image: dbProduct.image_url || '/placeholder.svg',
     images: dbProduct.image_url ? [dbProduct.image_url] : ['/placeholder.svg'],
-    featured: dbProduct.featured !== undefined ? Boolean(dbProduct.featured) : false,
+    category: '',
     stock_quantity: dbProduct.stock_quantity || 0,
-    specifications: dbProduct.specifications && typeof dbProduct.specifications === 'object' ? dbProduct.specifications : {},
+    featured: dbProduct.featured !== undefined ? Boolean(dbProduct.featured) : false,
     colors: Array.isArray(dbProduct.colors) ? dbProduct.colors : [],
-    mediaGallery: Array.isArray(dbProduct.media_gallery) ? dbProduct.media_gallery : [],
-    category: dbProduct.categories && typeof dbProduct.categories === 'object' && dbProduct.categories !== null && 'name' in dbProduct.categories 
-      ? dbProduct.categories.name as string
-      : ''
+    specifications: typeof dbProduct.specifications === 'object' && dbProduct.specifications !== null 
+      ? dbProduct.specifications 
+      : {},
+    mediaGallery: Array.isArray(dbProduct.media_gallery) 
+      ? dbProduct.media_gallery 
+      : []
   };
 };
 
 /**
- * Map InitialDataProduct to Product type
+ * Map initial data product to app Product type
  */
 export const mapInitialToProduct = (initialProduct: InitialDataProduct): Product => {
   return {
-    ...initialProduct,
-    images: [initialProduct.image],
-    stock_quantity: 0, // Default stock since it's not in initial data
-    category: categories.find(c => c.id === initialProduct.categoryId)?.name || ''
+    id: initialProduct.id,
+    name: initialProduct.name,
+    description: initialProduct.description || '',
+    price: initialProduct.price,
+    categoryId: initialProduct.categoryId || '',
+    image: initialProduct.image || '/placeholder.svg',
+    images: initialProduct.image ? [initialProduct.image] : ['/placeholder.svg'],
+    category: '',
+    stock_quantity: initialProduct.stock_quantity || 0, // Use the stock_quantity we added
+    featured: initialProduct.featured || false,
+    colors: initialProduct.colors || [],
+    specifications: initialProduct.specifications || {},
+    mediaGallery: initialProduct.mediaGallery || []
   };
 };

@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { Product } from '@/data/initialData';
+import { Product } from '@/utils/models/types'; // Updated import
 
 interface ProductFormData {
   name: string;
@@ -8,6 +8,7 @@ interface ProductFormData {
   categoryId: string;
   price: number;
   image: string;
+  stock_quantity?: number; // Added stock_quantity field
 }
 
 export const useFormState = (initialData: Partial<Product> = {}) => {
@@ -16,7 +17,8 @@ export const useFormState = (initialData: Partial<Product> = {}) => {
     description: initialData.description || '',
     categoryId: initialData.categoryId || '',
     price: initialData.price || 0,
-    image: initialData.image || '/placeholder.svg'
+    image: initialData.image || '/placeholder.svg',
+    stock_quantity: initialData.stock_quantity || 0 // Added stock_quantity field
   });
   
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -31,7 +33,8 @@ export const useFormState = (initialData: Partial<Product> = {}) => {
       description: initialData.description || '',
       categoryId: initialData.categoryId || '',
       price: initialData.price || 0,
-      image: initialData.image || '/placeholder.svg'
+      image: initialData.image || '/placeholder.svg',
+      stock_quantity: initialData.stock_quantity || 0 // Added stock_quantity field
     });
     
     setImagePreview(
