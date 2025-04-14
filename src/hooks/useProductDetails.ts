@@ -44,7 +44,7 @@ export const useProductDetails = (id: string | undefined) => {
                 description: fallbackProduct.description || '',
                 price: fallbackProduct.price,
                 cost_price: fallbackProduct.price * 0.7, // Default cost price as 70% of price
-                stock_quantity: fallbackProduct.stock_quantity || 0, // Using stock_quantity instead of stock
+                stock_quantity: fallbackProduct.stock_quantity || 0, // Updated from 'stock'
                 image_url: fallbackProduct.image || '',
                 category_id: fallbackProduct.categoryId || '',
                 created_at: new Date().toISOString(),
