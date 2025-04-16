@@ -33,12 +33,26 @@ export const supabase = createClient<Database>(
 );
 
 // Improved helper function to check connection to Supabase
-// Completely bypasses RLS policy issues with the user_roles table
+// Uses our new security definer function to bypass RLS issues
 export const pingDatabase = async () => {
   try {
     console.log("Attempting to ping database...");
     
-    // Try RPC function first - most reliable bypass for RLS
+    // Try user_has_admin_role function first - our new security definer function
+    try {
+      const { data: isAdminData, error: isAdminError } = await supabase.rpc('user_has_admin_role');
+      
+      if (!isAdminError) {
+        console.log("Database ping successful via user_has_admin_role function");
+        return { ok: true, latency: 0 };
+      } else {
+        console.warn("Failed to ping using user_has_admin_role:", isAdminError.message);
+      }
+    } catch (err) {
+      console.warn("Failed to ping using user_has_admin_role");
+    }
+    
+    // Try is_admin function as fallback
     try {
       const { data: functionData, error: functionError } = await supabase.rpc('is_admin');
       

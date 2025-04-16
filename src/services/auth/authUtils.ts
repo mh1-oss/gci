@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 import { toast } from "@/hooks/use-toast";
@@ -11,14 +12,14 @@ export interface AuthState {
   loading: boolean;
 }
 
-// Check if a user has admin role using our improved security definer function
+// Check if a user has admin role using our new security definer function
 export const checkIsAdmin = async (): Promise<boolean> => {
   try {
-    // First try the most reliable method: check_admin_status function (using our new secure function)
-    const { data: isAdminData, error: isAdminError } = await supabase.rpc('check_admin_status');
+    // First try the most reliable method: our new security definer function
+    const { data: isAdminData, error: isAdminError } = await supabase.rpc('user_has_admin_role');
     
     if (!isAdminError) {
-      console.log('Admin check via check_admin_status:', isAdminData);
+      console.log('Admin check via user_has_admin_role:', isAdminData);
       return !!isAdminData;
     }
     
