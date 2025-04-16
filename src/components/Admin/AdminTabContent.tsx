@@ -7,6 +7,7 @@ import AdminContent from "./AdminContent";
 import AdminSettings from "./AdminSettings";
 import AdminStock from "./AdminStock";
 import AdminSales from "./AdminSales";
+import AdminUserRoles from "./UserRoles/AdminUserRoles";
 
 const AdminTabContent = () => {
   return (
@@ -21,6 +22,7 @@ const AdminTabContent = () => {
         <Route path="content/reviews" element={<AdminContent activeTab="reviews" />} />
         <Route path="content/banners" element={<AdminContent activeTab="banners" />} />
         <Route path="settings" element={<AdminSettings />} />
+        <Route path="user-roles" element={<AdminUserRoles />} />
       </Routes>
     </div>
   );
