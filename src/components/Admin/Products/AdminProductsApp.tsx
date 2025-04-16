@@ -87,7 +87,7 @@ const AdminProductsApp = () => {
           
           {/* For RLS errors when we still have products to display */}
           {hasRlsButShowingData() && (
-            <Alert variant="warning" className="mb-4 bg-amber-50 border-amber-200">
+            <Alert variant="default" className="mb-4 bg-amber-50 border-amber-200">
               <InfoIcon className="h-4 w-4 text-amber-600" />
               <AlertTitle className="text-amber-800">تنبيه إعدادات الأمان</AlertTitle>
               <AlertDescription className="text-amber-700">
