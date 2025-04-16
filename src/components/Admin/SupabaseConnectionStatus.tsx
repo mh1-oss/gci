@@ -4,8 +4,9 @@ import { useToast } from "@/hooks/use-toast";
 import { checkDatabaseConnectivity } from "@/services/rls/rlsErrorHandler";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { DatabaseIcon, RefreshCw, AlertCircle, WifiOff, CheckCircle, InfoIcon } from "lucide-react";
+import { DatabaseIcon, RefreshCw, AlertCircle, WifiOff, CheckCircle, InfoIcon, LogOut } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/context/AuthContext";
 
 interface SupabaseConnectionStatusProps {
   showWhenConnected?: boolean;
@@ -13,6 +14,7 @@ interface SupabaseConnectionStatusProps {
 
 const SupabaseConnectionStatus = ({ showWhenConnected = false }: SupabaseConnectionStatusProps) => {
   const { toast } = useToast();
+  const { logout } = useAuth();
   
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['supabaseConnectionStatus'],
@@ -37,12 +39,29 @@ const SupabaseConnectionStatus = ({ showWhenConnected = false }: SupabaseConnect
             ? "تم الاتصال بقاعدة البيانات مع وجود تحذيرات" 
             : "تم الاتصال بقاعدة البيانات بنجاح" 
           : "تعذر الاتصال بقاعدة البيانات",
-        variant: data?.isConnected ? "default" : "destructive",
+        variant: "default",
       });
     } catch (err) {
       toast({
         title: "خطأ",
         description: "حدث خطأ أثناء التحقق من الاتصال",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast({
+        title: "تم تسجيل الخروج",
+        description: "تم تسجيل خروجك بنجاح",
+      });
+    } catch (error) {
+      console.error("Error logging out:", error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء تسجيل الخروج",
         variant: "destructive",
       });
     }
@@ -76,10 +95,10 @@ const SupabaseConnectionStatus = ({ showWhenConnected = false }: SupabaseConnect
             <Button 
               onClick={handleRefresh}
               variant="outline"
-              className="mt-2"
+              className="mt-2 ml-2"
               size="sm"
             >
-              <RefreshCw className="h-3 w-3 mr-2" />
+              <RefreshCw className="h-3 w-3 ml-2" />
               إعادة المحاولة
             </Button>
           </div>
@@ -92,20 +111,32 @@ const SupabaseConnectionStatus = ({ showWhenConnected = false }: SupabaseConnect
     return (
       <Alert variant="default" className="mb-4 bg-amber-50 border-amber-200">
         <InfoIcon className="h-4 w-4 text-amber-600" />
-        <AlertTitle className="text-amber-800">تنبيه</AlertTitle>
+        <AlertTitle className="text-amber-800">خطأ في سياسات قاعدة البيانات</AlertTitle>
         <AlertDescription className="text-amber-700">
           <p className="mb-2">
-            تم الاتصال بقاعدة البيانات ولكن هناك مشكلة في سياسات الأمان (RLS).
+            <strong>التفاصيل التقنية:</strong> هناك مشكلة في سياسات الأمان (RLS) لجدول user_roles.
+            يبدو أن هناك مشكلة في تكوين السياسات التي تسبب تكرارًا لانهائيًا.
+          </p>
+          <p className="mb-2">
             يمكنك متابعة استخدام التطبيق، ولكن قد تواجه صعوبات في حفظ بعض التغييرات.
           </p>
-          <div className="flex justify-end">
+          <div className="flex justify-end flex-wrap gap-2">
+            <Button 
+              onClick={handleLogout}
+              variant="outline"
+              className="mt-2 border-amber-300 text-amber-700"
+              size="sm"
+            >
+              <LogOut className="h-3 w-3 ml-2" />
+              تسجيل الخروج
+            </Button>
             <Button 
               onClick={handleRefresh}
               variant="outline"
               className="mt-2 border-amber-300 text-amber-700"
               size="sm"
             >
-              <RefreshCw className="h-3 w-3 mr-2" />
+              <RefreshCw className="h-3 w-3 ml-2" />
               إعادة التحقق
             </Button>
           </div>

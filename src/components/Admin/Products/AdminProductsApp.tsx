@@ -120,6 +120,7 @@ const AdminProductsApp = () => {
             <ProductErrorHandler
               error={error}
               onRetry={fetchAllData}
+              showLogoutOption={error.toLowerCase().includes('rls') || error.toLowerCase().includes('user_roles')}
             />
           )}
         </CardContent>

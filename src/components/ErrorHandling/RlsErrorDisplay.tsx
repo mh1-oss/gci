@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Database, RefreshCw, LogOut, Info, AlertTriangle } from "lucide-react";
+import { Database, RefreshCw, LogOut, Info, AlertTriangle, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/hooks/use-toast";
@@ -62,7 +62,7 @@ const RlsErrorDisplay: React.FC<RlsErrorDisplayProps> = ({
           <div className="mr-3">
             <AlertTitle>
               {isRecursion 
-                ? "مشكلة في تكرار سياسات قاعدة البيانات"
+                ? "خطأ في سياسات قاعدة البيانات"
                 : "مشكلة في سياسات قاعدة البيانات (RLS)"}
             </AlertTitle>
             <AlertDescription className="mt-2">
@@ -82,15 +82,16 @@ const RlsErrorDisplay: React.FC<RlsErrorDisplayProps> = ({
                   
                   {showTechnicalDetails && (
                     <div className="text-sm mt-2 bg-red-50 p-2 rounded border border-red-200">
-                      <p className="mb-1"><strong>تفاصيل المشكلة:</strong> هناك مشكلة في سياسات الأمان (RLS) للمستخدمين.</p>
+                      <p className="mb-1"><strong>تفاصيل المشكلة:</strong> هناك تكرار لانهائي في سياسات الأمان (RLS) للمستخدمين.</p>
+                      <p><strong>الجدول المتأثر:</strong> user_roles</p>
                       <p><strong>الحلول الممكنة:</strong></p>
                       <ol className="mr-5 mt-1 space-y-1">
                         <li>تسجيل الخروج وإعادة تسجيل الدخول قد يحل المشكلة مؤقتاً.</li>
                         <li>التواصل مع مدير النظام لإصلاح إعدادات سياسات RLS.</li>
-                        <li>استخدام وظائف security definer في قاعدة البيانات.</li>
+                        <li>استخدام وظائف security definer في قاعدة البيانات لتجنب التكرار اللانهائي.</li>
                       </ol>
                       {isRecursion && (
-                        <p className="mt-2 text-xs opacity-75">خطأ: تكرار لانهائي في سياسة RLS لجدول user_roles</p>
+                        <p className="mt-2 text-xs opacity-75">infinite recursion detected in policy for relation "user_roles"</p>
                       )}
                     </div>
                   )}
