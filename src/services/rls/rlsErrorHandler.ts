@@ -38,6 +38,49 @@ export const isRlsRecursionError = (error: any): boolean => {
   );
 };
 
+/**
+ * Creates a standardized error object for RLS policy violations
+ * @param operation The database operation that was attempted ('create', 'read', 'update', 'delete', 'fetch')
+ * @returns Error object with appropriate message
+ */
+export const createRlsError = (operation: 'create' | 'read' | 'update' | 'delete' | 'fetch'): Error => {
+  const operationMap = {
+    create: 'إنشاء',
+    read: 'قراءة',
+    update: 'تحديث',
+    delete: 'حذف',
+    fetch: 'جلب'
+  };
+
+  const arabicOperation = operationMap[operation] || operation;
+  
+  const error = new Error(
+    `خطأ في سياسات الأمان (RLS): ليس لديك صلاحية ${arabicOperation} هذا العنصر. يرجى التحقق من إعدادات الأمان الخاصة بك.`
+  );
+  
+  // Add a property to easily identify this as an RLS error
+  (error as any).isRlsError = true;
+  
+  return error;
+};
+
+/**
+ * Get a user-friendly error message for RLS policy violations
+ * @param error The error object
+ * @returns User-friendly error message
+ */
+export const getRlsErrorMessage = (error: any): string => {
+  if (!isRlsPolicyError(error)) {
+    return 'حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.';
+  }
+  
+  if (isRlsRecursionError(error)) {
+    return 'حدثت مشكلة في سياسات الأمان (RLS): تكرار لانهائي. يرجى الاتصال بمسؤول النظام.';
+  }
+  
+  return 'ليس لديك الصلاحيات الكافية لإجراء هذه العملية. يرجى التحقق من إعدادات الأمان الخاصة بك.';
+};
+
 // Function to check database connectivity and detect RLS issues
 export const checkDatabaseConnectivity = async (): Promise<{ 
   isConnected: boolean; 
