@@ -52,11 +52,12 @@ export const pingDatabase = async () => {
       console.warn("Failed to ping using is_admin");
     }
     
-    // Try all other RPC functions as fallbacks
+    // Try all other RPC functions as fallbacks - Fix: Use type assertion to bypass TypeScript's string literal constraint
     const rpcFunctions = ['get_company_info', 'get_all_categories', 'get_all_products'];
     for (const funcName of rpcFunctions) {
       try {
-        const { data, error } = await supabase.rpc(funcName);
+        // Use type assertion to tell TypeScript we know what we're doing
+        const { data, error } = await supabase.rpc(funcName as any);
         
         if (!error) {
           console.log(`Database ping successful via ${funcName} function`);
