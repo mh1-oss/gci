@@ -9,10 +9,14 @@ import {
 } from '@/services/auth/authService';
 import { toast } from '@/hooks/use-toast';
 import { isRlsPolicyError } from '@/services/rls/rlsErrorHandler';
+import { Database } from "@/integrations/supabase/types";
+
+// Define the app_role type based on the database schema
+type AppRole = Database["public"]["Enums"]["app_role"];
 
 export interface UserRole {
   user_id: string;
-  role: string;
+  role: AppRole;
 }
 
 export const useUserRoles = () => {
@@ -52,7 +56,7 @@ export const useUserRoles = () => {
     }
   };
 
-  const assignRole = async (userId: string, role: string) => {
+  const assignRole = async (userId: string, role: AppRole) => {
     try {
       setError(null);
       const { error } = await assignRoleToUser(userId, role);
@@ -85,7 +89,7 @@ export const useUserRoles = () => {
     }
   };
 
-  const removeRole = async (userId: string, role: string) => {
+  const removeRole = async (userId: string, role: AppRole) => {
     try {
       setError(null);
       const { error } = await removeRoleFromUser(userId, role);

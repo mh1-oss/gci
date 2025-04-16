@@ -7,6 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, UserPlus, RefreshCw, UserX } from "lucide-react";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Database } from "@/integrations/supabase/types";
+
+// Define the app_role type based on the database schema
+type AppRole = Database["public"]["Enums"]["app_role"];
 
 const AdminUserRoles = () => {
   const { usersWithRoles, loading, error, fetchUsersWithRoles, removeRole } = useUserRoles();
@@ -15,7 +19,7 @@ const AdminUserRoles = () => {
     fetchUsersWithRoles();
   };
 
-  const handleRemoveRole = async (userId: string, role: string) => {
+  const handleRemoveRole = async (userId: string, role: AppRole) => {
     if (window.confirm(`هل أنت متأكد من إزالة دور '${role}' من هذا المستخدم؟`)) {
       await removeRole(userId, role);
     }

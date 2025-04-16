@@ -1,6 +1,10 @@
 
 import { checkIsAdmin as utilsCheckIsAdmin } from "@/services/auth/authUtils";
 import { supabase } from "@/integrations/supabase/client";
+import { Database } from "@/integrations/supabase/types";
+
+// Define the app_role type based on the database schema
+type AppRole = Database["public"]["Enums"]["app_role"];
 
 // Export the checkIsAdmin function from authUtils
 export const checkIsAdmin = utilsCheckIsAdmin;
@@ -27,7 +31,7 @@ export const getAllUsersWithRoles = async () => {
 };
 
 // Function to assign a role to a user
-export const assignRoleToUser = async (userId: string, role: string) => {
+export const assignRoleToUser = async (userId: string, role: AppRole) => {
   try {
     const { data, error } = await supabase
       .from('user_roles')
@@ -49,7 +53,7 @@ export const assignRoleToUser = async (userId: string, role: string) => {
 };
 
 // Function to remove a role from a user
-export const removeRoleFromUser = async (userId: string, role: string) => {
+export const removeRoleFromUser = async (userId: string, role: AppRole) => {
   try {
     const { data, error } = await supabase
       .from('user_roles')
