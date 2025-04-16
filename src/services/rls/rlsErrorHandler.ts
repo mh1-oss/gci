@@ -1,4 +1,3 @@
-
 /**
  * Centralized error handler for Row Level Security (RLS) policy issues
  */
@@ -21,31 +20,17 @@ export type RlsErrorType = 'create' | 'update' | 'delete' | 'fetch' | 'general' 
  * @param error Any error object
  * @returns boolean indicating if it's an RLS policy error
  */
-export const isRlsPolicyError = (error: any): boolean => {
+export const isRlsPolicyError = (error: unknown): boolean => {
   if (!error) return false;
   
-  // Convert error to string safely
-  const errorString = typeof error === 'string' 
-    ? error 
-    : error.message || error.error || JSON.stringify(error);
+  const errorString = String(error).toLowerCase();
   
-  const errorMessage = errorString.toLowerCase();
-  
-  // Extended pattern matching for RLS policy errors
   return (
-    errorMessage.includes("infinite recursion") || 
-    errorMessage.includes("policy for relation") ||
-    errorMessage.includes("user_roles") ||
-    errorMessage.includes("row-level security") ||
-    errorMessage.includes("permission denied") ||
-    errorMessage.includes("rls") ||
-    errorMessage.includes("policy") ||
-    errorMessage.includes("violates row-level") ||
-    (error.code && (
-      error.code === "42P17" || // Infinite recursion code
-      error.code === "42501" || // Permission denied code
-      error.code === "P0001" && errorMessage.includes("policy") // PL/pgSQL error raising policy issues
-    ))
+    errorString.includes("permission denied") ||
+    errorString.includes("policy for relation") ||
+    errorString.includes("user_roles") ||
+    errorString.includes("new row violates row-level security policy") ||
+    errorString.includes("infinite recursion")
   );
 };
 

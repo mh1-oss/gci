@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { WifiOff, RefreshCw, Database, AlertCircle, LogOut } from "lucide-react";

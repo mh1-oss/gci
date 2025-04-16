@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -24,15 +23,13 @@ const AdminAuthCheck = ({ children }: AdminAuthCheckProps) => {
   const [showRlsWarning, setShowRlsWarning] = useState(false);
 
   useEffect(() => {
-    // Check if the user is authenticated and admin
     if (!loading && !isAuthenticated) {
       navigate("/login");
     } else if (!loading && isAuthenticated && !isAdmin) {
-      navigate("/"); // Redirect non-admin users
+      navigate("/");
     }
   }, [isAuthenticated, isAdmin, loading, navigate]);
 
-  // Handle logout
   const handleLogout = async () => {
     try {
       await logout();
@@ -46,7 +43,6 @@ const AdminAuthCheck = ({ children }: AdminAuthCheckProps) => {
     }
   };
 
-  // Check database connection
   useEffect(() => {
     const checkDbConnection = async () => {
       try {
@@ -57,14 +53,11 @@ const AdminAuthCheck = ({ children }: AdminAuthCheckProps) => {
         if (!result.isConnected) {
           setDbError(result.error || "تعذر الاتصال بقاعدة البيانات");
         } else {
-          // Even with RLS issues, we'll still show the main application
-          // Just set a flag for information or warning display
           if (result.hasRlsIssue) {
             setDbHasRlsIssue(true);
             setShowRlsWarning(true);
             console.log("Database connection has RLS issues but is functional");
             
-            // Auto-hide RLS warning after 5 seconds
             setTimeout(() => {
               setShowRlsWarning(false);
             }, 5000);
@@ -86,7 +79,6 @@ const AdminAuthCheck = ({ children }: AdminAuthCheckProps) => {
     }
   }, [isAuthenticated, isAdmin, dbCheckDone, retryCount]);
 
-  // Show loading state
   if (loading || (isAuthenticated && isAdmin && !dbCheckDone)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -98,7 +90,6 @@ const AdminAuthCheck = ({ children }: AdminAuthCheckProps) => {
     );
   }
 
-  // Show database error if there's a critical connection issue
   if (dbError && dbCheckDone) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
@@ -127,11 +118,9 @@ const AdminAuthCheck = ({ children }: AdminAuthCheckProps) => {
     );
   }
 
-  // If user is admin and authenticated (and db is ok or has manageable issues)
   if (isAuthenticated && isAdmin) {
     return (
       <>
-        {/* Show subtle notification for RLS issues that auto-dismisses */}
         {showRlsWarning && dbHasRlsIssue && (
           <Alert variant="default" className="bg-amber-50 border-amber-200 mb-0 rounded-none border-t-0 border-l-0 border-r-0">
             <InfoIcon className="h-4 w-4 text-amber-600" />
