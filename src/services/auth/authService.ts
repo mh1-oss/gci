@@ -4,13 +4,12 @@ import { checkIsAdmin as utilsCheckIsAdmin } from "@/services/auth/authUtils";
 // Export the checkIsAdmin function from authUtils
 export const checkIsAdmin = utilsCheckIsAdmin;
 
-// Add a function to get all users with roles (for admin use)
+// Function to get all users with roles (for admin use)
 export const getAllUsersWithRoles = async () => {
   try {
     const { supabase } = await import('@/integrations/supabase/client');
     
-    // Use a direct query instead of RPC to work around TypeScript constraints
-    // This avoids the TypeScript error since we're not using the rpc method
+    // Use a direct query to the user_roles table instead of RPC call
     const { data, error } = await supabase
       .from('user_roles')
       .select('user_id, role')
