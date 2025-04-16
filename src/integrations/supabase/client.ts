@@ -37,6 +37,20 @@ export const pingDatabase = async () => {
   try {
     console.log("Attempting to ping database...");
     
+    // Try the RPC function first - most reliable and bypasses RLS
+    try {
+      const { error } = await supabase.rpc('get_company_info');
+      
+      if (!error) {
+        console.log("Database ping successful using RPC function");
+        return { ok: true, latency: 0 };
+      } else {
+        console.warn("Failed to ping using RPC function:", error.message);
+      }
+    } catch (err) {
+      console.warn("Failed to ping using RPC function");
+    }
+    
     // Use a simple table that doesn't have complex RLS policies
     // We'll try multiple tables in sequence to find one that works
     const tables = ['company_info', 'products', 'categories'];
@@ -66,29 +80,12 @@ export const pingDatabase = async () => {
       }
     }
     
-    // If all tables failed, try a more direct approach
-    if (!success) {
-      try {
-        // Try a raw SQL query that requires minimal permissions
-        const { error } = await supabase.rpc('get_company_info');
-        
-        if (!error) {
-          success = true;
-          console.log("Database ping successful using RPC function");
-        } else {
-          errorMessage = error.message;
-          console.warn("Failed to ping using RPC function:", error.message);
-        }
-      } catch (err) {
-        console.warn("Failed to ping using RPC function");
-      }
-    }
-    
     // If all tables failed, but we detect the specific RLS recursion error
     if (!success && errorMessage && (
       errorMessage.includes("infinite recursion") || 
       errorMessage.includes("policy for relation") || 
-      errorMessage.includes("user_roles")
+      errorMessage.includes("user_roles") ||
+      errorMessage.includes("permission denied")
     )) {
       console.warn("Known RLS policy issue detected:", errorMessage);
       // Return partial success - we know the DB is up, but has policy configuration issues

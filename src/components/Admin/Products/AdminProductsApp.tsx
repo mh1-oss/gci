@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { 
   Card, 
   CardContent, 
@@ -18,6 +18,7 @@ import ProductListTable from './ProductListTable';
 import DeleteProductDialog from './DeleteProductDialog';
 import RlsErrorDisplay from '@/components/ErrorHandling/RlsErrorDisplay';
 import { isRlsPolicyError } from '@/services/rls/rlsErrorHandler';
+import { toast } from '@/hooks/use-toast';
 
 const AdminProductsApp = () => {
   const {
@@ -41,6 +42,17 @@ const AdminProductsApp = () => {
     fetchAllData,
     checkConnection
   } = useProductsManagement();
+  
+  // Show toast when there's an RLS error 
+  useEffect(() => {
+    if (error && isRlsPolicyError(error)) {
+      toast({
+        title: "تنبيه أمان قاعدة البيانات",
+        description: "تم اكتشاف مشكلة في سياسات الأمان (RLS). قد تواجه صعوبات في إضافة أو تعديل البيانات.",
+        variant: "default"
+      });
+    }
+  }, [error]);
   
   return (
     <div>
@@ -70,6 +82,7 @@ const AdminProductsApp = () => {
             <RlsErrorDisplay 
               error={error}
               onRetry={fetchAllData}
+              showDetails={true}
             />
           ) : error && connectionStatus !== 'disconnected' && (
             <ProductErrorHandler
@@ -80,7 +93,7 @@ const AdminProductsApp = () => {
           
           {connectionStatus === 'checking' || loading ? (
             <ProductsLoading />
-          ) : connectionStatus === 'connected' && products.length === 0 ? (
+          ) : connectionStatus === 'connected' && products.length === 0 && !error ? (
             <NoProductsView onAddNew={handleOpenCreateDialog} />
           ) : connectionStatus === 'connected' && (
             <ProductListTable 

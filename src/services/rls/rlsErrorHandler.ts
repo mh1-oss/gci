@@ -26,16 +26,23 @@ export const isRlsPolicyError = (error: any): boolean => {
   
   const errorMessage = typeof error === 'string' 
     ? error 
-    : error.message || error.toString();
+    : error.message || error.error || error.toString();
   
+  // Extended pattern matching for RLS policy errors
   return !!(errorMessage && (
-    errorMessage.includes("infinite recursion") || 
-    errorMessage.includes("policy for relation") ||
-    errorMessage.includes("user_roles") ||
-    errorMessage.includes("row-level security") ||
-    errorMessage.includes("permission denied") ||
-    errorMessage.includes("RLS") ||
-    (error.code && (error.code === "42P17" || error.code === "42501"))
+    errorMessage.toLowerCase().includes("infinite recursion") || 
+    errorMessage.toLowerCase().includes("policy for relation") ||
+    errorMessage.toLowerCase().includes("user_roles") ||
+    errorMessage.toLowerCase().includes("row-level security") ||
+    errorMessage.toLowerCase().includes("permission denied") ||
+    errorMessage.toLowerCase().includes("rls") ||
+    errorMessage.toLowerCase().includes("policy") ||
+    errorMessage.toLowerCase().includes("violates row-level") ||
+    (error.code && (
+      error.code === "42P17" || // Infinite recursion code
+      error.code === "42501" || // Permission denied code
+      error.code === "P0001" && errorMessage.toLowerCase().includes("policy") // PL/pgSQL error raising policy issues
+    ))
   ));
 };
 
@@ -52,7 +59,7 @@ export const isRlsRecursionError = (error: any): boolean => {
     : error.message || error.toString();
   
   return !!(errorMessage && (
-    errorMessage.includes("infinite recursion") ||
+    errorMessage.toLowerCase().includes("infinite recursion") ||
     (error.code && error.code === "42P17")
   ));
 };
@@ -63,7 +70,8 @@ export const isRlsRecursionError = (error: any): boolean => {
  * @returns Localized error message
  */
 export const getRlsErrorMessage = (type: RlsErrorType = 'general'): string => {
-  return RLS_ERROR_MESSAGES[type.toUpperCase() as keyof typeof RLS_ERROR_MESSAGES] || RLS_ERROR_MESSAGES.GENERAL;
+  const key = type.toUpperCase() as keyof typeof RLS_ERROR_MESSAGES;
+  return RLS_ERROR_MESSAGES[key] || RLS_ERROR_MESSAGES.GENERAL;
 };
 
 /**
@@ -97,4 +105,31 @@ export const handleRlsError = async <T>(
   
   // Re-throw if not an RLS error
   throw error;
+};
+
+/**
+ * Handles database connectivity check with RLS error awareness
+ * @returns Object with connection status and any relevant messages
+ */
+export const checkDatabaseConnectivity = async () => {
+  try {
+    const { pingDatabase } = await import('@/integrations/supabase/client');
+    const pingResult = await pingDatabase();
+    
+    return {
+      isConnected: pingResult.ok,
+      hasRlsIssue: pingResult.warning?.includes('RLS policy') || 
+                   pingResult.warning?.includes('policy configuration'),
+      error: pingResult.error || null,
+      message: pingResult.warning || null
+    };
+  } catch (error) {
+    console.error('Error checking database connectivity:', error);
+    return {
+      isConnected: false,
+      hasRlsIssue: isRlsPolicyError(error),
+      error: error instanceof Error ? error.message : 'Unknown error',
+      message: 'Failed to check database connection'
+    };
+  }
 };
