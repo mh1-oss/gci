@@ -20,6 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { InfoIcon, AlertCircle } from "lucide-react";
 import RlsErrorDisplay from '@/components/ErrorHandling/RlsErrorDisplay';
+import { isRlsRecursionError } from '@/services/rls/rlsErrorHandler';
 
 const AdminProductsApp = () => {
   const {
@@ -63,15 +64,6 @@ const AdminProductsApp = () => {
            products.length > 0 && 
            connectionStatus === 'connected';
   };
-
-  // Check if error is specifically an RLS recursion error
-  const isRlsRecursionError = () => {
-    return error && 
-           typeof error === 'string' && (
-              error.toLowerCase().includes('infinite recursion') || 
-              error.toLowerCase().includes('policy for relation')
-           );
-  };
   
   return (
     <div>
@@ -114,7 +106,7 @@ const AdminProductsApp = () => {
           )}
           
           {/* RLS Recursion error - use specialized component */}
-          {isRlsRecursionError() && (
+          {isRlsRecursionError(error) && (
             <RlsErrorDisplay
               error={error}
               onRetry={fetchAllData}
@@ -134,7 +126,7 @@ const AdminProductsApp = () => {
               onEditProduct={handleOpenEditDialog}
               onDeleteProduct={handleOpenDeleteDialog}
             />
-          ) : error && !hasRlsButShowingData() && !isRlsRecursionError() && (
+          ) : error && !hasRlsButShowingData() && !isRlsRecursionError(error) && (
             <ProductErrorHandler
               error={error}
               onRetry={fetchAllData}

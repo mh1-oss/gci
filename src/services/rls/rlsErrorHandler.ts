@@ -24,13 +24,12 @@ export type RlsErrorType = 'create' | 'update' | 'delete' | 'fetch' | 'general' 
 export const isRlsPolicyError = (error: any): boolean => {
   if (!error) return false;
   
-  const errorMessage = typeof error === 'string' 
-    ? error.toLowerCase()
-    : typeof error.message === 'string' 
-      ? error.message.toLowerCase() 
-      : typeof error.error === 'string'
-        ? error.error.toLowerCase()
-        : String(error).toLowerCase();
+  // Convert error to string safely
+  const errorString = typeof error === 'string' 
+    ? error 
+    : error.message || error.error || JSON.stringify(error);
+  
+  const errorMessage = errorString.toLowerCase();
   
   // Extended pattern matching for RLS policy errors
   return (
@@ -58,13 +57,12 @@ export const isRlsPolicyError = (error: any): boolean => {
 export const isRlsRecursionError = (error: any): boolean => {
   if (!error) return false;
   
-  const errorMessage = typeof error === 'string' 
-    ? error.toLowerCase()
-    : typeof error.message === 'string' 
-      ? error.message.toLowerCase() 
-      : typeof error.error === 'string'
-        ? error.error.toLowerCase()
-        : String(error).toLowerCase();
+  // Convert error to string safely
+  const errorString = typeof error === 'string' 
+    ? error 
+    : error.message || error.error || JSON.stringify(error);
+    
+  const errorMessage = errorString.toLowerCase();
   
   // More comprehensive detection for recursion errors
   return (
