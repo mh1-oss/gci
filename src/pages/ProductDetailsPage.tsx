@@ -34,7 +34,7 @@ const ProductDetailsPage = () => {
     if (error) {
       console.error('Product details error:', error);
       
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage = error instanceof Error ? error.message : String(error);
       console.log(`Error message: ${errorMessage}`);
       
       // Don't show toast for RLS errors as we'll display a dedicated component
@@ -90,7 +90,7 @@ const ProductDetailsPage = () => {
 
   // Handle error or not found state
   if (error || !product) {
-    console.log("Rendering error state due to:", error ? error.message : "Product not found");
+    console.log("Rendering error state due to:", error ? (error instanceof Error ? error.message : String(error)) : "Product not found");
     return <ProductErrorState />;
   }
 

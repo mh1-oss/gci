@@ -48,7 +48,7 @@ const AdminProductsApp = () => {
   
   // Show notification for RLS errors but continue to show local data
   useEffect(() => {
-    if (connectionStatus === 'connected' && error && error.toLowerCase().includes('rls')) {
+    if (connectionStatus === 'connected' && error && (typeof error === 'string' && error.toLowerCase().includes('rls'))) {
       toast({
         title: "تنبيه إعدادات الأمان",
         description: "يمكنك متابعة الاستخدام، ولكن قد تواجه صعوبات في حفظ التغييرات.",
@@ -59,17 +59,18 @@ const AdminProductsApp = () => {
   // Helper to check if we have an RLS error but we're still showing data
   const hasRlsButShowingData = () => {
     return error && 
-           error.toLowerCase().includes('rls') && 
+           (typeof error === 'string' && error.toLowerCase().includes('rls')) && 
            products.length > 0 && 
            connectionStatus === 'connected';
   };
 
   // Check if error is specifically an RLS recursion error
   const isRlsRecursionError = () => {
-    return error && (
-      error.toLowerCase().includes('infinite recursion') || 
-      error.toLowerCase().includes('policy for relation')
-    );
+    return error && 
+           typeof error === 'string' && (
+              error.toLowerCase().includes('infinite recursion') || 
+              error.toLowerCase().includes('policy for relation')
+           );
   };
   
   return (
@@ -89,13 +90,13 @@ const AdminProductsApp = () => {
         <CardContent>
           {/* Always show connection status during loading or when there's a connection issue */}
           {(connectionStatus === 'checking' || connectionStatus === 'disconnected' || 
-              (error && error.toLowerCase().includes('rls'))) && (
+              (error && typeof error === 'string' && error.toLowerCase().includes('rls'))) && (
             <SupabaseConnectionStatus />
           )}
           
           {/* For RLS errors when we still have products to display */}
           {hasRlsButShowingData() && (
-            <Alert variant="default" className="mb-4 bg-amber-50 border-amber-200">
+            <Alert className="mb-4 bg-amber-50 border-amber-200">
               <InfoIcon className="h-4 w-4 text-amber-600" />
               <AlertTitle className="text-amber-800">تنبيه إعدادات الأمان</AlertTitle>
               <AlertDescription className="text-amber-700">
@@ -137,7 +138,7 @@ const AdminProductsApp = () => {
             <ProductErrorHandler
               error={error}
               onRetry={fetchAllData}
-              showLogoutOption={error.toLowerCase().includes('rls') || error.toLowerCase().includes('user_roles')}
+              showLogoutOption={typeof error === 'string' && (error.toLowerCase().includes('rls') || error.toLowerCase().includes('user_roles'))}
             />
           )}
         </CardContent>

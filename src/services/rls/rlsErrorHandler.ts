@@ -25,25 +25,29 @@ export const isRlsPolicyError = (error: any): boolean => {
   if (!error) return false;
   
   const errorMessage = typeof error === 'string' 
-    ? error 
-    : error.message || error.error || error.toString();
+    ? error.toLowerCase()
+    : typeof error.message === 'string' 
+      ? error.message.toLowerCase() 
+      : typeof error.error === 'string'
+        ? error.error.toLowerCase()
+        : String(error).toLowerCase();
   
   // Extended pattern matching for RLS policy errors
-  return !!(errorMessage && (
-    errorMessage.toLowerCase().includes("infinite recursion") || 
-    errorMessage.toLowerCase().includes("policy for relation") ||
-    errorMessage.toLowerCase().includes("user_roles") ||
-    errorMessage.toLowerCase().includes("row-level security") ||
-    errorMessage.toLowerCase().includes("permission denied") ||
-    errorMessage.toLowerCase().includes("rls") ||
-    errorMessage.toLowerCase().includes("policy") ||
-    errorMessage.toLowerCase().includes("violates row-level") ||
+  return (
+    errorMessage.includes("infinite recursion") || 
+    errorMessage.includes("policy for relation") ||
+    errorMessage.includes("user_roles") ||
+    errorMessage.includes("row-level security") ||
+    errorMessage.includes("permission denied") ||
+    errorMessage.includes("rls") ||
+    errorMessage.includes("policy") ||
+    errorMessage.includes("violates row-level") ||
     (error.code && (
       error.code === "42P17" || // Infinite recursion code
       error.code === "42501" || // Permission denied code
-      error.code === "P0001" && errorMessage.toLowerCase().includes("policy") // PL/pgSQL error raising policy issues
+      error.code === "P0001" && errorMessage.includes("policy") // PL/pgSQL error raising policy issues
     ))
-  ));
+  );
 };
 
 /**
@@ -55,16 +59,20 @@ export const isRlsRecursionError = (error: any): boolean => {
   if (!error) return false;
   
   const errorMessage = typeof error === 'string' 
-    ? error 
-    : error.message || error.toString();
+    ? error.toLowerCase()
+    : typeof error.message === 'string' 
+      ? error.message.toLowerCase() 
+      : typeof error.error === 'string'
+        ? error.error.toLowerCase()
+        : String(error).toLowerCase();
   
   // More comprehensive detection for recursion errors
-  return !!(errorMessage && (
-    errorMessage.toLowerCase().includes("infinite recursion") ||
-    errorMessage.toLowerCase().includes("policy for relation") ||
-    errorMessage.toLowerCase().includes("user_roles") ||
+  return (
+    errorMessage.includes("infinite recursion") ||
+    errorMessage.includes("policy for relation") ||
+    errorMessage.includes("user_roles") ||
     (error.code && error.code === "42P17")
-  ));
+  );
 };
 
 /**
@@ -83,7 +91,10 @@ export const getRlsErrorMessage = (type: RlsErrorType = 'general'): string => {
  * @returns Error object with localized message
  */
 export const createRlsError = (type: RlsErrorType = 'general'): Error => {
-  return new Error(getRlsErrorMessage(type));
+  const error = new Error(getRlsErrorMessage(type));
+  // Add a property to identify this as an RLS error
+  Object.defineProperty(error, 'isRlsError', { value: true });
+  return error;
 };
 
 /**

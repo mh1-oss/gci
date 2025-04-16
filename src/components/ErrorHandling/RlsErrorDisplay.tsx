@@ -4,7 +4,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Database, RefreshCw, LogOut, Info, AlertTriangle, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { isRlsRecursionError } from "@/services/rls/rlsErrorHandler";
 
 interface RlsErrorDisplayProps {
@@ -23,11 +23,14 @@ const RlsErrorDisplay: React.FC<RlsErrorDisplayProps> = ({
   showDetails = true
 }) => {
   const { logout } = useAuth();
+  const { toast } = useToast();
   const [showTechnicalDetails, setShowTechnicalDetails] = useState(false);
   
   if (!error) return null;
   
-  const errorMessage = error instanceof Error ? error.message : String(error);
+  const errorMessage = typeof error === 'string' ? error : 
+                      error instanceof Error ? error.message : String(error);
+  
   const isRecursion = isRlsRecursionError(error);
   
   // Function to handle logout

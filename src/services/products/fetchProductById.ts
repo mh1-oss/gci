@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Product as InitialDataProduct } from '@/data/initialData';
-import { isRlsPolicyError, createRlsError, getRlsErrorMessage } from '@/services/rls/rlsErrorHandler';
+import { isRlsPolicyError, createRlsError } from '@/services/rls/rlsErrorHandler';
 import { getFallbackProductById, mapDbToInitialDataProduct } from './utils/productUtils';
 
 /**
@@ -17,7 +17,7 @@ export const fetchProductById = async (id: string): Promise<InitialDataProduct |
       .from('products')
       .select('*')
       .eq('id', id)
-      .single();
+      .maybeSingle(); // Using maybeSingle instead of single to avoid errors
     
     if (error) {
       console.error('Error fetching product by id:', error);
@@ -35,13 +35,15 @@ export const fetchProductById = async (id: string): Promise<InitialDataProduct |
         return fallbackProduct;
       }
       
-      return null;
+      throw error;
     }
     
     if (!data) {
       console.log(`No product found with ID: ${id}`);
       return null;
     }
+    
+    console.log("Product data fetched successfully:", data);
     
     // Map to InitialDataProduct type with proper defaults
     return mapDbToInitialDataProduct(data);
@@ -51,9 +53,14 @@ export const fetchProductById = async (id: string): Promise<InitialDataProduct |
     if (isRlsPolicyError(error)) {
       // Log specific RLS error information
       console.warn('RLS policy error in fetchProductById:', error);
+      
+      // Try to find the product in the fallback data
+      const fallbackProduct = getFallbackProductById(id);
+      if (fallbackProduct) {
+        return fallbackProduct;
+      }
     }
     
-    // Try to find the product in the fallback data
-    return getFallbackProductById(id);
+    throw error;
   }
 };

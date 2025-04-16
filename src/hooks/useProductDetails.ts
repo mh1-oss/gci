@@ -44,7 +44,7 @@ export const useProductDetails = (id: string | undefined) => {
                 description: fallbackProduct.description || '',
                 price: fallbackProduct.price,
                 cost_price: fallbackProduct.price * 0.7, // Default cost price as 70% of price
-                stock_quantity: fallbackProduct.stock_quantity || 0, // Using the correct property name
+                stock_quantity: fallbackProduct.stock_quantity || 0, 
                 image_url: fallbackProduct.image || '',
                 category_id: fallbackProduct.categoryId || '',
                 created_at: new Date().toISOString(),
@@ -52,10 +52,12 @@ export const useProductDetails = (id: string | undefined) => {
                 featured: fallbackProduct.featured || false,
                 colors: fallbackProduct.colors || [],
                 specifications: fallbackProduct.specifications || {},
-                media_gallery: fallbackProduct.mediaGallery || [],
-                categories: null
+                media_gallery: fallbackProduct.mediaGallery || []
               } as DbProduct;
             }
+            
+            console.warn("Fallback product not found either");
+            throw error;
           }
           
           throw error;
@@ -70,7 +72,7 @@ export const useProductDetails = (id: string | undefined) => {
         
         return data;
       } catch (error: any) {
-        console.error('Error fetching product:', error.message);
+        console.error('Error fetching product:', error?.message || 'Unknown error');
         throw error;
       }
     },
@@ -87,7 +89,7 @@ export const useProductDetails = (id: string | undefined) => {
         return false;
       }
       
-      console.log(`Retry attempt ${failureCount} for error: ${error?.message}`);
+      console.log(`Retry attempt ${failureCount} for error: ${error?.message || 'Unknown error'}`);
       return failureCount < 1;
     },
     enabled: !!id && id.trim() !== ''

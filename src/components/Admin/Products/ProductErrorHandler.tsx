@@ -24,9 +24,9 @@ const ProductErrorHandler: React.FC<ProductErrorHandlerProps> = ({
   if (!error) return null;
 
   // Enhanced error type detection
-  const errorString = String(error);
+  const errorString = String(error).toLowerCase();
   const isRlsPolicyError = 
-    isRlsRecursionError(error) || 
+    isRlsRecursionError(errorString) || 
     errorString.includes("infinite recursion") || 
     errorString.includes("policy for relation") ||
     errorString.includes("سياسات") || 
