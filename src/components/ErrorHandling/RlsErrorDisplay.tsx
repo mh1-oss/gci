@@ -36,7 +36,7 @@ const RlsErrorDisplay: React.FC<RlsErrorDisplayProps> = ({
       await logout();
       toast({
         title: "تم تسجيل الخروج",
-        description: "تم تسجيل خروجك بنجاح. يرجى تسجيل الدخول مرة أخرى."
+        description: "تم تسجيل خروجك بنجاح. يرجى تسجيل الدخول مرة أخرى.",
       });
       window.location.reload();
     } catch (err) {

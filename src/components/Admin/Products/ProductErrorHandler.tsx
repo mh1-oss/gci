@@ -4,6 +4,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { WifiOff, RefreshCw, Database, AlertCircle, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
+import { isRlsRecursionError } from "@/services/rls/rlsErrorHandler";
 
 interface ProductErrorHandlerProps {
   error: string | null;
@@ -22,26 +23,33 @@ const ProductErrorHandler: React.FC<ProductErrorHandlerProps> = ({
 
   if (!error) return null;
 
-  // Check for different error types
-  const isRlsPolicyError = error.includes("سياسات") || 
-                          error.includes("infinite recursion") || 
-                          error.includes("policy") || 
-                          error.includes("user_roles");
+  // Enhanced error type detection
+  const errorString = String(error);
+  const isRlsPolicyError = 
+    isRlsRecursionError(error) || 
+    errorString.includes("infinite recursion") || 
+    errorString.includes("policy for relation") ||
+    errorString.includes("سياسات") || 
+    errorString.includes("policy") || 
+    errorString.includes("user_roles");
                           
-  const isConnectionError = error.includes("اتصال") || 
-                           error.includes("connection") || 
-                           error.includes("network");
+  const isConnectionError = 
+    errorString.includes("اتصال") || 
+    errorString.includes("connection") || 
+    errorString.includes("network");
                            
-  const isCrudError = error.includes("إنشاء") || 
-                     error.includes("تحديث") || 
-                     error.includes("حذف") ||
-                     error.includes("create") ||
-                     error.includes("update") ||
-                     error.includes("delete");
+  const isCrudError = 
+    errorString.includes("إنشاء") || 
+    errorString.includes("تحديث") || 
+    errorString.includes("حذف") ||
+    errorString.includes("create") ||
+    errorString.includes("update") ||
+    errorString.includes("delete");
 
   const handleLogout = async () => {
     try {
       await logout();
+      window.location.reload();
     } catch (err) {
       console.error("Error logging out:", err);
     }
@@ -69,7 +77,7 @@ const ProductErrorHandler: React.FC<ProductErrorHandlerProps> = ({
                 : "خطأ"}
             </AlertTitle>
             <AlertDescription>
-              <p>{error}</p>
+              <p>{errorString}</p>
               {isRlsPolicyError && (
                 <div className="text-sm mt-2 bg-red-50 p-2 rounded border border-red-200">
                   <p><strong>التفاصيل التقنية:</strong> يبدو أن هناك مشكلة في تكوين سياسات الأمان (RLS) لجدول user_roles.</p>

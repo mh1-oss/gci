@@ -1,163 +1,140 @@
 
-import React, { useEffect, useState } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { checkDatabaseConnectivity } from "@/services/rls/rlsErrorHandler";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { DatabaseIcon, RefreshCw, AlertCircle, WifiOff, CheckCircle, InfoIcon, LogOut } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/context/AuthContext";
+import React, { useEffect, useState } from 'react';
+import { Loader2, Database, AlertTriangle, CheckCircle, RefreshCw, WifiOff } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Alert } from '@/components/ui/alert';
 
-interface SupabaseConnectionStatusProps {
-  showWhenConnected?: boolean;
-}
+const SupabaseConnectionStatus: React.FC<{
+  onRetry?: () => void;
+  showAsAlert?: boolean;
+}> = ({ onRetry, showAsAlert = false }) => {
+  const [status, setStatus] = useState<'checking' | 'connected' | 'warning' | 'error'>('checking');
+  const [message, setMessage] = useState<string | null>(null);
 
-const SupabaseConnectionStatus = ({ showWhenConnected = false }: SupabaseConnectionStatusProps) => {
-  const { toast } = useToast();
-  const { logout } = useAuth();
-  
-  const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['supabaseConnectionStatus'],
-    queryFn: checkDatabaseConnectivity,
-    refetchOnWindowFocus: false,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    retry: 2,
-  });
-  
-  const handleRefresh = async () => {
-    toast({
-      title: "جاري التحقق من الاتصال",
-      description: "يتم التحقق من حالة الاتصال بقاعدة البيانات...",
-    });
-    
+  // Check connection on mount
+  useEffect(() => {
+    checkConnection();
+  }, []);
+
+  // Function to check connection
+  const checkConnection = async () => {
+    setStatus('checking');
     try {
-      await refetch();
-      toast({
-        title: data?.isConnected ? "تم الاتصال بنجاح" : "فشل الاتصال",
-        description: data?.isConnected 
-          ? data?.hasRlsIssue 
-            ? "تم الاتصال بقاعدة البيانات مع وجود تحذيرات" 
-            : "تم الاتصال بقاعدة البيانات بنجاح" 
-          : "تعذر الاتصال بقاعدة البيانات",
-        variant: "default",
-      });
-    } catch (err) {
-      toast({
-        title: "خطأ",
-        description: "حدث خطأ أثناء التحقق من الاتصال",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      toast({
-        title: "تم تسجيل الخروج",
-        description: "تم تسجيل خروجك بنجاح",
-      });
+      const { pingDatabase } = await import('@/integrations/supabase/client');
+      const result = await pingDatabase();
+      
+      if (!result.ok) {
+        console.error('Database connection failed:', result.error);
+        setStatus('error');
+        setMessage(result.error || 'لا يمكن الاتصال بقاعدة البيانات');
+      } else if (result.warning) {
+        console.warn('Database connected with warning:', result.warning);
+        setStatus('warning');
+        setMessage(result.warning);
+      } else {
+        console.log('Database connected successfully');
+        setStatus('connected');
+        setMessage(null);
+      }
     } catch (error) {
-      console.error("Error logging out:", error);
-      toast({
-        title: "خطأ",
-        description: "حدث خطأ أثناء تسجيل الخروج",
-        variant: "destructive",
-      });
+      console.error('Error checking database connection:', error);
+      setStatus('error');
+      setMessage(error instanceof Error ? error.message : 'خطأ غير معروف');
     }
   };
-  
-  // If connection is good and we don't need to show the status, return null
-  if (data?.isConnected && !data?.hasRlsIssue && !showWhenConnected) {
-    return null;
-  }
-  
-  if (isLoading) {
+
+  // Handle retry button click
+  const handleRetry = () => {
+    if (onRetry) {
+      onRetry();
+    } else {
+      checkConnection();
+    }
+  };
+
+  // Conditional content based on status
+  const getStatusContent = () => {
+    switch (status) {
+      case 'checking':
+        return {
+          icon: <Loader2 className="h-4 w-4 mr-2 animate-spin" />,
+          text: 'جاري التحقق من الاتصال...',
+          bgColor: 'bg-blue-50',
+          borderColor: 'border-blue-200',
+          textColor: 'text-blue-700'
+        };
+      case 'connected':
+        return {
+          icon: <CheckCircle className="h-4 w-4 mr-2" />,
+          text: 'متصل بقاعدة البيانات',
+          bgColor: 'bg-green-50',
+          borderColor: 'border-green-200',
+          textColor: 'text-green-700'
+        };
+      case 'warning':
+        return {
+          icon: <AlertTriangle className="h-4 w-4 mr-2" />,
+          text: message || 'متصل مع تحذيرات',
+          bgColor: 'bg-amber-50',
+          borderColor: 'border-amber-200',
+          textColor: 'text-amber-700'
+        };
+      case 'error':
+        return {
+          icon: <WifiOff className="h-4 w-4 mr-2" />,
+          text: message || 'غير متصل بقاعدة البيانات',
+          bgColor: 'bg-red-50',
+          borderColor: 'border-red-200',
+          textColor: 'text-red-700'
+        };
+    }
+  };
+
+  const content = getStatusContent();
+
+  if (showAsAlert) {
     return (
-      <Alert className="mb-4 bg-gray-50 border-gray-200">
-        <RefreshCw className="h-4 w-4 animate-spin text-gray-500" />
-        <AlertTitle>جاري التحقق من الاتصال</AlertTitle>
-        <AlertDescription>
-          يرجى الانتظار بينما نتحقق من حالة الاتصال بقاعدة البيانات...
-        </AlertDescription>
+      <Alert 
+        className={`${content.bgColor} ${content.borderColor} mb-4 flex justify-between items-center`}
+      >
+        <div className="flex items-center">
+          {content.icon}
+          <span className={content.textColor}>{content.text}</span>
+        </div>
+        {(status === 'error' || status === 'warning') && (
+          <Button 
+            variant="outline" 
+            size="sm"
+            className={`border-none ${content.textColor} hover:bg-opacity-20 hover:bg-black`} 
+            onClick={handleRetry}
+          >
+            <RefreshCw className="h-3.5 w-3.5 mr-1" />
+            إعادة المحاولة
+          </Button>
+        )}
       </Alert>
     );
   }
-  
-  if (!data?.isConnected) {
-    return (
-      <Alert variant="destructive" className="mb-4">
-        <WifiOff className="h-4 w-4" />
-        <AlertTitle>خطأ في الاتصال بقاعدة البيانات</AlertTitle>
-        <AlertDescription className="flex flex-col">
-          <p className="mb-2">تعذر الاتصال بقاعدة البيانات. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.</p>
-          <div className="flex justify-end">
-            <Button 
-              onClick={handleRefresh}
-              variant="outline"
-              className="mt-2 ml-2"
-              size="sm"
-            >
-              <RefreshCw className="h-3 w-3 ml-2" />
-              إعادة المحاولة
-            </Button>
-          </div>
-        </AlertDescription>
-      </Alert>
-    );
-  }
-  
-  if (data?.hasRlsIssue) {
-    return (
-      <Alert variant="default" className="mb-4 bg-amber-50 border-amber-200">
-        <InfoIcon className="h-4 w-4 text-amber-600" />
-        <AlertTitle className="text-amber-800">خطأ في سياسات قاعدة البيانات</AlertTitle>
-        <AlertDescription className="text-amber-700">
-          <p className="mb-2">
-            <strong>التفاصيل التقنية:</strong> هناك مشكلة في سياسات الأمان (RLS) لجدول user_roles.
-            يبدو أن هناك مشكلة في تكوين السياسات التي تسبب تكرارًا لانهائيًا.
-          </p>
-          <p className="mb-2">
-            يمكنك متابعة استخدام التطبيق، ولكن قد تواجه صعوبات في حفظ بعض التغييرات.
-          </p>
-          <div className="flex justify-end flex-wrap gap-2">
-            <Button 
-              onClick={handleLogout}
-              variant="outline"
-              className="mt-2 border-amber-300 text-amber-700"
-              size="sm"
-            >
-              <LogOut className="h-3 w-3 ml-2" />
-              تسجيل الخروج
-            </Button>
-            <Button 
-              onClick={handleRefresh}
-              variant="outline"
-              className="mt-2 border-amber-300 text-amber-700"
-              size="sm"
-            >
-              <RefreshCw className="h-3 w-3 ml-2" />
-              إعادة التحقق
-            </Button>
-          </div>
-        </AlertDescription>
-      </Alert>
-    );
-  }
-  
-  if (data?.isConnected && showWhenConnected) {
-    return (
-      <Alert className="mb-4 bg-green-50 border-green-200">
-        <CheckCircle className="h-4 w-4 text-green-600" />
-        <AlertTitle className="text-green-800">تم الاتصال بقاعدة البيانات</AlertTitle>
-        <AlertDescription className="text-green-700">
-          تم الاتصال بقاعدة البيانات بنجاح.
-        </AlertDescription>
-      </Alert>
-    );
-  }
-  
-  return null;
+
+  return (
+    <div className={`flex items-center justify-between rounded-md p-2 mb-4 ${content.bgColor} ${content.borderColor}`}>
+      <div className="flex items-center">
+        <Database className="h-4 w-4 mr-2 text-gray-600" />
+        <span className={`${content.textColor} text-sm font-medium`}>{content.text}</span>
+      </div>
+      {(status === 'error' || status === 'warning') && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className={`${content.textColor} hover:bg-opacity-20 hover:bg-black p-1 h-8`}
+          onClick={handleRetry}
+        >
+          <RefreshCw className="h-3.5 w-3.5 mr-1" />
+          <span className="text-xs">إعادة المحاولة</span>
+        </Button>
+      )}
+    </div>
+  );
 };
 
 export default SupabaseConnectionStatus;

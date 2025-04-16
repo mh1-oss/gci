@@ -58,8 +58,11 @@ export const isRlsRecursionError = (error: any): boolean => {
     ? error 
     : error.message || error.toString();
   
+  // More comprehensive detection for recursion errors
   return !!(errorMessage && (
     errorMessage.toLowerCase().includes("infinite recursion") ||
+    errorMessage.toLowerCase().includes("policy for relation") ||
+    errorMessage.toLowerCase().includes("user_roles") ||
     (error.code && error.code === "42P17")
   ));
 };

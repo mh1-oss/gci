@@ -19,6 +19,7 @@ import DeleteProductDialog from './DeleteProductDialog';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { InfoIcon, AlertCircle } from "lucide-react";
+import RlsErrorDisplay from '@/components/ErrorHandling/RlsErrorDisplay';
 
 const AdminProductsApp = () => {
   const {
@@ -51,7 +52,6 @@ const AdminProductsApp = () => {
       toast({
         title: "تنبيه إعدادات الأمان",
         description: "يمكنك متابعة الاستخدام، ولكن قد تواجه صعوبات في حفظ التغييرات.",
-        variant: "default"
       });
     }
   }, [connectionStatus, error, toast]);
@@ -62,6 +62,14 @@ const AdminProductsApp = () => {
            error.toLowerCase().includes('rls') && 
            products.length > 0 && 
            connectionStatus === 'connected';
+  };
+
+  // Check if error is specifically an RLS recursion error
+  const isRlsRecursionError = () => {
+    return error && (
+      error.toLowerCase().includes('infinite recursion') || 
+      error.toLowerCase().includes('policy for relation')
+    );
   };
   
   return (
@@ -104,6 +112,15 @@ const AdminProductsApp = () => {
             />
           )}
           
+          {/* RLS Recursion error - use specialized component */}
+          {isRlsRecursionError() && (
+            <RlsErrorDisplay
+              error={error}
+              onRetry={fetchAllData}
+              showLogoutButton={true}
+            />
+          )}
+          
           {/* Loading state */}
           {connectionStatus === 'checking' || loading ? (
             <ProductsLoading />
@@ -116,7 +133,7 @@ const AdminProductsApp = () => {
               onEditProduct={handleOpenEditDialog}
               onDeleteProduct={handleOpenDeleteDialog}
             />
-          ) : error && !hasRlsButShowingData() && (
+          ) : error && !hasRlsButShowingData() && !isRlsRecursionError() && (
             <ProductErrorHandler
               error={error}
               onRetry={fetchAllData}
