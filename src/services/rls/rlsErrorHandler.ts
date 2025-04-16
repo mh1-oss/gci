@@ -9,6 +9,7 @@ export const isRlsPolicyError = (error: any): boolean => {
       ? error.message.toLowerCase() 
       : String(error).toLowerCase();
   
+  // More comprehensive check for common RLS error patterns
   return (
     errorString.includes('policy') ||
     errorString.includes('policies') ||
@@ -17,7 +18,10 @@ export const isRlsPolicyError = (error: any): boolean => {
     errorString.includes('row level security') ||
     errorString.includes('recursive') ||
     errorString.includes('recursion') ||
-    errorString.includes('user_roles')
+    errorString.includes('user_roles') ||
+    errorString.includes('new row violates') ||
+    errorString.includes('violates row-level') ||
+    errorString.includes('42501') // PostgreSQL permission denied code
   );
 };
 
@@ -34,6 +38,7 @@ export const isRlsRecursionError = (error: any): boolean => {
   return (
     errorString.includes('infinite recursion') ||
     errorString.includes('recursion detected') ||
+    errorString.includes('42p17') || // PostgreSQL infinite recursion code
     (errorString.includes('recursion') && errorString.includes('user_roles'))
   );
 };
@@ -60,6 +65,8 @@ export const createRlsError = (operation: 'create' | 'read' | 'update' | 'delete
   
   // Add a property to easily identify this as an RLS error
   (error as any).isRlsError = true;
+  (error as any).operation = operation;
+  console.error(`RLS Error created for operation: ${operation}`);
   
   return error;
 };
@@ -120,11 +127,13 @@ export const checkDatabaseConnectivity = async (): Promise<{
   } catch (error) {
     console.error("Error checking database connectivity:", error);
     
+    const isRls = isRlsPolicyError(error);
+    
     return {
-      isConnected: false,
-      hasRlsIssue: false,
+      isConnected: isRls, // If it's an RLS error, we are technically connected
+      hasRlsIssue: isRls,
       error: error instanceof Error ? error.message : "Unknown error checking connectivity",
-      message: null
+      message: isRls ? "Connected but with RLS policy issues" : null
     };
   }
 };

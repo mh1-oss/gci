@@ -57,6 +57,10 @@ const RlsErrorDisplay: React.FC<RlsErrorDisplayProps> = ({
     setShowTechnicalDetails(prev => !prev);
   };
   
+  // Log the error for debugging purposes
+  console.log('RLS Error being displayed:', error);
+  console.log('Is recursion error:', isRecursion);
+  
   return (
     <Alert variant="destructive" className={`mb-4 ${className}`}>
       <div className="flex items-start justify-between">
@@ -86,15 +90,16 @@ const RlsErrorDisplay: React.FC<RlsErrorDisplayProps> = ({
                   {showTechnicalDetails && (
                     <div className="text-sm mt-2 bg-red-50 p-2 rounded border border-red-200">
                       <p className="mb-1"><strong>تفاصيل المشكلة:</strong> هناك تكرار لانهائي في سياسات الأمان (RLS) للمستخدمين.</p>
-                      <p><strong>الجدول المتأثر:</strong> user_roles</p>
+                      <p><strong>الجدول المتأثر:</strong> user_roles أو products</p>
                       <p><strong>الحلول الممكنة:</strong></p>
                       <ol className="mr-5 mt-1 space-y-1">
                         <li>تسجيل الخروج وإعادة تسجيل الدخول قد يحل المشكلة مؤقتاً.</li>
                         <li>التواصل مع مدير النظام لإصلاح إعدادات سياسات RLS.</li>
                         <li>استخدام وظائف security definer في قاعدة البيانات لتجنب التكرار اللانهائي.</li>
+                        <li>التأكد من أن للمستخدم صلاحيات admin لإدارة المنتجات.</li>
                       </ol>
                       {isRecursion && (
-                        <p className="mt-2 text-xs opacity-75">infinite recursion detected in policy for relation "user_roles"</p>
+                        <p className="mt-2 text-xs opacity-75">infinite recursion detected in policy for relation "user_roles" or "products"</p>
                       )}
                     </div>
                   )}
