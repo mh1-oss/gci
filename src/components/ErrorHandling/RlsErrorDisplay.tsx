@@ -10,18 +10,21 @@ interface RlsErrorDisplayProps {
   error: string | Error | null;
   onRetry?: () => void;
   className?: string;
+  showLogoutButton?: boolean;
 }
 
 const RlsErrorDisplay: React.FC<RlsErrorDisplayProps> = ({
   error,
   onRetry,
   className = "",
+  showLogoutButton = true
 }) => {
   const { logout } = useAuth();
   
   if (!error) return null;
   
   const errorMessage = error instanceof Error ? error.message : String(error);
+  const isRecursion = errorMessage.includes("infinite recursion") || errorMessage.includes("42P17");
   
   const handleLogout = async () => {
     await logout();
@@ -39,7 +42,9 @@ const RlsErrorDisplay: React.FC<RlsErrorDisplayProps> = ({
           <Database className="h-4 w-4 mt-0.5" />
           <div className="mr-3">
             <AlertTitle>
-              مشكلة في سياسات قاعدة البيانات (RLS)
+              {isRecursion 
+                ? "مشكلة في تكرار سياسات قاعدة البيانات"
+                : "مشكلة في سياسات قاعدة البيانات (RLS)"}
             </AlertTitle>
             <AlertDescription>
               <p>{errorMessage}</p>
@@ -50,7 +55,9 @@ const RlsErrorDisplay: React.FC<RlsErrorDisplayProps> = ({
                   <li>إعادة تسجيل الدخول قد يحل المشكلة مؤقتاً.</li>
                   <li>التواصل مع مدير النظام لإصلاح سياسات RLS.</li>
                 </ol>
-                <p className="mt-2 text-xs opacity-75">خطأ: تكرار لانهائي في سياسة RLS لجدول user_roles</p>
+                {isRecursion && (
+                  <p className="mt-2 text-xs opacity-75">خطأ: تكرار لانهائي في سياسة RLS لجدول user_roles</p>
+                )}
               </div>
             </AlertDescription>
           </div>
@@ -68,14 +75,16 @@ const RlsErrorDisplay: React.FC<RlsErrorDisplayProps> = ({
               إعادة المحاولة
             </Button>
           )}
-          <Button
-            variant="outline"
-            size="sm"
-            className="border-red-300 text-red-700 hover:bg-red-50 shrink-0"
-            onClick={handleLogout}
-          >
-            تسجيل الخروج
-          </Button>
+          {showLogoutButton && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-red-300 text-red-700 hover:bg-red-50 shrink-0"
+              onClick={handleLogout}
+            >
+              تسجيل الخروج
+            </Button>
+          )}
         </div>
       </div>
     </Alert>

@@ -10,7 +10,8 @@ export const isRlsInfiniteRecursionError = (error: any): boolean => {
   return !!(error?.message && (
     error.message.includes("infinite recursion") || 
     error.message.includes("policy for relation") ||
-    error.message.includes("user_roles")
+    error.message.includes("user_roles") ||
+    (error?.code && error.code === "42P17")
   ));
 };
 
@@ -28,7 +29,8 @@ export const isRlsPolicyError = (error: any): boolean => {
     error.message.includes("permission denied") ||
     error.message.includes("new row violates row-level security") ||
     error.message.includes("RLS") ||
-    error.message.includes("policy")
+    error.message.includes("policy") ||
+    (error?.code && error.code === "42501")
   ));
 };
 

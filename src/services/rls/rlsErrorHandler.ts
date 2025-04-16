@@ -35,7 +35,7 @@ export const isRlsPolicyError = (error: any): boolean => {
     errorMessage.includes("row-level security") ||
     errorMessage.includes("permission denied") ||
     errorMessage.includes("RLS") ||
-    (error.code && error.code === "42P17")
+    (error.code && (error.code === "42P17" || error.code === "42501"))
   ));
 };
 

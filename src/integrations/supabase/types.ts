@@ -537,6 +537,10 @@ export type Database = {
         Args: { p_id: string; p_name: string; p_description?: string }
         Returns: boolean
       }
+      check_admin_status: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       get_all_categories: {
         Args: Record<PropertyKey, never>
         Returns: {

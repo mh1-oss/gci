@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,8 +34,17 @@ export const useAuthState = (): AuthState => {
     } catch (error) {
       console.error('Error checking admin status:', error);
       setIsAdmin(false);
+      
+      // Only show toast for RLS errors if we're not in the initial loading
+      if (!loading && error instanceof Error && error.message.includes('RLS')) {
+        toast({
+          title: "RLS Policy Error",
+          description: "There was an issue checking your admin privileges. Please try logging out and back in.",
+          variant: "destructive",
+        });
+      }
     }
-  }, [user]);
+  }, [user, loading]);
 
   // Initialize auth state
   useEffect(() => {
