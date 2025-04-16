@@ -1,10 +1,10 @@
 
 import React, { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { checkDatabaseConnectivity } from "@/services/products/utils/rlsErrorHandler";
+import { checkDatabaseConnectivity } from "@/services/rls/rlsErrorHandler";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { DatabaseIcon, RefreshCw, AlertCircle, WifiOff, CheckCircle } from "lucide-react";
+import { DatabaseIcon, RefreshCw, AlertCircle, WifiOff, CheckCircle, InfoIcon } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
 interface SupabaseConnectionStatusProps {
@@ -72,11 +72,6 @@ const SupabaseConnectionStatus = ({ showWhenConnected = false }: SupabaseConnect
         <AlertTitle>خطأ في الاتصال بقاعدة البيانات</AlertTitle>
         <AlertDescription className="flex flex-col">
           <p className="mb-2">تعذر الاتصال بقاعدة البيانات. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.</p>
-          {data?.error && (
-            <p className="text-sm bg-red-100 p-2 rounded mb-4">
-              <strong>معلومات تقنية:</strong> {data.error}
-            </p>
-          )}
           <div className="flex justify-end">
             <Button 
               onClick={handleRefresh}
@@ -96,16 +91,12 @@ const SupabaseConnectionStatus = ({ showWhenConnected = false }: SupabaseConnect
   if (data?.hasRlsIssue) {
     return (
       <Alert variant="default" className="mb-4 bg-amber-50 border-amber-200">
-        <DatabaseIcon className="h-4 w-4 text-amber-600" />
-        <AlertTitle className="text-amber-800">تحذير بشأن قاعدة البيانات</AlertTitle>
+        <InfoIcon className="h-4 w-4 text-amber-600" />
+        <AlertTitle className="text-amber-800">تنبيه</AlertTitle>
         <AlertDescription className="text-amber-700">
           <p className="mb-2">
             تم الاتصال بقاعدة البيانات ولكن هناك مشكلة في سياسات الأمان (RLS).
-            نحن نستخدم البيانات المحلية حاليًا لضمان استمرار عمل التطبيق.
-          </p>
-          <p className="text-sm bg-amber-100 p-2 rounded mb-4">
-            <strong>معلومات تقنية:</strong> تم اكتشاف تكرار لانهائي في سياسة الجدول user_roles.
-            هذه المشكلة تتطلب إعادة تكوين سياسات RLS للجدول.
+            يمكنك متابعة استخدام التطبيق، ولكن قد تواجه صعوبات في حفظ بعض التغييرات.
           </p>
           <div className="flex justify-end">
             <Button 

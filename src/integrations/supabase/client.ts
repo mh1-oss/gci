@@ -32,34 +32,60 @@ export const supabase = createClient<Database>(
 );
 
 // Improved helper function to check connection to Supabase
-// that can bypass RLS policy issues with the user_roles table
+// Completely bypasses RLS policy issues with the user_roles table
 export const pingDatabase = async () => {
   try {
     console.log("Attempting to ping database...");
     
-    // Try the RPC function first - most reliable and bypasses RLS
+    // Try the direct RPC function first - most reliable bypass for RLS
     try {
-      const { error } = await supabase.rpc('get_company_info');
+      const { data: functionData, error: functionError } = await supabase.rpc('get_company_info');
       
-      if (!error) {
-        console.log("Database ping successful using RPC function");
+      if (!functionError) {
+        console.log("Database ping successful via get_company_info function");
         return { ok: true, latency: 0 };
       } else {
-        console.warn("Failed to ping using RPC function:", error.message);
+        console.warn("Failed to ping using get_company_info:", functionError.message);
       }
     } catch (err) {
-      console.warn("Failed to ping using RPC function");
+      console.warn("Failed to ping using get_company_info");
     }
     
-    // Use a simple table that doesn't have complex RLS policies
-    // We'll try multiple tables in sequence to find one that works
-    const tables = ['company_info', 'products', 'categories'];
+    // Try categories RPC as fallback
+    try {
+      const { data: categoriesData, error: categoriesError } = await supabase.rpc('get_all_categories');
+      
+      if (!categoriesError) {
+        console.log("Database ping successful via get_all_categories function");
+        return { ok: true, latency: 0 };
+      } else {
+        console.warn("Failed to ping using get_all_categories:", categoriesError.message);
+      }
+    } catch (err) {
+      console.warn("Failed to ping using get_all_categories");
+    }
+    
+    // Try products RPC as fallback
+    try {
+      const { data: productsData, error: productsError } = await supabase.rpc('get_all_products');
+      
+      if (!productsError) {
+        console.log("Database ping successful via get_all_products function");
+        return { ok: true, latency: 0 };
+      } else {
+        console.warn("Failed to ping using get_all_products:", productsError.message);
+      }
+    } catch (err) {
+      console.warn("Failed to ping using get_all_products");
+    }
+    
+    // Use a simple table that doesn't have complex RLS policies as final fallback
+    const tables = ['company_info', 'products', 'categories', 'features'];
     let success = false;
     let errorMessage = '';
     
     for (const table of tables) {
       try {
-        // Using type assertion to handle the dynamic table name
         const { data, error } = await supabase
           .from(table as any)
           .select('id')

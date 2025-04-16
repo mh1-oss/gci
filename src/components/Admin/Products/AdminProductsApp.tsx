@@ -16,9 +16,9 @@ import ProductsLoading from './ProductsLoading';
 import NoProductsView from './NoProductsView';
 import ProductListTable from './ProductListTable';
 import DeleteProductDialog from './DeleteProductDialog';
-import RlsErrorDisplay from '@/components/ErrorHandling/RlsErrorDisplay';
-import { isRlsPolicyError } from '@/services/rls/rlsErrorHandler';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { InfoIcon, AlertCircle } from "lucide-react";
 
 const AdminProductsApp = () => {
   const {
@@ -43,16 +43,26 @@ const AdminProductsApp = () => {
     checkConnection
   } = useProductsManagement();
   
-  // Show toast when there's an RLS error 
+  const { toast } = useToast();
+  
+  // Show notification for RLS errors but continue to show local data
   useEffect(() => {
-    if (error && isRlsPolicyError(error)) {
+    if (connectionStatus === 'connected' && error && error.toLowerCase().includes('rls')) {
       toast({
-        title: "تنبيه أمان قاعدة البيانات",
-        description: "تم اكتشاف مشكلة في سياسات الأمان (RLS). قد تواجه صعوبات في إضافة أو تعديل البيانات.",
+        title: "تنبيه إعدادات الأمان",
+        description: "يمكنك متابعة الاستخدام، ولكن قد تواجه صعوبات في حفظ التغييرات.",
         variant: "default"
       });
     }
-  }, [error]);
+  }, [connectionStatus, error, toast]);
+
+  // Helper to check if we have an RLS error but we're still showing data
+  const hasRlsButShowingData = () => {
+    return error && 
+           error.toLowerCase().includes('rls') && 
+           products.length > 0 && 
+           connectionStatus === 'connected';
+  };
   
   return (
     <div>
@@ -69,8 +79,24 @@ const AdminProductsApp = () => {
           />
         </CardHeader>
         <CardContent>
-          <SupabaseConnectionStatus />
+          {/* Always show connection status during loading or when there's a connection issue */}
+          {(connectionStatus === 'checking' || connectionStatus === 'disconnected' || 
+              (error && error.toLowerCase().includes('rls'))) && (
+            <SupabaseConnectionStatus />
+          )}
           
+          {/* For RLS errors when we still have products to display */}
+          {hasRlsButShowingData() && (
+            <Alert variant="warning" className="mb-4 bg-amber-50 border-amber-200">
+              <InfoIcon className="h-4 w-4 text-amber-600" />
+              <AlertTitle className="text-amber-800">تنبيه إعدادات الأمان</AlertTitle>
+              <AlertDescription className="text-amber-700">
+                نعرض حالياً البيانات المخزنة محلياً. قد تواجه صعوبات في حفظ التغييرات بسبب مشكلة في سياسات الأمان (RLS).
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {/* Critical connection error */}
           {connectionStatus === 'disconnected' && (
             <ProductErrorHandler
               error="لا يمكن الاتصال بقاعدة البيانات. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى."
@@ -78,29 +104,22 @@ const AdminProductsApp = () => {
             />
           )}
           
-          {error && connectionStatus !== 'disconnected' && isRlsPolicyError(error) ? (
-            <RlsErrorDisplay 
-              error={error}
-              onRetry={fetchAllData}
-              showDetails={true}
-            />
-          ) : error && connectionStatus !== 'disconnected' && (
-            <ProductErrorHandler
-              error={error}
-              onRetry={fetchAllData}
-            />
-          )}
-          
+          {/* Loading state */}
           {connectionStatus === 'checking' || loading ? (
             <ProductsLoading />
           ) : connectionStatus === 'connected' && products.length === 0 && !error ? (
             <NoProductsView onAddNew={handleOpenCreateDialog} />
-          ) : connectionStatus === 'connected' && (
+          ) : connectionStatus === 'connected' && products.length > 0 ? (
             <ProductListTable 
               products={products}
               categories={categories}
               onEditProduct={handleOpenEditDialog}
               onDeleteProduct={handleOpenDeleteDialog}
+            />
+          ) : error && !hasRlsButShowingData() && (
+            <ProductErrorHandler
+              error={error}
+              onRetry={fetchAllData}
             />
           )}
         </CardContent>

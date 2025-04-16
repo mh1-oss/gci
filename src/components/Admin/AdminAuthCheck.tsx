@@ -7,6 +7,8 @@ import { checkDatabaseConnectivity } from "@/services/rls/rlsErrorHandler";
 import DatabaseConnectionError from "../ErrorHandling/DatabaseConnectionError";
 import { Button } from "../ui/button";
 import { toast } from "@/hooks/use-toast";
+import { Alert, AlertTitle, AlertDescription } from "../ui/alert";
+import { InfoIcon } from "lucide-react";
 
 interface AdminAuthCheckProps {
   children: React.ReactNode;
@@ -19,6 +21,7 @@ const AdminAuthCheck = ({ children }: AdminAuthCheckProps) => {
   const [dbError, setDbError] = useState<string | null>(null);
   const [dbHasRlsIssue, setDbHasRlsIssue] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [showRlsWarning, setShowRlsWarning] = useState(false);
 
   useEffect(() => {
     // Check if the user is authenticated and admin
@@ -47,24 +50,27 @@ const AdminAuthCheck = ({ children }: AdminAuthCheckProps) => {
   useEffect(() => {
     const checkDbConnection = async () => {
       try {
+        setDbCheckDone(false);
         const result = await checkDatabaseConnectivity();
         console.log("Database connection result:", result);
         
         if (!result.isConnected) {
           setDbError(result.error || "تعذر الاتصال بقاعدة البيانات");
-        } else if (result.hasRlsIssue) {
-          // We can still continue with RLS issues, just log it
-          setDbHasRlsIssue(true);
-          console.log("Database connection has RLS issues but is functional");
-          
-          // Show a warning toast about RLS issues but continue
-          if (retryCount === 0) {
-            toast({
-              title: "تنبيه: مشكلة في سياسات الأمان",
-              description: "تم اكتشاف مشكلة في إعدادات الأمان (RLS). قد تواجه صعوبات في بعض العمليات.",
-              variant: "default",
-            });
+        } else {
+          // Even with RLS issues, we'll still show the main application
+          // Just set a flag for information or warning display
+          if (result.hasRlsIssue) {
+            setDbHasRlsIssue(true);
+            setShowRlsWarning(true);
+            console.log("Database connection has RLS issues but is functional");
+            
+            // Auto-hide RLS warning after 5 seconds
+            setTimeout(() => {
+              setShowRlsWarning(false);
+            }, 5000);
           }
+          
+          setDbError(null);
         }
         
         setDbCheckDone(true);
@@ -107,7 +113,6 @@ const AdminAuthCheck = ({ children }: AdminAuthCheckProps) => {
             showHomeLink={true}
           />
           
-          {/* Add logout button for critical errors */}
           <div className="text-center mt-4">
             <Button 
               variant="ghost" 
@@ -126,12 +131,22 @@ const AdminAuthCheck = ({ children }: AdminAuthCheckProps) => {
   if (isAuthenticated && isAdmin) {
     return (
       <>
-        {dbHasRlsIssue && (
-          <div className="bg-amber-50 p-2 border-b border-amber-200 text-amber-800 text-sm text-center">
-            <p>
-              تنبيه: تم اكتشاف مشكلة في سياسات الأمان (RLS). بعض العمليات قد لا تعمل بشكل صحيح.
-            </p>
-          </div>
+        {/* Show subtle notification for RLS issues that auto-dismisses */}
+        {showRlsWarning && dbHasRlsIssue && (
+          <Alert variant="default" className="bg-amber-50 border-amber-200 mb-0 rounded-none border-t-0 border-l-0 border-r-0">
+            <InfoIcon className="h-4 w-4 text-amber-600" />
+            <AlertTitle className="text-amber-800">تنبيه</AlertTitle>
+            <AlertDescription className="text-amber-700">
+              تم اكتشاف مشكلة في سياسات الأمان (RLS). يمكنك متابعة استخدام التطبيق.
+              <Button 
+                variant="link" 
+                className="p-0 h-6 text-amber-800 hover:text-amber-900 ml-2"
+                onClick={() => setShowRlsWarning(false)}
+              >
+                إخفاء
+              </Button>
+            </AlertDescription>
+          </Alert>
         )}
         {children}
       </>
