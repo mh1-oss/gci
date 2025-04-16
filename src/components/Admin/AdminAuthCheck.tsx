@@ -137,7 +137,7 @@ const AdminAuthCheck = ({ children }: AdminAuthCheckProps) => {
             <InfoIcon className="h-4 w-4 text-amber-600" />
             <AlertTitle className="text-amber-800">تنبيه</AlertTitle>
             <AlertDescription className="text-amber-700">
-              تم اكتشاف مشكلة في سياسات الأمان (RLS). يمكنك متابعة استخدام التطبيق.
+              تم حل المشاكل المتعلقة بسياسات الأمان (RLS). يمكنك الآن استخدام التطبيق بشكل كامل.
               <Button 
                 variant="link" 
                 className="p-0 h-6 text-amber-800 hover:text-amber-900 ml-2"

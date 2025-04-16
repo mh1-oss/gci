@@ -4,6 +4,7 @@ import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { checkIsAdmin } from "@/services/auth/authUtils";
 import { toast } from "@/hooks/use-toast";
+import { isRlsPolicyError } from "@/services/rls/rlsErrorHandler";
 
 interface AuthState {
   user: User | null;
@@ -19,7 +20,7 @@ export const useAuthState = (): AuthState => {
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
 
-  // Check admin status safely without retries
+  // Check admin status safely using our improved security definer function
   const updateAdminStatus = useCallback(async () => {
     if (!user) {
       setIsAdmin(false);
@@ -36,7 +37,7 @@ export const useAuthState = (): AuthState => {
       setIsAdmin(false);
       
       // Only show toast for RLS errors if we're not in the initial loading
-      if (!loading && error instanceof Error && error.message.includes('RLS')) {
+      if (!loading && isRlsPolicyError(error)) {
         toast({
           title: "خطأ في سياسات الأمان",
           description: "حدثت مشكلة أثناء التحقق من صلاحياتك. يرجى تسجيل الخروج وإعادة الدخول.",
