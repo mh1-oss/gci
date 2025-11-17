@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>NFC Enrollment – تهيئة بطاقة طالب</title>
+<style>
+:root{--bg:#f7f9fc;--card:#fff;--text:#0f172a;--muted:#64748b;--border:#e5e7eb;--accent:#2563eb;--shadow:0 2px 12px rgba(15,23,42,.08)}
+*{box-sizing:border-box} body{margin:0;font-family:system-ui,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
+.wrap{max-width:720px;margin:0 auto;padding:24px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:18px;margin:12px 0;animation:pop .25s ease}
+label{display:block;margin:8px 0 6px;font-size:14px;color:var(--muted)}
+input{width:100%;padding:10px;border-radius:10px;border:1px solid var(--border)}
+button{padding:10px 14px;border-radius:12px;border:1px solid var(--border);background:#eef2ff;color:#111;cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.muted{color:var(--muted)} .row{display:flex;gap:12px;flex-wrap:wrap}.col{flex:1 1 240px}
+.badge{display:inline-block;background:#eef2ff;border:1px solid var(--border);padding:6px 10px;border-radius:999px}
+@keyframes pop{from{transform:scale(.98);opacity:.0}to{transform:scale(1);opacity:1}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>تهيئة بطاقة طالب (NFC)</h1>
+
+  <div class="card">
+    <div class="row">
+      <div class="col">
+        <label>Student ID (معرّف الطالب)</label>
+        <input id="sid" placeholder="مثال: 2025-01234">
+      </div>
+      <div class="col">
+        <label>Full Name (الاسم الكامل)</label>
+        <input id="name" placeholder="مثال: مصطفى محمد فوزي">
+      </div>
+    </div>
+    <div class="row">
+      <div class="col">
+        <label>Section (الشعبة)</label>
+        <input id="sec" placeholder="A / 3">
+      </div>
+      <div class="col">
+        <label>معلومة إضافية (اختياري)</label>
+        <input id="extra" placeholder="Major, Year ...">
+      </div>
+    </div>
+    <p class="muted">يُكتب على البطاقة JSON داخل NDEF بمحتوى MIME: <span class="badge">application/json</span></p>
+    <button id="write" class="primary">كتابة إلى بطاقة NFC</button>
+    <p id="state" class="muted"></p>
+  </div>
+
+  <div class="card">
+    <a href="index.html">⬅ رجوع للصفحة الرئيسية</a>
+  </div>
+</div>
+
+<script>
+async function writeToTag(json){
+  if(!('NDEFWriter' in window)){ alert('Web NFC غير مدعوم في هذا المتصفح/الجهاز'); return; }
+  try{
+    const writer = new NDEFWriter();
+    await writer.write({
+      records: [{recordType: "mime", mediaType: "application/json", data: new TextEncoder().encode(JSON.stringify(json))}]
+    });
+    return true;
+  }catch(e){ throw e; }
+}
+
+document.getElementById('write').onclick = async ()=>{
+  const sid = document.getElementById('sid').value.trim();
+  const name= document.getElementById('name').value.trim();
+  const sec = document.getElementById('sec').value.trim();
+  const extra= document.getElementById('extra').value.trim();
+  if(!sid || !name){ alert('Student ID و Full Name مطلوبان'); return; }
+  const payload = { student_id: sid, full_name: name, section: sec, extra };
+  const state = document.getElementById('state');
+  state.textContent = 'قرّب البطاقة من الهاتف...';
+  try{
+    await writeToTag(payload);
+    state.textContent = '✅ تمّت الكتابة بنجاح.';
+  }catch(e){
+    state.textContent = '❌ فشل: '+e.message;
+  }
+};
+</script>
+</body>
+</html>
